@@ -1,0 +1,101 @@
+.learning-library{background:#eef3e9;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.library-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.library-card{display:flex;flex-direction:column;min-height:255px;padding:24px;background:var(--white);border:1px solid #cbd3c5;border-radius:5px;text-decoration:none;color:var(--ink);transition:transform .15s,box-shadow .15s}
+.library-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px #15373112}
+.library-card .library-kicker{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--teal);font-weight:700}
+.library-card h3{font-family:Georgia,'Times New Roman',serif;font-size:25px;line-height:1.15;letter-spacing:-.5px;font-weight:400;margin:30px 0 11px}
+.library-card p{font-size:11px;line-height:1.8;color:var(--muted);margin:0 0 18px}
+.library-card .library-arrow{margin-top:auto;font-size:11px;font-weight:700}
+.lesson-hero .field-note{transform:rotate(.8deg)}
+.lesson-hero .field-note h2{margin-top:42px}
+.lesson-hero .field-note>p{max-width:unset}
+.lesson-content{max-width:980px;margin:0 auto}
+.lesson-copy{font-size:15px;line-height:1.9;color:#344d45;max-width:790px}
+.lesson-copy>p{margin:0 0 18px}
+.lesson-copy h2,.lesson-copy h3{font-family:Georgia,'Times New Roman',serif;font-weight:400;line-height:1.2;color:var(--ink)}
+.lesson-copy h2{font-size:clamp(30px,3.5vw,42px);letter-spacing:-1px;margin:0 0 17px}
+.lesson-copy h3{font-size:25px;letter-spacing:-.4px;margin:34px 0 10px}
+.lesson-copy ul,.lesson-copy ol{padding-left:23px}
+.lesson-copy li{padding:4px 0}
+.lesson-callout{background:#e9edde;border-left:4px solid var(--teal);padding:20px 23px;margin:26px 0;color:#344d45;font-size:13px;line-height:1.85}
+.lesson-callout strong{color:var(--ink)}
+.tissue-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin:26px 0}
+.tissue-card{background:var(--white);border:1px solid var(--line);border-radius:5px;padding:23px}
+.tissue-card .tissue-index{font-size:9px;letter-spacing:1px;color:var(--teal);font-weight:700}
+.tissue-card h3{font-family:Georgia,serif;font-size:25px;font-weight:400;margin:12px 0 5px}
+.tissue-card p{font-size:11px;line-height:1.8;color:var(--muted);margin:0}
+.tissue-art{width:100%;height:auto;display:block;margin:12px 0 15px;background:#f6f5ed;border-radius:3px}
+.tissue-art text{font-family:Arial,sans-serif;font-size:10px;fill:#52665f}
+.tissue-art .cell{fill:#e4ebdd;stroke:#153731;stroke-width:2}
+.tissue-art .nucleus{fill:#2f7464}
+.tissue-art .base{stroke:#2f7464;stroke-width:3}
+.tissue-art .label{font-weight:700;fill:#153731}
+.practice-list{border-top:1px solid var(--line);margin-top:22px}
+.practice-list details{border-bottom:1px solid var(--line);padding:15px 3px}
+.practice-list summary{font-size:13px;line-height:1.65;font-weight:700;color:var(--ink);cursor:pointer}
+.practice-list details p{font-size:12px;line-height:1.8;color:var(--muted);margin:11px 0 2px}
+.learning-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:25px 0}
+.learning-facts article{background:#f1f1e5;border:1px solid #cbd3c3;padding:22px;border-radius:4px}
+.learning-facts span{font-size:9px;letter-spacing:1px;color:var(--teal);font-weight:700}
+.learning-facts h3{font-family:Georgia,serif;font-weight:400;font-size:22px;margin:20px 0 8px}
+.learning-facts p{font-size:11px;line-height:1.8;color:var(--muted);margin:0}
+.flow-route{counter-reset:flow;list-style:none;padding:0;margin:25px 0;border-top:1px solid var(--line)}
+.flow-route li{counter-increment:flow;display:grid;grid-template-columns:38px 1fr;gap:16px;align-items:start;border-bottom:1px solid var(--line);padding:15px 3px}
+.flow-route li:before{content:counter(flow,decimal-leading-zero);color:var(--teal);font-size:10px;letter-spacing:1px;font-weight:700;padding-top:4px}
+.flow-route strong{display:block;font-size:14px;color:var(--ink);margin-bottom:4px}
+.flow-route span{display:block;color:var(--muted);font-size:11px;line-height:1.75}
+.side-route{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin:25px 0}
+.side-route article{padding:24px;background:#e9edde;border:1px solid #cbd3c5;border-radius:4px}
+.side-route article+article{background:#f1f1e5}
+.side-route span{font-size:9px;letter-spacing:1px;color:var(--teal);font-weight:700}
+.side-route h3{font-family:Georgia,serif;font-size:25px;font-weight:400;margin:13px 0 8px}
+.side-route p{font-size:11px;line-height:1.8;color:var(--muted);margin:0}
+.print-tools{display:flex;flex-wrap:wrap;align-items:center;gap:15px;margin:20px 0 27px}
+.print-tools .button{width:auto;min-width:230px}
+.print-tools p{font-size:10px;line-height:1.7;color:var(--muted);margin:0}
+.print-sheet{background:#fffefa;border:1px solid #cbd3c5;border-radius:5px;padding:34px;box-shadow:8px 10px 0 #e8ebde;color:#153731}
+.print-sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid #153731;padding-bottom:15px;margin-bottom:20px}
+.print-sheet-head .worksheet-brand{font-size:9px;letter-spacing:1.5px;font-weight:700}
+.print-sheet-head h2{font-family:Georgia,serif;font-size:30px;line-height:1.1;font-weight:400;margin:12px 0 0}
+.print-sheet-head p{font-size:10px;line-height:1.65;color:#52665f;margin:8px 0 0}
+.worksheet-name{font-size:10px;white-space:nowrap;border-bottom:1px solid #75847b;padding:0 0 6px;min-width:150px}
+.worksheet-directions{font-size:11px;line-height:1.7;color:#344d45;margin:0 0 18px}
+.heart-map{display:block;width:100%;height:auto;margin:14px auto 20px;background:#fff}
+.worksheet-flow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.worksheet-flow article{min-height:84px;border:1.5px solid #153731;border-radius:4px;padding:11px;position:relative}
+.worksheet-flow article span{font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#52665f}
+.worksheet-flow article strong{display:block;font-family:Georgia,serif;font-size:16px;font-weight:400;margin-top:10px}
+.worksheet-flow .route-blue{border-left:7px solid #7ca9b4}
+.worksheet-flow .route-red{border-left:7px solid #c87968}
+.worksheet-question{font-size:10px;line-height:1.7;margin:17px 0 0;padding-top:11px;border-top:1px solid #d6ddd3}
+.worksheet-answerline{display:inline-block;border-bottom:1px solid #75847b;min-width:120px;margin:0 4px}
+.specimen-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin:23px 0}
+.specimen-grid article{background:var(--white);border:1px solid var(--line);border-radius:4px;padding:21px}
+.specimen-grid span{font-size:8px;letter-spacing:1px;color:var(--teal);font-weight:700}
+.specimen-grid h3{font-family:Georgia,serif;font-size:21px;font-weight:400;margin:11px 0 7px}
+.specimen-grid p{font-size:11px;line-height:1.8;color:var(--muted);margin:0}
+.observation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.observation-card{border:1px solid #153731;padding:13px;min-height:240px}
+.observation-card h3{font-family:Georgia,serif;font-size:15px;font-weight:400;margin:0 0 11px}
+.drawing-circle{height:105px;width:105px;border:1px solid #aab7ac;border-radius:50%;margin:0 auto 11px}
+.observation-line{font-size:8px;line-height:1.6;color:#52665f;margin:7px 0;border-bottom:1px solid #aab7ac;padding-bottom:3px}
+.source-note{border-top:1px solid var(--line);padding-top:21px;margin-top:45px}
+.source-note h2{font-family:Georgia,serif;font-size:24px;font-weight:400;margin:0 0 11px}
+.source-note a{display:block;color:var(--teal);font-size:10px;text-decoration:none;margin:7px 0}
+.source-note a:hover{text-decoration:underline}
+.source-note p{font-size:9px;line-height:1.7;color:var(--muted);margin:13px 0 0}
+.print-only{display:none}
+@media(max-width:1000px){.library-grid{grid-template-columns:1fr 1fr}.library-card{min-height:220px}}
+@media(max-width:760px){.library-grid{grid-template-columns:1fr 1fr}.library-card{padding:19px;min-height:215px}.library-card h3{font-size:22px;margin-top:23px}.lesson-hero .field-note{min-height:290px}.tissue-grid,.learning-facts,.side-route{grid-template-columns:1fr}.tissue-card{padding:19px}.specimen-grid{grid-template-columns:1fr}.print-sheet{padding:22px}.print-sheet-head h2{font-size:25px}.print-sheet-head{display:block}.worksheet-name{display:block;margin-top:15px;width:200px}.observation-grid{grid-template-columns:1fr}.observation-card{min-height:215px}.drawing-circle{height:90px;width:90px}}
+@media(max-width:440px){.library-grid{grid-template-columns:1fr}.library-card{min-height:175px}.library-card h3{margin-top:15px}.print-tools .button{width:100%;min-width:0}.print-sheet{padding:15px}.worksheet-flow{grid-template-columns:1fr}.worksheet-flow article{min-height:72px}.print-sheet-head h2{font-size:23px}}
+@media print{
+  @page{size:letter;margin:.5in}
+  body.print-mode>*{visibility:hidden!important}
+  body.print-mode .print-sheet,body.print-mode .print-sheet *{visibility:visible!important}
+  body.print-mode .print-sheet{display:block!important;position:absolute;left:0;top:0;width:100%;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:#fff;color:#000}
+  body.print-mode .print-sheet *{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  body.print-mode .worksheet-flow article{break-inside:avoid}
+  body.print-mode .heart-map{width:100%;height:auto}
+  body.print-mode .observation-grid{grid-template-columns:repeat(3,1fr)}
+  body.print-mode .observation-card{min-height:220px;break-inside:avoid}
+}
