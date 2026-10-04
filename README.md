@@ -10,23 +10,9 @@ Public website: https://studybench.mwscrafts.workers.dev/
 
 ## Automatic updates through GitHub
 
-The source repository is ready. The remaining setup is to connect it to the existing Cloudflare Worker.
+The `main` branch is connected to the existing Cloudflare Worker named `studybench`. Every commit to `main` triggers a Cloudflare build and deploys the contents of `dist/` automatically.
 
-1. In Cloudflare, open **Workers & Pages → studybench → Settings → Builds → Connect**. Connect GitHub and select the `mwscrafts/study-bench` repository.
-2. Use these options:
-
-   | Setting | Value |
-   | --- | --- |
-   | Production branch | `main` |
-   | Root directory | Repository root |
-   | Build command | Leave empty |
-   | Deploy command | `npx wrangler deploy` |
-
-   Cloudflare can generate the build authorization token automatically. No password or token needs to be put into the source code or shared in chat.
-3. Save the configuration. The first build should deploy the current `main` branch to the existing Worker.
-4. Confirm the build succeeds and the Worker has a new active deployment before treating the update as live.
-
-The Worker name in the dashboard must remain `studybench` to match the configuration. Future pushes to the connected branch can publish updates automatically.
+The Worker name in the dashboard must remain `studybench` to match `wrangler.json`. Cloudflare manages the build authorization token; no password or token belongs in this repository.
 
 Official setup: https://developers.cloudflare.com/workers/ci-cd/builds/
 
