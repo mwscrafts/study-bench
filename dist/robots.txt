@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://studybench.mwscrafts.workers.dev/sitemap.xml
