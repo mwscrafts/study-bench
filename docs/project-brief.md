@@ -33,6 +33,29 @@ Check exact and similar names in web/education/publishing search, relevant trade
 
 If the name or URL changes, update site copy, metadata, email subjects, PDF branding, canonical URLs, sitemap and robots together. Plan redirects and Search Console verification before moving traffic. Do not silently migrate hosting or change the account-wide Cloudflare subdomain.
 
+
+## Preliminary naming research — 4 October 2026
+
+Recommended for owner consideration: **Trace & Theory**. Proposed descriptor: **Visual science lessons, stories and activities.** It describes observation and explanation, stays broad across anatomy, microscopy, natural history and Earth science, and is not location-specific. This is a recommendation, not an approved or deployed rebrand.
+
+| Candidate | Evidence gathered | Decision |
+| --- | --- | --- |
+| Study Bench | Existing education service at studybench.com, shown by the owner and previously checked. | Replace before promotion. |
+| Cell & Stone | Canadian Trademark field query `CELL AND STONE` returned 0 results. U.S. Wordmark search surfaced a live registered `CELL STONE` mark, serial 76282762, for heat-exchange media in class 011. | Do not lead with it; the similar industrial mark is a screening flag, not a finding that our proposed use would infringe. |
+| Trace & Theory | Canadian Trademark field query `TRACE AND THEORY` returned 0 results. U.S. Field tag and Search builder query `CM:trace AND CM:theory` displayed “No results found.” No matching education business surfaced in the exact-name web queries. | Leading candidate; owner approval required. |
+
+Domain checks: Verisign's .com RDAP endpoint returned HTTP 404 for both `CELLANDSTONE.COM` and `TRACEANDTHEORY.COM`. This suggests no registry record at the time checked; it does not guarantee registrability, price, or hosting-subdomain availability. No domain has been purchased or reserved.
+
+Primary sources and reproduction:
+- [Canadian Trademarks Database](https://ised-isde.canada.ca/cipo/trademark-search/srch): choose Trademark, enter the queries above, leave status unrestricted.
+- [U.S. trademark search](https://tmsearch.uspto.gov/): choose Field tag and Search builder and enter `CM:trace AND CM:theory`. Results are session state, not encoded in the result-page URL.
+- [Verisign RDAP check](https://rdap.verisign.com/com/v1/domain/TRACEANDTHEORY.COM).
+- Web queries checked exact spellings with ampersand, “and”, and the concatenated domain spelling.
+
+Limits: These are preliminary searches, not comprehensive legal clearance. Similar spellings, sounds, unregistered use, business-name registers, additional jurisdictions, social handles, and the final logo/descriptor have not been exhaustively cleared. Do not say the name is globally unused or trademark-safe.
+
+Next: owner chooses the name. Then review its final spelling and visual treatment; confirm the free hosting URL can be claimed before promising it; change site and PDF branding consistently; plan redirects, canonicals, sitemap and Search Console updates if the URL changes. Preserve all existing content and layouts. No public branding or hosting settings changed during this research.
+
 ## Publishing checklist
 
 1. Inspect the current repository and live state. State the specific change before making it. Major branding, layout, pricing and platform decisions need owner agreement.
