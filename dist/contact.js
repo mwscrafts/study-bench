@@ -17,7 +17,9 @@ if (contactForm) {
       fields.get('message')
     ].join('\n');
 
-    contactStatus.querySelector('strong').textContent = 'Email draft opened';
+    if (contactStatus) {
+      contactStatus.querySelector('strong').textContent = 'Continue in your email app to send. If it did not open, use Email us above.';
+    }
     window.location.href = `mailto:mwscrafts@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
 }

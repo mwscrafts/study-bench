@@ -40,4 +40,15 @@ If the public URL changes, update the canonical and Open Graph URLs in every HTM
 
 ## Local checks
 
-Run `node --check dist/app.js` to check JavaScript syntax. The page and downloads can also be opened locally; no package installation is required to edit the site.
+Before publishing, run:
+
+```sh
+python3 scripts/check_site.py
+python3 -m unittest discover -s tests -v
+```
+
+The checker validates navigation order, local links and fragments, required page metadata, image alt attributes, PDFs, sitemap and robots consistency, and JavaScript syntax. It requires Python 3 and Node.js, but no packages. These are technical checks, not a substitute for mobile, print, accessibility, scientific accuracy, or licensing review.
+
+After deployment, run `python3 scripts/check_site.py --live` to check HTTP responses and compare deployed site files with the source. This does not confirm Google indexing. Checks currently run manually; they do not block Cloudflare deployment automatically.
+
+Keep changes focused: inspect current source first, edit only the affected files, run checks, and verify the deployed result. Do not rebuild unrelated pages. See `docs/project-brief.md` for the agreed audience, commercial direction, and release rules.
