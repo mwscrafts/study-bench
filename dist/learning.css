@@ -174,3 +174,41 @@
   body.print-mode .heart-print-sheet .worksheet-flow article{min-height:.58in}
   body.print-mode .heart-answer{display:none}
 }
+
+/* Short home and dedicated collection pages. */
+.home-method{display:grid;grid-template-columns:1fr 1fr;gap:42px;border-top:1px solid var(--line);padding-top:38px;padding-bottom:42px;align-items:center}
+.home-method .eyebrow{margin-bottom:10px}
+.home-method h2{font-size:36px;letter-spacing:-1px;margin:0}
+.home-method p:not(.eyebrow){font-size:14px;color:var(--muted);margin-bottom:12px}
+.directory-intro{padding-top:52px;padding-bottom:34px}
+.directory-intro .eyebrow{margin-bottom:15px}
+.directory-intro h1{font-size:clamp(44px,5vw,64px);margin-bottom:18px}
+.directory-intro .page-intro{max-width:660px;margin:0}
+.directory-group{padding-bottom:38px}
+.directory-heading{margin-bottom:20px}
+.directory-heading h2{font-size:30px;letter-spacing:-.8px;line-height:1.2;margin:0 0 8px}
+.directory-heading p{font-size:13px;color:var(--muted);margin:0}
+.directory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.directory-grid .library-card{min-height:225px}
+.directory-grid .library-card h3{font-size:27px;margin-top:20px}
+.directory-grid .library-card p{font-size:13px;line-height:1.7}
+.directory-grid .library-kicker{font-size:9px}
+.directory-grid .library-arrow{font-size:12px}
+.discovery-link{display:flex;justify-content:space-between;align-items:center;gap:25px;padding:24px;background:var(--pale);border:1px solid var(--line);border-radius:5px;text-decoration:none}
+.discovery-link:hover{border-color:var(--teal)}
+.discovery-link h3{font-family:Georgia,serif;font-size:27px;font-weight:400;line-height:1.2;margin:0 0 8px}
+.discovery-link p{font-size:13px;color:var(--muted);margin:0}
+.discovery-link>span{font-size:12px;font-weight:700;white-space:nowrap}
+.directory-note{padding-bottom:34px}
+.directory-note p{font-size:13px;color:var(--muted);margin:0}
+.directory-note a,.related-lesson{color:var(--teal);text-underline-offset:3px}
+.printable-card{display:flex;flex-direction:column;align-items:flex-start;padding:25px;background:var(--white);border:1px solid var(--line);border-radius:5px}
+.printable-card h2{font-size:29px;line-height:1.15;letter-spacing:-.7px;margin:24px 0 14px}
+.printable-card>p{font-size:13px;line-height:1.8;color:var(--muted);margin-bottom:22px}
+.printable-card .resource-meta{flex-wrap:wrap;row-gap:8px;margin-top:auto}
+.printable-card .button{width:100%;gap:10px}
+.related-lesson{font-size:11px;line-height:1.7;margin-top:17px}
+.print-faq{border-top:1px solid var(--line);padding-top:34px;padding-bottom:44px}
+.print-faq .section-heading h2{font-size:34px}
+@media(max-width:900px){.directory-grid{grid-template-columns:1fr}.directory-grid .library-card{min-height:0}.directory-grid .library-card h3{margin-top:12px}.printable-card{padding:24px}.printable-card h2{margin-top:15px}.printable-card .button{width:auto;min-width:240px}}
+@media(max-width:760px){.home-method{grid-template-columns:1fr;gap:20px;padding-top:30px;padding-bottom:32px}.home-method h2{font-size:32px}.directory-intro{padding-top:32px;padding-bottom:28px}.directory-intro .page-intro{font-size:15px}.directory-group{padding-bottom:30px}.directory-heading h2{font-size:28px}.directory-grid{gap:14px}.directory-grid .library-card{padding:21px}.discovery-link{align-items:flex-start;flex-direction:column;gap:16px;padding:21px}.print-faq{padding-top:28px}.printable-card .button{width:100%;min-width:0}}

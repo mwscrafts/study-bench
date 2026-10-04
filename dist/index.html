@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Clear anatomy foundations: explore directional terms, learn body planes, and download original worksheets with explained answers.">
+  <meta name="description" content="Visual anatomy lessons, printable practice, and science discoveries. Learn a little, try it from memory, and build your understanding.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://studybench.mwscrafts.workers.dev/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Study Bench">
-  <meta property="og:title" content="Study Bench | Make anatomy make sense">
-  <meta property="og:description" content="Explore anatomy directional terms and body planes, then practise with original worksheets and explained answers.">
+  <meta property="og:title" content="Study Bench | Small steps. Solid understanding.">
+  <meta property="og:description" content="Visual anatomy lessons, printable practice, and science discoveries. Learn a little, try it from memory, and build your understanding.">
   <meta property="og:url" content="https://studybench.mwscrafts.workers.dev/">
   <meta name="theme-color" content="#153731">
-  <title>Study Bench | Make anatomy make sense</title>
+  <title>Study Bench | Small steps. Solid understanding.</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="learning.css">
-  <script src="app.js" defer></script>
+  <script src="home-navigation.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -25,16 +25,16 @@
       <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 8h11l3 3 3-3h11v25H23l-3 3-3-3H6z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 11v24M10 14h6M10 19h6M25 14h5M25 19h5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       <span>Study Bench<span class="brand-sub">small steps. solid understanding.</span></span>
     </a>
-    <nav aria-label="Main navigation"><a href="index.html#library">Lessons</a><a href="index.html#downloads">Printables</a><a href="about.html">About</a><a class="nav-cta" href="contact.html">Contact <span aria-hidden="true">↗</span></a></nav>
+    <nav aria-label="Main navigation"><a href="index.html" aria-current="page">Home</a><a href="lessons.html">Lessons</a><a href="printables.html">Printables</a><a href="about.html">About</a><a class="nav-cta" href="contact.html">Contact</a></nav>
   </header>
   <main id="main">
-    <section class="hero wrap">
+<section class="hero wrap">
       <div class="hero-copy">
-        <p class="eyebrow"><span></span> Anatomy, from the beginning</p>
+        <p class="eyebrow"><span></span> Lessons, practice &amp; discovery</p>
         <h1>Make anatomy<br>make <em>sense.</em></h1>
-        <p class="hero-intro">Learn the language of location with clear comparisons, a visual reference, and printables you can actually write on.</p>
-        <div class="hero-actions"><a class="button" href="#explore">Start with the directions <span aria-hidden="true">→</span></a><a class="text-link" href="#downloads">Explore the practice pack</a></div>
-        <p class="hero-note">A focused first collection. Read, practise, then check your reasoning.</p>
+        <p class="hero-intro">Visual lessons, printable practice, and small science discoveries. Start with anatomy and build from there.</p>
+        <div class="hero-actions"><a class="button" href="lessons.html">Browse lessons <span aria-hidden="true">→</span></a><a class="text-link" href="printables.html">Browse printables</a></div>
+        <p class="hero-note">New to anatomy? <a href="anatomy-foundations.html">Start with anatomy foundations.</a></p>
       </div>
       <div class="hero-art" aria-label="An illustrated front view explains that anatomical right and left belong to the person being described.">
         <span class="card-tape" aria-hidden="true"></span>
@@ -61,82 +61,11 @@
         <span class="corner-number" aria-hidden="true">01</span>
       </div>
     </section>
-    <div class="chapter-strip"><div class="wrap"><span>THE STARTER COLLECTION</span><span>10 directional terms</span><span>3 main body planes</span><span>28 original practice questions</span></div></div>
-
-    <section id="explore" class="explore section wrap">
-      <div class="section-heading"><div><p class="eyebrow">01 / Learn the language</p><h2>Think in pairs.</h2></div><p>Choose a pair to see what changes.<br>Always compare one structure with another.</p></div>
-      <div class="pair-tabs" role="tablist" aria-label="Directional term pairs">
-        <button id="tab-height" type="button" role="tab" aria-selected="true" aria-controls="pair-panel" data-pair="height">Superior / inferior</button>
-        <button id="tab-front" type="button" role="tab" aria-selected="false" aria-controls="pair-panel" tabindex="-1" data-pair="front">Anterior / posterior</button>
-        <button id="tab-midline" type="button" role="tab" aria-selected="false" aria-controls="pair-panel" tabindex="-1" data-pair="midline">Medial / lateral</button>
-        <button id="tab-limb" type="button" role="tab" aria-selected="false" aria-controls="pair-panel" tabindex="-1" data-pair="limb">Proximal / distal</button>
-        <button id="tab-surface" type="button" role="tab" aria-selected="false" aria-controls="pair-panel" tabindex="-1" data-pair="surface">Superficial / deep</button>
-      </div>
-      <div id="pair-panel" class="pair-panel" role="tabpanel" aria-labelledby="tab-height" tabindex="0">
-        <article class="term"><span class="term-cue" id="cue-a">TOWARD THE HEAD</span><h3 id="term-a">Superior</h3><p id="definition-a">Higher, toward the head.</p><div class="example"><span>For example</span><p id="example-a">The head is superior to the chest.</p></div></article>
-        <div class="pair-divider" aria-hidden="true">↕</div>
-        <article class="term"><span class="term-cue" id="cue-b">TOWARD THE FEET</span><h3 id="term-b">Inferior</h3><p id="definition-b">Lower, toward the feet.</p><div class="example"><span>For example</span><p id="example-b">The ankle is inferior to the knee.</p></div></article>
-        <p class="pair-tip" id="pair-tip">Describe the person's body in anatomical position, even when their posture changes.</p>
-      </div>
-      <details class="try-question"><summary>Try one question <span aria-hidden="true">+</span></summary><div class="question-body"><p><strong>The elbow is ____ to the wrist.</strong></p><p>Choose the term that follows the limb toward its attachment.</p><div class="answer-buttons"><button type="button" data-answer="proximal">Proximal</button><button type="button" data-answer="distal">Distal</button></div><p id="answer-feedback" class="answer-feedback" aria-live="polite">Choose an answer to see the explanation.</p></div></details>
-    </section>
-
-    <section id="downloads" class="download-section section">
-      <div class="wrap"><div class="section-heading"><div><p class="eyebrow">02 / Put pencil to paper</p><h2>A little practice.<br>A clearer picture.</h2></div><p>Both downloads are free in this pilot collection.<br>Each one includes an explained answer key.</p></div>
-      <div class="resource-grid">
-        <article class="resource-card sample-card">
-          <div class="paper-preview" aria-hidden="true"><div class="mini-brand">STUDY BENCH</div><div class="mini-title">Anatomical<br>directions</div><div class="mini-sub">EIGHT COMPARISONS. ONE REFERENCE POSITION.</div><div class="mini-line"><span>01</span><i></i></div><div class="mini-line"><span>02</span><i></i></div><div class="mini-line"><span>03</span><i></i></div><div class="mini-line"><span>04</span><i></i></div><div class="mini-footer">WORKSHEET + EXPLAINED ANSWERS</div></div>
-          <div class="resource-copy"><span class="pill">START HERE</span><h3>The free worksheet</h3><p>Eight clear comparisons to introduce anatomical direction. A simple, useful first step.</p><ul class="resource-meta"><li>2 pages</li><li>8 questions</li><li>PDF</li></ul><a class="button button-light" href="downloads/anatomical-directions-free-worksheet.pdf" download>Download the worksheet <span aria-hidden="true">↓</span></a></div>
-        </article>
-        <article class="resource-card pack-card">
-          <div class="pack-preview" aria-hidden="true"><span>STUDY BENCH / PRACTICE PACK</span><div>Anatomy<br><em>foundations.</em></div><p>Know the direction.<br>Name the plane.</p><div class="pack-stamp">28<br><small>QUESTIONS</small></div><span class="pack-bottom">REFERENCE · PRACTICE · EXPLAINED ANSWERS</span></div>
-          <div class="resource-copy"><span class="pill">THE COMPLETE STARTER PACK</span><h3>Anatomy foundations</h3><p>Build on the basics with reference pages, applied comparisons, body planes, and explained answers.</p><ul class="resource-meta"><li>8 pages</li><li>28 questions</li><li>PDF</li></ul><a class="button" href="downloads/anatomy-foundations-practice-pack.pdf" download>Download the practice pack <span aria-hidden="true">↓</span></a></div>
-        </article>
-      </div></div>
-    </section>
-
-    <section class="planes section wrap" id="planes">
-      <div class="section-heading"><div><p class="eyebrow">03 / See the division</p><h2>Name what the plane separates.</h2></div><p>The word “vertical” alone is not enough.<br>Look at the portions on either side.</p></div>
-      <div class="plane-grid">
-        <article><div class="plane-icon vertical" aria-hidden="true"><span>R</span><i></i><span>L</span></div><span class="card-index">01</span><h3>Sagittal</h3><p>Right and left portions.</p><small>At the midline: midsagittal, or median.</small></article>
-        <article><div class="plane-icon vertical" aria-hidden="true"><span>A</span><i></i><span>P</span></div><span class="card-index">02</span><h3>Frontal</h3><p>Anterior and posterior portions.</p><small>Also called the coronal plane.</small></article>
-        <article><div class="plane-icon horizontal" aria-hidden="true"><span>S</span><i></i><span>I</span></div><span class="card-index">03</span><h3>Transverse</h3><p>Superior and inferior portions.</p><small>Also called the axial plane.</small></article>
-      </div><p class="plane-note">These icons show conceptual portions, not anatomical body views.</p>
-    </section>
-
-    <section id="approach" class="approach section"><div class="wrap approach-layout"><div><p class="eyebrow">04 / The Study Bench approach</p><h2>Understand it.<br>Then practise it.</h2><p>Study Bench begins with one small corner of anatomy: the language used to describe where things are.</p><p>The references, exercises, and illustrations in this collection were created specifically for this pilot. The terminology and learning approach were checked against the sources below.</p></div><ol class="approach-steps"><li><span>01</span><div><h3>Make the comparison explicit.</h3><p>Name both structures. “Medial” only makes sense when you know what you are comparing.</p></div></li><li><span>02</span><div><h3>Practise without the prompt.</h3><p>Read the reference, cover it, and bring the answer to mind. This answer-first method is called retrieval practice; its benefit for later memory is often called the testing effect.</p></div></li><li><span>03</span><div><h3>Check the explanation.</h3><p>Use the answer key to correct the thinking, then try the comparison again rather than stopping at the score.</p></div></li></ol></div></section>
-
-    <section class="faq section wrap"><div class="section-heading"><div><p class="eyebrow">A few useful details</p><h2>Before you print.</h2></div></div><div class="faq-grid"><details><summary>What level is this collection for?</summary><p>Students beginning anatomy or revisiting its basic directional language. The focus is intentionally narrow: ten directional terms, body planes, and anatomical position.</p></details><details><summary>How should I print the PDFs?</summary><p>Use US Letter paper and 100% scale. The exercises leave room for handwritten answers. You can also keep the PDFs open and answer in a notebook.</p></details><details><summary>Are the answer keys included?</summary><p>Yes. The worksheet has an answer page, and the practice pack has two answer-key pages with short explanations.</p></details><details><summary>Can I use these with my course notes?</summary><p>Yes. Use your course requirements as the guide. This collection includes common synonyms, such as frontal/coronal and transverse/axial.</p></details></div></section>
-    <section id="library" class="learning-library section" aria-labelledby="library-title">
-      <div class="wrap">
-        <div class="section-heading"><div><p class="eyebrow">THE LEARNING LIBRARY</p><h2 id="library-title">Anatomy, practice, and discovery.</h2></div><p>Choose a clear path: learn a concept, practise it, or explore the natural world.</p></div>
-        <div class="library-groups">
-          <section class="library-group" aria-labelledby="anatomy-group-title">
-            <div class="library-group-heading"><span>01 / STUDY GUIDES</span><h3 id="anatomy-group-title">Anatomy &amp; physiology</h3></div>
-            <div class="library-grid">
-              <a class="library-card" href="epithelial-tissue-identification.html"><span class="library-kicker">TISSUES / STUDENT GUIDE</span><h3>Identify epithelial tissue</h3><p>Compare layers, cell shape, and special features.</p><span class="library-arrow">Study the four patterns →</span></a>
-              <a class="library-card" href="blood-flow-through-heart.html"><span class="library-kicker">CARDIOVASCULAR / VISUAL LESSON</span><h3>Follow blood through the heart</h3><p>Trace the chambers, valves, lungs, and body.</p><span class="library-arrow">Follow the pathway →</span></a>
-            </div>
-          </section>
-          <section class="library-group" aria-labelledby="practice-group-title">
-            <div class="library-group-heading"><span>02 / PRACTISE &amp; EXPLORE</span><h3 id="practice-group-title">Practice and discovery</h3></div>
-            <div class="library-grid">
-              <a class="library-card" href="heart-colouring-practice.html"><span class="library-kicker">FREE PRINTABLE / HEART ANATOMY</span><h3>Heart anatomy coloring page</h3><p>Color a heart cross-section, label its chambers, and recall the flow.</p><span class="library-arrow">Open the printable →</span></a>
-              <a class="library-card" href="microscope-activities-for-kids.html"><span class="library-kicker">MICROSCOPY / IMAGE GALLERY</span><h3>Explore a microscopic world</h3><p>Real specimen photographs and simple observation prompts. No equipment needed.</p><span class="library-arrow">View the images →</span></a>
-            </div>
-          </section>
-        </div>
-      </div>
-    </section>
-    <section class="source-section wrap" aria-labelledby="sources-title">
-      <h2 id="sources-title">Sources named openly</h2>
-      <div class="source-grid">
-        <div><h3>Anatomy terminology</h3><a href="https://training.seer.cancer.gov/anatomy/body/terminology.html" target="_blank" rel="noopener noreferrer">National Cancer Institute · SEER Training: Anatomical Terminology <span aria-hidden="true">↗</span></a><a href="https://openstax.org/books/anatomy-and-physiology-2e/pages/1-6-anatomical-terminology" target="_blank" rel="noopener noreferrer">OpenStax · Anatomy and Physiology 2e, section 1.6 <span aria-hidden="true">↗</span></a></div>
-        <div><h3>Learning method</h3><a href="https://pubmed.ncbi.nlm.nih.gov/16507066/" target="_blank" rel="noopener noreferrer">Roediger &amp; Karpicke (2006) · Test-enhanced learning <span aria-hidden="true">↗</span></a><a href="https://pubmed.ncbi.nlm.nih.gov/18276894/" target="_blank" rel="noopener noreferrer">Karpicke &amp; Roediger (2008) · The critical importance of retrieval for learning <span aria-hidden="true">↗</span></a></div>
-      </div>
-      <p>Terminology checked 3 October 2026; learning-method references reviewed 4 October 2026. Original exercises and illustrations; no source images reproduced.</p>
+    <section class="home-method wrap" aria-labelledby="home-method-title">
+      <div><p class="eyebrow">THE STUDY BENCH APPROACH</p><h2 id="home-method-title">Read. Recall. Check.</h2></div>
+      <div><p>Explore a clear example, try from memory, then check your reasoning.</p><a class="text-link" href="about.html#evidence-title">Why we use retrieval practice →</a></div>
     </section>
   </main>
-  <footer class="footer"><div class="wrap"><div class="footer-signoff"><a class="brand" href="index.html">Study Bench</a><p>Small steps. Solid understanding.</p></div><nav class="footer-nav" aria-label="Footer navigation"><a href="index.html#library">Lessons</a><a href="index.html#downloads">Printables</a><a href="about.html">About</a><a href="contact.html">Contact</a></nav></div></footer>
+  <footer class="footer"><div class="wrap"><div class="footer-signoff"><a class="brand" href="index.html">Study Bench</a><p>Small steps. Solid understanding.</p></div><nav class="footer-nav" aria-label="Footer navigation"><a href="index.html" aria-current="page">Home</a><a href="lessons.html">Lessons</a><a href="printables.html">Printables</a><a href="about.html">About</a><a href="contact.html">Contact</a></nav></div></footer>
 </body>
 </html>

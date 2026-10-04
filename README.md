@@ -1,12 +1,24 @@
 # Study Bench
 
-An original static anatomy learning website with interactive comparisons and two downloadable PDFs.
+An original static learning website with visual anatomy lessons, science discoveries, and printable practice.
 
 Public website: https://studybench.mwscrafts.workers.dev/
 
 ## Files
 
 `dist/` contains the complete website. No build step is needed. `wrangler.json` targets the existing Cloudflare Worker named `studybench` and serves only static assets. This configuration adds no server script, database, checkout, or paid plan.
+
+## Site structure
+
+- `dist/index.html`: short homepage linking to the two collections.
+- `dist/lessons.html`: lesson directory, grouped by subject.
+- `dist/printables.html`: printable directory with download and print instructions.
+- `dist/anatomy-foundations.html`: interactive directional terms and body planes.
+- Each other lesson or activity keeps its own HTML page and existing URL.
+- `dist/about.html` and `dist/contact.html`: purpose, learning approach, and contact.
+- `dist/home-navigation.js`: sends old homepage section links to their new destinations.
+
+Keep header and footer navigation in the same order on every page: Home, Lessons, Printables, About, Contact. New lessons belong in the Lessons directory; downloadable or browser-printable resources belong in Printables. Cross-link related resources rather than embedding whole lessons in the homepage. Add new public pages to `dist/sitemap.xml`.
 
 ## Automatic updates through GitHub
 
@@ -24,7 +36,7 @@ For the existing dashboard upload flow, upload the contents of `dist/` with `ind
 
 The current source allows indexing, has a canonical URL, and includes `robots.txt` and `sitemap.xml`. These take effect on Cloudflare only after the updated files are deployed there. Search indexing and rankings are not guaranteed.
 
-If the public URL changes, update the canonical and Open Graph URL in `dist/index.html`, the sitemap URL in `dist/robots.txt`, and the page URL in `dist/sitemap.xml` together.
+If the public URL changes, update the canonical and Open Graph URLs in every HTML page, the sitemap URL in `dist/robots.txt`, and the page URL in `dist/sitemap.xml` together.
 
 ## Local checks
 
