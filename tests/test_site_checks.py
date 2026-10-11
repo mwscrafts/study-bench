@@ -35,7 +35,7 @@ class SiteChecks(unittest.TestCase):
         self.assertTrue(any('missing local file' in e for e in self.errors()))
 
     def test_missing_fragment(self):
-        self.replace('index.html', '#evidence-title', '#missing-heading')
+        self.replace('index.html', 'href="#main"', 'href="#missing-heading"')
         self.assertTrue(any('missing fragment' in e for e in self.errors()))
 
     def test_navigation_order(self):
@@ -56,7 +56,7 @@ class SiteChecks(unittest.TestCase):
         self.assertTrue(any('robots.txt sitemap URL mismatch' in e for e in self.errors()))
 
     def test_duplicate_id(self):
-        self.replace('index.html', '<section class="hero wrap">', '<section class="hero wrap" id="main">')
+        self.replace('index.html', '<main id="main">', '<main id="main"><div id="main"></div>')
         self.assertTrue(any('duplicate id' in e for e in self.errors()))
 
     def test_invalid_pdf(self):
