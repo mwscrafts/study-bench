@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Emberwild — A little wilderness</title>
+<meta name="description" content="Explore a wild forest, gather supplies, build your camp, and survive three nights. A free browser survival platformer with touch controls.">
+<meta name="theme-color" content="#162d2b"><meta name="robots" content="noindex,follow">
+<link rel="stylesheet" href="emberwild.css">
+</head>
+<body>
+<header class="mast"><a href="/" class="back">↖ Back home</a><a href="game.html" class="wordmark">Emberwild<span>✦</span></a><div class="tools"><button id="sound" aria-pressed="false" aria-label="Enable game sound">Sound off</button><button id="guideButton" aria-label="Open field guide">Field guide ↗</button></div></header>
+<main>
+<section class="heading"><div><p class="eyebrow">A LITTLE WILDERNESS. A BIG ADVENTURE.</p><h1>Make yourself <em>at home.</em></h1></div><p class="description">The forest gives. The night takes.<br>Gather, build, and keep your fire alive.</p></section>
+<section class="game-shell" id="shell" aria-label="Emberwild survival platformer">
+<div class="game-top"><div class="chapter"><span class="live-dot"></span><span id="phase">DAY 01</span><span class="divider">/</span><span id="clock">Daylight · 90s</span></div><div class="top-actions"><span id="saved">Saves on this device</span><button id="pause" aria-label="Pause game">Ⅱ</button><button id="fullscreen" aria-label="Toggle fullscreen">⛶</button></div></div>
+<div class="viewport" id="viewport">
+<canvas id="world" tabindex="0" aria-label="Game world. A and D or arrow keys to move. Space to jump twice. E to gather or attack. B to build at camp. Q to eat a berry.">Your browser needs canvas support to play this game.</canvas>
+<div class="hud" id="hud"><div class="vitals"><div><span>♥ <b id="hpText">100</b></span><div class="meter"><i id="hpBar"></i></div></div><div><span>♨ <b id="fuelText">70</b><small> CAMP FIRE</small></span><div class="meter fire"><i id="fuelBar"></i></div></div></div><div class="mission"><span id="region">THE HOLLOW</span><strong id="objective">Survive three nights</strong><small id="nights">○ ○ ○</small></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="context" class="context"></div>
+<div class="camp-marker" id="campMarker" hidden>← Camp</div>
+<div class="overlay" id="intro"><div class="intro-card"><span class="tiny-label">YOUR STORY STARTS WITH A SPARK</span><h2>A place in<br>the <em>wild.</em></h2><p>Leap through the forest. Gather supplies.<br>Build a shelter before the shadows wake.</p><button class="primary" id="start">Enter the wilderness <span>→</span></button><button class="text-button" id="continue" hidden>Continue your adventure →</button><p class="start-hint">Survive 3 nights · Double-jump to explore<br>Touch controls + keyboard</p></div></div>
+<div class="overlay" id="pauseOverlay" hidden><div class="panel"><span class="tiny-label">TAKE A BREATHER</span><h2>The forest can wait.</h2><p>Your adventure is saved on this device.</p><button class="primary" id="resume">Keep exploring →</button><button class="text-button" id="restart">Start a new adventure</button><p id="restartHint" class="start-hint" hidden>Tap again to replace your saved adventure.</p></div></div>
+<div class="overlay" id="endOverlay" hidden><div class="panel"><span class="tiny-label" id="endLabel"></span><h2 id="endTitle"></h2><p id="endCopy"></p><button class="primary" id="again">Try another adventure →</button></div></div>
+<div class="overlay" id="buildOverlay" hidden><div class="panel craft-panel"><div class="panel-head"><div><span class="tiny-label">A LITTLE MORE LIKE HOME</span><h2>Your camp.</h2></div><button id="closeBuild" class="close" aria-label="Close camp building menu">×</button></div><p id="campHint">Build something worth coming back to.</p><div id="recipes"></div><small>Time pauses while you build. Gather resources with the action button.</small></div></div>
+</div>
+<div class="inventory"><div class="supplies"><span><i class="wood-icon">▰</i> <b id="wood">0</b><small>WOOD</small></span><span><i class="stone-icon">⬟</i> <b id="stone">0</b><small>STONE</small></span><span><i class="crystal-icon">◆</i> <b id="crystal">0</b><small>CRYSTAL</small></span><button id="eat" title="Eat one berry to heal 25 health (Q)"><i class="berry-icon">●</i> <b id="berry">3</b><small>EAT · Q</small></button></div><button class="build-button" id="build">⌂ <span>Build at camp</span><kbd>B</kbd></button></div>
+<div class="touch-controls" id="touchControls"><div class="movement"><button data-hold="left" aria-label="Move left">←</button><button data-hold="right" aria-label="Move right">→</button></div><div class="actions"><button data-hold="action" class="act" aria-label="Gather resources or attack">⚒<small>ACTION</small></button><button data-hold="jump" class="jump" aria-label="Jump or double jump">↑<small>JUMP</small></button></div></div>
+</section>
+<div class="below"><p><span class="small-spark">✦</span> A fire, a shelter, a fighting chance.</p><p class="keyboard"><kbd>A</kbd><kbd>D</kbd> move <kbd>SPACE</kbd> double jump <kbd>E</kbd> gather / attack</p><p class="rotate">↻ Landscape gives you more room to explore.</p></div>
+<dialog id="guide"><div class="panel-head"><div><span class="tiny-label">NOT ALL WHO WANDER ARE LOST</span><h2>Field notes.</h2></div><button id="closeGuide" class="close" aria-label="Close field guide">×</button></div><div class="notes"><article><b>01 / Find your footing</b><p>Move with A/D or arrows. Press Space twice for a double jump. On your phone, use the buttons below the forest.</p></article><article><b>02 / Take what you need</b><p>Stand beside trees, rocks, berries, or glowing crystals and hold Action (E). Trees give wood, rocks give stone. Supplies return each morning.</p></article><article><b>03 / Make camp</b><p>The fire is your home. Return to it and open Build (B). Build a shelter, sharpen your axe, and refuel the fire with wood. A lit fire hurts nearby shadows; a shelter heals you near camp.</p></article><article><b>04 / See another sunrise</b><p>You get 90 seconds of daylight and 45 seconds of night. Fight shadows with Action. Eat berries (Q) to heal. Falling costs 20 health and returns you to camp. Survive three nights to win.</p></article></div><p class="guide-foot">Progress saves in this browser. Switching tabs pauses the adventure.</p></dialog>
+</main>
+<footer>Made for a little escape. <span>Explore with curiosity. Return with firewood.</span></footer>
+<script src="emberwild.js"></script>
+</body></html>
