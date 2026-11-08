@@ -43,12 +43,12 @@ class SiteChecks(unittest.TestCase):
         self.assertTrue(any('navigation order' in e for e in self.errors()))
 
     def test_canonical_mismatch(self):
-        self.replace('contact.html', 'rel="canonical" href="https://studybench.mwscrafts.workers.dev/contact.html"',
+        self.replace('contact.html', 'rel="canonical" href="https://love.ashquack.workers.dev/contact.html"',
                      'rel="canonical" href="https://example.com/contact.html"')
         self.assertTrue(any('canonical does not match' in e for e in self.errors()))
 
     def test_sitemap_omission(self):
-        self.replace('sitemap.xml', '<url><loc>https://studybench.mwscrafts.workers.dev/contact.html</loc><lastmod>2026-10-04</lastmod></url>', '')
+        self.replace('sitemap.xml', '<url><loc>https://love.ashquack.workers.dev/contact.html</loc><lastmod>2026-10-04</lastmod></url>', '')
         self.assertTrue(any('Sitemap must list' in e for e in self.errors()))
 
     def test_robots_mismatch(self):

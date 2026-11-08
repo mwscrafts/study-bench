@@ -2,11 +2,11 @@
 
 An original static learning website with visual anatomy lessons, science discoveries, and printable practice.
 
-Public website: https://studybench.mwscrafts.workers.dev/
+Public website: https://love.ashquack.workers.dev/
 
 ## Files
 
-`dist/` contains the complete website. No build step is needed. `wrangler.json` targets the existing Cloudflare Worker named `studybench` and serves only static assets. This configuration adds no server script, database, checkout, or paid plan.
+`dist/` contains the complete website. No build step is needed. `wrangler.json` targets the existing Cloudflare Worker named `love` and serves only static assets. This configuration adds no server script, database, checkout, or paid plan.
 
 ## Site structure
 
@@ -22,9 +22,9 @@ Keep header and footer navigation in the same order on every page: Home, Lessons
 
 ## Automatic updates through GitHub
 
-The `main` branch is connected to the existing Cloudflare Worker named `studybench`. Every commit to `main` triggers a Cloudflare build and deploys the contents of `dist/` automatically.
+The `main` branch is connected to the existing Cloudflare Worker named `love`. Every commit to `main` triggers a Cloudflare build and deploys the contents of `dist/` automatically.
 
-The Worker name in the dashboard must remain `studybench` to match `wrangler.json`. Cloudflare manages the build authorization token; no password or token belongs in this repository.
+The Worker name in the dashboard must remain `love` to match `wrangler.json`. Cloudflare manages the build authorization token; no password or token belongs in this repository.
 
 Official setup: https://developers.cloudflare.com/workers/ci-cd/builds/
 
