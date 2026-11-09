@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#233a32">
+  <title>Alder Camp · The First Hearth playtest</title>
+  <link rel="stylesheet" href="./playtest.css">
+</head>
+<body>
+  <main class="page">
+    <header class="mast">
+      <a href="/" class="home">← Back home</a>
+      <span class="mast-mark">✦ &nbsp; The First Hearth</span>
+      <span class="edition">Playtest 01</span>
+    </header>
+    <div class="title">
+      <div>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 01</p>
+        <h1>Alder <em>Camp</em></h1>
+      </div>
+      <p>Meet Mara, take Alvin along, and see where the two trails lead.</p>
+    </div>
+    <section id="game" class="game" aria-label="Alder Camp playtest">
+      <div class="game-bar">
+        <div class="game-location"><span class="spark">✦</span> <strong>Alder Camp</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
+        <div class="game-actions">
+          <button id="sky-toggle" type="button" title="Preview the sky at different times">Sky: Auto</button>
+          <button id="pause" type="button" aria-label="Pause or resume">Pause</button>
+          <button id="fullscreen" type="button" aria-label="Toggle fullscreen">⛶</button>
+        </div>
+      </div>
+      <div class="scene">
+        <canvas id="world" tabindex="0" aria-label="Alder Camp game world. Move with arrows or A and D, jump with Space, and interact with E."></canvas>
+        <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+        <div id="start" class="overlay">
+          <div class="start-card">
+            <p class="eyebrow">A FIRST WALK THROUGH CAMP</p>
+            <h2>Choose your <em>adventurer.</em></h2>
+            <p>Alvin’s coming either way.</p>
+            <div class="characters" role="group" aria-label="Adventurer sprite">
+              <button class="character" id="choose-boy" type="button" data-avatar="boy" aria-pressed="true"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Boy</span></button>
+              <button class="character" id="choose-girl" type="button" data-avatar="girl" aria-pressed="false"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Girl</span></button>
+            </div>
+            <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
+            <button id="continue" type="button" class="secondary" hidden>Continue saved playtest →</button>
+            <p id="load-error" class="error" role="alert" hidden>Camp art didn’t load. Refresh to try again.</p>
+          </div>
+        </div>
+        <div id="dialogue" class="overlay" hidden>
+          <section class="dialogue" role="dialog" aria-modal="true" aria-labelledby="speaker">
+            <canvas id="portrait" width="110" height="136" aria-hidden="true"></canvas>
+            <div>
+              <p class="eyebrow" id="speaker-role"></p>
+              <h2 id="speaker"></h2>
+              <p id="line"></p>
+              <div id="choices" class="choices"></div>
+              <button id="close-dialogue" type="button" class="secondary">Back to camp →</button>
+            </div>
+          </section>
+        </div>
+        <div id="paused" class="overlay" hidden>
+          <div class="pause-card">
+            <p class="eyebrow">A MOMENT TO BREATHE</p>
+            <h2>Taking a break.</h2>
+            <button id="resume" type="button" class="primary">Keep exploring →</button>
+          </div>
+        </div>
+      </div>
+      <div class="control-deck">
+        <div class="move-controls">
+          <button class="pad" id="left" type="button" aria-label="Move left">←</button>
+          <button class="pad" id="right" type="button" aria-label="Move right">→</button>
+        </div>
+        <span class="key-guide"><kbd>A</kbd> <kbd>D</kbd> Move &nbsp; <kbd>Space</kbd> Double-jump &nbsp; <kbd>E</kbd> Interact</span>
+        <div class="act-controls">
+          <button class="pad action" id="interact" type="button" disabled aria-label="Interact"><span>✦</span><small>Interact</small></button>
+          <button class="pad jump" id="jump" type="button" aria-label="Jump"><span>↑</span><small>Jump</small></button>
+        </div>
+      </div>
+    </section>
+    <footer>
+      <span id="trail-notes">Explore camp and see where both trails begin.</span>
+      <span>Camp playtest · saves on this device</span>
+    </footer>
+  </main>
+  <script type="module" src="./playtest.mjs"></script>
+</body>
+</html>
