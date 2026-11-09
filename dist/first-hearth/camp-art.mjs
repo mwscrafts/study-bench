@@ -7,14 +7,14 @@ const palettes = {
   dawn: ['#434d75','#a0889c','#eec69e','#ffe3ad']
 };
 
-function random(seed) {
+export function random(seed) {
   return () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
 }
 
-function poly(ctx, points, color) {
+export function poly(ctx, points, color) {
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(...points[0]);
@@ -23,7 +23,7 @@ function poly(ctx, points, color) {
   ctx.fill();
 }
 
-function path(ctx, points, color, width = 2) {
+export function path(ctx, points, color, width = 2) {
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.beginPath();
@@ -32,14 +32,14 @@ function path(ctx, points, color, width = 2) {
   ctx.stroke();
 }
 
-function orb(ctx, x, y, r, color) {
+export function orb(ctx, x, y, r, color) {
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function pine(ctx, x, y, size, dark, light) {
+export function pine(ctx, x, y, size, dark, light) {
   poly(ctx, [[x-5,y],[x-2,y-size*.83],[x+5,y-size*.8],[x+8,y]], dark);
   for (let i = 3; i >= 0; i--) {
     const top = y-size + i*size*.173;
@@ -50,7 +50,7 @@ function pine(ctx, x, y, size, dark, light) {
   }
 }
 
-function stone(ctx, x, y, w, h, tone = '#466057') {
+export function stone(ctx, x, y, w, h, tone = '#466057') {
   poly(ctx, [[x-w*.5,y],[x-w*.42,y-h*.63],[x-w*.13,y-h],[x+w*.29,y-h*.8],[x+w*.5,y]], tone);
   poly(ctx, [[x-w*.42,y-h*.63],[x-w*.13,y-h],[x+w*.29,y-h*.8],[x+w*.08,y-h*.44]], '#8ea18b');
 }
@@ -63,7 +63,7 @@ function lantern(ctx, x, y) {
   ctx.fillRect(x+20,y-81,12,17);
 }
 
-function sign(ctx, x, y, text, side = 1) {
+export function sign(ctx, x, y, text, side = 1) {
   path(ctx, [[x,y],[x,y-95]], '#554938', 8);
   const w = text.length * 8 + 20;
   poly(ctx, [[x-w/2,y-86],[x+w/2,y-86],[x+w/2+side*7,y-73],[x+w/2,y-61],[x-w/2,y-61]], '#3b5145');

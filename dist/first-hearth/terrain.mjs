@@ -16,20 +16,25 @@ export const surfaces = [
   { id: 'bough-two', points: [[3255,355],[3330,341],[3530,341]] },
   { id: 'crown', points: [[3510,278],[3580,260],[3830,260]] }
 ];
-const byId = new Map(surfaces.map(surface => [surface.id, surface]));
-const trail = surfaces[0];
+export function defineTerrain(width, height, spawn, platforms) {
+  return {
+    width, height, spawn, surfaces: platforms, floor: platforms[0],
+    ledges: platforms.slice(1), byId: new Map(platforms.map(surface => [surface.id, surface]))
+  };
+}
+
+export const campTerrain = defineTerrain(WORLD_WIDTH, WORLD_HEIGHT, SPAWN_X, surfaces);
 
 export const landmarks = [
   { id: 'mara', x: 2080, y: 610, label: 'Talk to Mara', radius: 94 },
   { id: 'lift', x: 2425, y: 610, label: 'Inspect the lift', radius: 76 },
-  { id: 'canopy', x: 3745, y: 260, label: 'Crownwood trail', radius: 92 },
+  { id: 'canopy', x: 3745, y: 260, label: 'Enter Crownwood', radius: 92 },
   { id: 'mine', x: 4050, y: 748, label: 'Mine doorway', radius: 95 },
   { id: 'shore', x: 4660, y: 718, label: 'Shore trail', radius: 88 }
 ];
 
 export const flowers = [
   { id: 'clearing', x: 2310, y: 610, label: 'Pick dusklily by the fire' },
-  { id: 'crownwood', x: 3405, y: 341, label: 'Pick Crownwood dusklily' },
   { id: 'timber', x: 3940, y: 748, label: 'Pick dusklily by the mine' }
 ];
 
@@ -48,15 +53,15 @@ export function surfaceAt(surface, x) {
   return null;
 }
 
-export function groundAt(x) {
-  return surfaceAt(trail, clamp(x, 0, WORLD_WIDTH));
+export function groundAt(x, terrain = campTerrain) {
+  return surfaceAt(terrain.floor, clamp(x, 0, terrain.width));
 }
 
-export function createPlayer(saved) {
-  const ground = byId.get(saved?.ground) ?? trail;
-  const x = Number.isFinite(saved?.x) ? clamp(saved.x, 23, WORLD_WIDTH - 23) : SPAWN_X;
+export function createPlayer(saved, terrain = campTerrain) {
+  const ground = terrain.byId.get(saved?.ground) ?? terrain.floor;
+  const x = Number.isFinite(saved?.x) ? clamp(saved.x, 23, terrain.width - 23) : terrain.spawn;
   const y = surfaceAt(ground, x);
-  if (y === null) return createPlayer();
+  if (y === null) return createPlayer(undefined, terrain);
   return { x, y, velocityY: 0, direction: 1, ground: ground.id, jumps: 0, moving: false };
 }
 
@@ -68,15 +73,15 @@ export function jump(player) {
   return true;
 }
 
-export function movePlayer(player, direction, dt) {
+export function movePlayer(player, direction, dt, terrain = campTerrain) {
   const previousX = player.x;
   const previousY = player.y;
   if (direction) player.direction = direction;
-  player.x = clamp(player.x + direction * RUN_SPEED * dt, 23, WORLD_WIDTH - 23);
+  player.x = clamp(player.x + direction * RUN_SPEED * dt, 23, terrain.width - 23);
   player.moving = Math.abs(player.x - previousX) > .01;
 
   if (player.ground) {
-    const support = byId.get(player.ground);
+    const support = terrain.byId.get(player.ground);
     const y = surfaceAt(support, player.x);
     if (y !== null) {
       player.y = y;
@@ -88,11 +93,11 @@ export function movePlayer(player, direction, dt) {
 
   player.velocityY += GRAVITY * dt;
   player.y += player.velocityY * dt;
-  const floor = groundAt(player.x);
-  let contact = player.y >= floor ? { id: trail.id, y: floor, time: 1 } : null;
+  const floor = groundAt(player.x, terrain);
+  let contact = player.y >= floor ? { id: terrain.floor.id, y: floor, time: 1 } : null;
 
   if (player.velocityY >= 0) {
-    for (const surface of surfaces.slice(1)) {
+    for (const surface of terrain.ledges) {
       const first = surface.points[0][0];
       const last = surface.points.at(-1)[0];
       if (player.x < first || player.x > last) continue;
@@ -117,8 +122,7 @@ export function movePlayer(player, direction, dt) {
   }
 }
 
-export function nearbyLandmark(player, collected) {
-  const candidates = [...landmarks, ...flowers.filter(flower => !collected.has(flower.id))];
+export function nearbyLandmark(player, candidates) {
   return candidates.reduce((nearest, item) => {
     const dx = Math.abs(item.x - player.x);
     const dy = Math.abs(item.y - player.y);
