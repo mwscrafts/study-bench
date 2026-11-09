@@ -13,18 +13,18 @@
     <header class="mast">
       <a href="/" class="home">← Back home</a>
       <span class="mast-mark">✦ &nbsp; The First Hearth</span>
-      <span class="edition">Playtest 01</span>
+      <span class="edition">Playtest 02</span>
     </header>
     <div class="title">
       <div>
-        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 01</p>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 02</p>
         <h1>Alder <em>Camp</em></h1>
       </div>
-      <p>Meet Mara, take Alvin along, and see where the two trails lead.</p>
+      <p>Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.</p>
     </div>
     <section id="game" class="game" aria-label="Alder Camp playtest">
       <div class="game-bar">
-        <div class="game-location"><span class="spark">✦</span> <strong>Alder Camp</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
+        <div class="game-location"><span class="spark">✦</span> <strong id="location-name">Reedbank Trail</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
         <div class="game-actions">
           <button id="sky-toggle" type="button" title="Preview the sky at different times">Sky: Auto</button>
           <button id="pause" type="button" aria-label="Pause or resume">Pause</button>
@@ -33,10 +33,11 @@
       </div>
       <div class="scene">
         <canvas id="world" tabindex="0" aria-label="Alder Camp game world. Move with arrows or A and D, jump with Space, and interact with E."></canvas>
+        <div id="quest-tracker" class="quest-tracker" aria-live="polite" hidden></div>
         <div id="status" class="status" role="status" aria-live="polite" hidden></div>
         <div id="start" class="overlay">
           <div class="start-card">
-            <p class="eyebrow">A FIRST WALK THROUGH CAMP</p>
+            <p class="eyebrow">THE ALDER CAMP TRAILS</p>
             <h2>Choose your <em>adventurer.</em></h2>
             <p>Alvin’s coming either way.</p>
             <div class="characters" role="group" aria-label="Adventurer sprite">
@@ -81,7 +82,7 @@
       </div>
     </section>
     <footer>
-      <span id="trail-notes">Explore camp and see where both trails begin.</span>
+      <span id="trail-notes">Trail entrances found · 0 / 3</span>
       <span>Camp playtest · saves on this device</span>
     </footer>
   </main>

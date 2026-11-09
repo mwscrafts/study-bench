@@ -103,3 +103,22 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .primary, .secondary, .choices button { min-height: 32px; padding: 4px 10px; }
   #continue { margin-top: 0; }
 }
+.quest-tracker {
+  position: absolute;
+  top: 12px;
+  left: 13px;
+  padding: 6px 9px;
+  max-width: calc(100% - 26px);
+  color: #fff1cd;
+  background: #20372fea;
+  border: 1px solid #f4d6a449;
+  border-radius: 7px;
+  font-size: 12px;
+  pointer-events: none;
+}
+.dialogue:has(#portrait[hidden]) { grid-template-columns: 1fr; }
+.choices button { font-size: 13px; }
+@media (orientation: landscape) and (max-height: 420px) and (pointer: coarse) {
+  .dialogue { padding: 8px 14px; }
+  .dialogue #line { font-size: 13px; margin: 6px 0; }
+}

@@ -1,4 +1,6 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_X, surfaces, landmarks, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs';
+import { WORLD_WIDTH, WORLD_HEIGHT, VIEW_WIDTH, SPAWN_X, CAMP_X, surfaces, landmarks, flowers,
+  groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs';
+import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower } from './camp-art.mjs';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -9,12 +11,11 @@ const skyModes = ['auto', 'day', 'dusk', 'night', 'dawn'];
 const skyLabels = { day: 'Daylight', dusk: 'Dusk', night: 'Night', dawn: 'Dawn' };
 const heldKeys = new Set();
 const heldPointers = new Map();
-const camera = { x: 0, y: 0, width: 1882, height: 836, zoom: 1, density: 1 };
+const camera = { x: 0, y: 0, width: VIEW_WIDTH, height: 600, zoom: 1, density: 1 };
 const tracker = [];
-const cat = { x: SPAWN_X - 72, y: 565, direction: 1, gait: 0 };
+const cat = { x: SPAWN_X - 72, y: groundAt(SPAWN_X), direction: 1, gait: 0 };
 let sprites;
 let camp;
-let skies;
 let player = createPlayer();
 let avatar = 'boy';
 let playing = false;
@@ -28,29 +29,33 @@ let elapsedSinceSave = 0;
 let lastFrame = 0;
 let selectedLandmark;
 let visited = new Set();
+let collected = new Set();
+let quest = 'unoffered';
+let notice = '';
+let noticeUntil = 0;
 let savedFooting = { x: player.x, ground: player.ground };
 
 const conversations = {
-  mara: {
-    name: 'Mara',
-    role: 'FORGE KEEPER',
-    greeting: 'Welcome to Alder Camp. You can catch your breath by the fire. Alvin seems to have made himself at home.',
-    options: [
-      ['Where do the trails go?', 'Up the roots is Crownwood. Keep to the lower stones and you’ll find the mine door. If you meet Ivo, ask him about that lift.'],
-      ['Did you stitch those flowers?', 'Every one. The flowers I’m looking for grow where the light changes. If you spot one on your travels, remember where it was.']
-    ]
+  mara: { name: 'Mara', role: 'FORGE KEEPER' },
+  lift: {
+    name: 'The old lift',
+    role: 'MARA’S CLEARING',
+    greeting: 'The lift goes down to Ivo’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
   },
   mine: {
     name: 'Embervein Mine',
-    role: 'LOWER TRAIL',
-    greeting: 'Lamplight spills through the timber doorway. This is the entrance to Ivo’s mine.',
-    options: []
+    role: 'TIMBER GATE',
+    greeting: 'Lantern light slips through the timbers. Ivo’s mine starts here. Look for a dusklily on the path beside the door.'
   },
   canopy: {
     name: 'Crownwood Canopy',
     role: 'UPPER TRAIL',
-    greeting: 'From the last branch you can see over the campfire smoke. The trail into Crownwood starts here.',
-    options: []
+    greeting: 'You can see camp through the branches. Crownwood continues past this gate. The wide branch below is a good place to look for dusklilies.'
+  },
+  shore: {
+    name: 'Shore trail',
+    role: 'PAST TIMBER GATE',
+    greeting: 'The air smells of salt. This path runs out to the beach.'
   }
 };
 
@@ -109,67 +114,6 @@ function drawPortrait(canvas, sprite) {
   drawSprite(context, sprite, canvas.width * .55, canvas.height - 4, canvas.height - 8);
 }
 
-function buildSkyLayers(image) {
-  const width = WORLD_WIDTH / 2;
-  const height = 155;
-  const mask = surfaceCanvas(width, height);
-  const maskCtx = mask.getContext('2d', { willReadFrequently: true });
-  maskCtx.drawImage(image, 0, 0, WORLD_WIDTH, height * 2, 0, 0, width, height);
-  const pixels = maskCtx.getImageData(0, 0, width, height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = (y * width + x) * 4;
-      const [red, green, blue] = [pixels.data[index], pixels.data[index + 1], pixels.data[index + 2]];
-      const sun = Math.hypot(x - 297, y - 73.5) <= 26.6 && red > 215 && green > 202;
-      const sky = red > 170 && blue > 170 && green - red > 3;
-      pixels.data[index + 3] = sun ? 255 : sky ? Math.round(255 * clamp((green - 189) / 24, 0, 1)) : 0;
-    }
-  }
-  maskCtx.putImageData(pixels, 0, 0);
-  const colors = {
-    dusk: ['#676489', '#d19ba0', '#f8bd8d'],
-    night: ['#202846', '#354974', '#757ca2'],
-    dawn: ['#527497', '#b593a9', '#f8cba1']
-  };
-  return Object.fromEntries(Object.entries(colors).map(([name, stops]) => {
-    const layer = surfaceCanvas(width, height);
-    const context = layer.getContext('2d');
-    const gradient = context.createLinearGradient(0, 0, 0, height);
-    stops.forEach((color, i) => gradient.addColorStop(i / 2, color));
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, width, height);
-    if (name === 'night') {
-      for (let index = 0; index < 50; index++) {
-        const x = (index * 137.15 + 13) % width;
-        const y = (index * 19.87 + 4) % 107;
-        context.fillStyle = index % 5 === 0 ? '#f7e7be' : '#e2e5fa88';
-        context.beginPath();
-        context.arc(x, y, index % 5 === 0 ? 1 : .55, 0, Math.PI * 2);
-        context.fill();
-      }
-      context.fillStyle = '#f9e3ab';
-      context.beginPath();
-      context.arc(297, 73.5, 22, 0, Math.PI * 2);
-      context.fill();
-      context.globalCompositeOperation = 'destination-out';
-      context.beginPath();
-      context.arc(305, 66, 21, 0, Math.PI * 2);
-      context.fill();
-      context.globalCompositeOperation = 'destination-over';
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, width, height);
-    } else {
-      context.fillStyle = name === 'dusk' ? '#ffdaa8' : '#fff0c3';
-      context.beginPath();
-      context.arc(297, name === 'dusk' ? 98 : 79, 24, 0, Math.PI * 2);
-      context.fill();
-    }
-    context.globalCompositeOperation = 'destination-in';
-    context.drawImage(mask, 0, 0);
-    return [name, layer];
-  }));
-}
-
 function skyState() {
   if (skyMode !== 'auto') return { from: skyMode, to: skyMode, mix: 0 };
   const time = phaseClock % DAY_LENGTH;
@@ -179,17 +123,6 @@ function skyState() {
   if (time < 104) return { from: 'night', to: 'night', mix: 0 };
   if (time < 121) return { from: 'night', to: 'dawn', mix: (time - 104) / 17 };
   return { from: 'dawn', to: 'day', mix: (time - 121) / 15 };
-}
-
-function drawSkyLayer(name, weight) {
-  if (name === 'day' || weight <= 0) return;
-  const tint = { dusk: '#a35e6d43', night: '#111a47a0', dawn: '#635a8640' };
-  ctx.save();
-  ctx.globalAlpha = weight;
-  ctx.fillStyle = tint[name];
-  ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-  ctx.drawImage(skies[name], 0, 0, WORLD_WIDTH, 310);
-  ctx.restore();
 }
 
 function drawFirelight(x, y, radius, strength) {
@@ -230,25 +163,30 @@ function shadow(x, y, width) {
 function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
-  ctx.clearRect(x, y, camera.width, camera.height);
-  ctx.drawImage(camp, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
   const sky = skyState();
-  drawSkyLayer(sky.from, 1 - sky.mix);
-  drawSkyLayer(sky.to, sky.mix);
+  paintHorizon(ctx, camera, sky.from, 1, animationClock);
+  if (sky.from !== sky.to) paintHorizon(ctx, camera, sky.to, sky.mix, animationClock);
+  ctx.drawImage(camp, 0, 0);
   const clockText = skyLabels[sky.mix > .35 ? sky.to : sky.from];
   if (el('time-label').textContent !== clockText) el('time-label').textContent = clockText;
   const night = (sky.from === 'night' ? 1 - sky.mix : 0) + (sky.to === 'night' ? sky.mix : 0);
-  drawFirelight(697, 547, 132, .13 + night * .36);
-  drawFirelight(169, 502, 90, .09 + night * .29);
-  drawFirelight(1658, 625, 95, .08 + night * .28);
+  paintCampTint(ctx, camera, night);
+  drawFirelight(2258, 595, 132, .18 + night * .42);
+  drawFirelight(2150, 582, 90, .08 + night * .25);
+  drawFirelight(4168, 677, 90, .12 + night * .31);
+  paintFlame(ctx, 2258, 604, animationClock);
   for (let i = 0; i < 7; i++) {
-    const rise = (animationClock * 23 + i * 14) % 97;
+    const rise = (animationClock * 26 + i * 14) % 97;
     ctx.fillStyle = 'rgba(255,204,123,' + ((1 - rise / 97) * .8) + ')';
-    ctx.fillRect(699 + Math.sin(rise * .08 + i) * 15, 537 - rise, 2.7, 2.7);
+    ctx.fillRect(2258 + Math.sin(rise * .08 + i) * 15, 594 - rise, 2.7, 2.7);
   }
+  flowers.forEach(flower => {
+    if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
+  });
 
-  shadow(300, 565, 24);
-  drawSprite(ctx, sprites.mara, 300, 565, 98);
+  const mara = landmarks[0];
+  shadow(mara.x, mara.y, 24);
+  drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
   if (playing) {
     shadow(cat.x, cat.y, 17);
     drawSprite(ctx, sprites.alvin, cat.x, cat.y, 44, cat.direction,
@@ -300,7 +238,7 @@ function resize() {
   camera.density = Math.min(2, window.devicePixelRatio || 1);
   world.width = Math.round(rect.width * camera.density);
   world.height = Math.round(rect.height * camera.density);
-  camera.zoom = Math.max(rect.width / WORLD_WIDTH, rect.height / WORLD_HEIGHT);
+  camera.zoom = Math.max(rect.width / VIEW_WIDTH, rect.height / 600);
   camera.width = rect.width / camera.zoom;
   camera.height = rect.height / camera.zoom;
   updateCamera(true);
@@ -315,19 +253,33 @@ function clearControls() {
 }
 
 function updatePrompt() {
-  const current = controlsActive() ? nearbyLandmark(player) : undefined;
-  if (selectedLandmark === current) return;
+  const current = controlsActive() ? nearbyLandmark(player, collected) : undefined;
+  const message = current ? current.label + ' · E / Interact'
+    : controlsActive() && animationClock < noticeUntil ? notice : '';
   selectedLandmark = current;
-  el('status').hidden = !current;
-  el('status').textContent = current ? current.label + ' · E / Interact' : '';
+  if (el('status').textContent !== message) el('status').textContent = message;
+  el('status').hidden = !message;
   el('interact').disabled = !current;
 }
 
+function updateLocation() {
+  const location = player.x < 1140 ? 'Reedbank Trail'
+    : player.x < 1830 ? 'Pine Gate'
+    : player.x < 2680 ? 'Mara’s Clearing'
+    : player.x < 3800 ? 'Root Fork'
+    : player.x < 4300 ? 'Timber Gate' : 'Shore Trail';
+  if (el('location-name').textContent !== location) el('location-name').textContent = location;
+}
+
 function updateNotes() {
-  const remaining = landmarks.filter(landmark => !visited.has(landmark.id));
-  el('trail-notes').textContent = remaining.length
-    ? 'Camp discoveries: ' + visited.size + ' / 3'
-    : 'Camp explored · Mara, mine doorway, and canopy trail';
+  const clue = quest === 'complete' ? 'Brass key earned'
+    : quest === 'accepted' ? 'Mara’s dusklilies · ' + collected.size + ' / 3'
+    : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
+    : 'Explore the trail and find Mara by the fire.';
+  el('quest-tracker').textContent = clue;
+  el('quest-tracker').hidden = false;
+  const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
+  el('trail-notes').textContent = 'Trail entrances found · ' + destinations + ' / 3';
 }
 
 function getSavedCamp() {
@@ -342,7 +294,8 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      avatar, footing: savedFooting, phaseClock: phaseClock % DAY_LENGTH, visited: [...visited]
+      version: 2, avatar, footing: savedFooting, phaseClock: phaseClock % DAY_LENGTH,
+      visited: [...visited], flowers: [...collected], quest
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -352,7 +305,13 @@ function begin(save) {
   avatar = save?.avatar ?? avatar;
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
   visited = new Set(landmarks.filter(landmark => Array.isArray(save?.visited) && save.visited.includes(landmark.id)).map(landmark => landmark.id));
-  player = createPlayer(save?.footing);
+  const savedFlowers = Array.isArray(save?.flowers) ? save.flowers : [];
+  collected = new Set(flowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
+  quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
+  // The old one-screen map has unrelated terrain coordinates.
+  const footing = save && save.version !== 2 ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  player = createPlayer(footing);
+  noticeUntil = 0;
   savedFooting = { x: player.x, ground: player.ground };
   cat.x = clamp(player.x - 62, 19, WORLD_WIDTH - 19);
   cat.y = player.y;
@@ -361,15 +320,77 @@ function begin(save) {
   el('start').hidden = true;
   clearControls();
   updateNotes();
+  updateLocation();
   updateCamera(true);
   updatePrompt();
   saveCamp();
   world.focus({ preventScroll: true });
 }
 
+function setDialogue(line, options = []) {
+  el('line').textContent = line;
+  const choices = el('choices');
+  choices.replaceChildren();
+  for (const [label, action] of options) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.addEventListener('click', action);
+    choices.append(button);
+  }
+  (choices.firstElementChild ?? el('close-dialogue')).focus({ preventScroll: true });
+}
+
+const flowerHint = 'One grows here by the fire, one on a wide branch up the Crownwood trail, and one beside the mine door.';
+
+function setQuest(state) {
+  quest = state;
+  updateNotes();
+  saveCamp();
+}
+
+function maraDialogue() {
+  const paths = ['Where do the trails go?', () => setDialogue(
+    'At the root fork, jump up into Crownwood. Stay on the ground for the mine. The shore trail keeps going past the mine door.',
+    [['Back', maraDialogue]])];
+  if (quest === 'complete') {
+    setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there.', [paths]);
+  } else if (quest === 'accepted' && collected.size === flowers.length) {
+    setDialogue('Three dusklilies! I used to pick these on the way home. Here’s the brass key I promised.', [
+      ['Give Mara the 3 dusklilies', () => {
+        setQuest('complete');
+        setDialogue('Brass key received. Keep it for the old box behind falling water. Alvin, see if you can keep them out of trouble.');
+      }], paths]);
+  } else if (quest === 'accepted') {
+    setDialogue('You’ve found ' + collected.size + ' of the 3 dusklilies. ' + flowerHint, [paths]);
+  } else {
+    const greeting = quest === 'declined' ? 'Changed your mind? ' : 'Come warm up. Alvin already has. ';
+    setDialogue(greeting + 'Bring me 3 dusklilies and I’ll give you a brass key. ' + flowerHint + ' Will you help?', [
+      ['Yes, I’ll find them', () => {
+        setQuest('accepted');
+        maraDialogue();
+      }],
+      ['No, maybe later', () => {
+        setQuest('declined');
+        setDialogue('Fair enough. The fire’s here whenever you need it.', [paths]);
+      }], paths]);
+  }
+}
+
 function interact() {
   if (!controlsActive() || !selectedLandmark) return;
-  const id = selectedLandmark.id;
+  const item = selectedLandmark;
+  if (flowers.includes(item)) {
+    collected.add(item.id);
+    notice = 'Dusklily picked · ' + collected.size + ' / 3';
+    noticeUntil = animationClock + 1.9;
+    updateNotes();
+    updatePrompt();
+    saveCamp();
+    world.focus({ preventScroll: true });
+    return;
+  }
+  const id = item.id;
   const info = conversations[id];
   visited.add(id);
   talking = true;
@@ -379,19 +400,11 @@ function interact() {
   saveCamp();
   el('speaker').textContent = info.name;
   el('speaker-role').textContent = info.role;
-  el('line').textContent = info.greeting;
-  el('choices').replaceChildren();
   el('portrait').hidden = id !== 'mara';
   if (id === 'mara') drawPortrait(el('portrait'), sprites.mara);
-  for (const [question, answer] of info.options) {
-    const choice = document.createElement('button');
-    choice.type = 'button';
-    choice.textContent = question;
-    choice.addEventListener('click', () => { el('line').textContent = answer; });
-    el('choices').append(choice);
-  }
   el('dialogue').hidden = false;
-  (el('choices').firstElementChild ?? el('close-dialogue')).focus({ preventScroll: true });
+  if (id === 'mara') maraDialogue();
+  else setDialogue(info.greeting + (id === 'lift' ? '' : ' The next region opens in a later playtest.'));
 }
 
 function closeDialogue() {
@@ -434,6 +447,7 @@ function frame(time) {
     phaseClock = (phaseClock + dt) % DAY_LENGTH;
     updateCat(dt);
     updateCamera(false, dt);
+    updateLocation();
     updatePrompt();
     elapsedSinceSave += dt;
     if (elapsedSinceSave > 3) {
@@ -530,11 +544,10 @@ new ResizeObserver(resize).observe(world);
 
 async function boot() {
   try {
-    const [scenery, party, keepers] = await Promise.all([
-      loadImage('./camp.webp'), loadImage('./party.webp'), loadImage('./keepers.webp')
+    const [party, keepers] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp')
     ]);
-    camp = scenery;
-    skies = buildSkyLayers(camp);
+    camp = buildCampArt();
     sprites = {
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),

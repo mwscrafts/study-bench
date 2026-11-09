@@ -1,24 +1,36 @@
-export const WORLD_WIDTH = 1882;
-export const WORLD_HEIGHT = 836;
-export const SPAWN_X = 755;
-const LEFT_EDGE = 25;
-const RIGHT_EDGE = WORLD_WIDTH - 23;
+export const WORLD_WIDTH = 4800;
+export const WORLD_HEIGHT = 900;
+export const SPAWN_X = 280;
+export const CAMP_X = 2190;
+export const VIEW_WIDTH = 960;
 const RUN_SPEED = 320;
 const GRAVITY = 1700;
 
 export const surfaces = [
-  { id: 'trail', points: [[0,565], [995,565], [1030,594], [1058,613], [1091,647], [1190,647], [1216,684], [1244,684], [1282,718], [1332,720], [1375,738], [1882,738]] },
-  { id: 'roots', points: [[885,565], [940,546], [992,525], [1051,511], [1092,503], [1117,503]] },
-  { id: 'branch-one', points: [[1088,421], [1111,410], [1316,410]] },
-  { id: 'branch-two', points: [[1282,318], [1308,309], [1508,309]] },
-  { id: 'branch-three', points: [[1498,216], [1519,204], [1753,204]] },
-  { id: 'crown', points: [[1718,188], [1750,173], [1882,173]] }
+  { id: 'trail', points: [[0,608],[420,608],[560,623],[680,664],[800,687],[920,687],[1030,656],[1140,612],[1450,608],[1590,580],[1800,590],[1990,610],[2550,610],[2720,627],[2980,630],[3160,662],[3370,689],[3540,728],[3710,748],[4320,748],[4510,716],[4800,720]] },
+  { id: 'bridge', points: [[538,620],[620,609],[745,603],[880,600],[1000,600],[1130,610]] },
+  { id: 'log', points: [[1180,556],[1340,548],[1450,551]] },
+  { id: 'pine-rock', points: [[1480,534],[1570,534],[1620,555]] },
+  { id: 'roots', points: [[2690,624],[2785,591],[2895,542],[3040,528]] },
+  { id: 'bough-one', points: [[3010,454],[3080,440],[3240,440]] },
+  { id: 'bough-two', points: [[3255,355],[3330,341],[3530,341]] },
+  { id: 'crown', points: [[3510,278],[3580,260],[3830,260]] }
 ];
+const byId = new Map(surfaces.map(surface => [surface.id, surface]));
+const trail = surfaces[0];
 
 export const landmarks = [
-  { id: 'mara', x: 300, y: 565, label: 'Talk to Mara', radius: 100 },
-  { id: 'mine', x: 1685, y: 738, label: 'Mine doorway', radius: 120 },
-  { id: 'canopy', x: 1810, y: 173, label: 'Canopy trail', radius: 118 }
+  { id: 'mara', x: 2080, y: 610, label: 'Talk to Mara', radius: 94 },
+  { id: 'lift', x: 2425, y: 610, label: 'Inspect the lift', radius: 76 },
+  { id: 'canopy', x: 3745, y: 260, label: 'Crownwood trail', radius: 92 },
+  { id: 'mine', x: 4050, y: 748, label: 'Mine doorway', radius: 95 },
+  { id: 'shore', x: 4660, y: 718, label: 'Shore trail', radius: 88 }
+];
+
+export const flowers = [
+  { id: 'clearing', x: 2310, y: 610, label: 'Pick dusklily by the fire' },
+  { id: 'crownwood', x: 3405, y: 341, label: 'Pick Crownwood dusklily' },
+  { id: 'timber', x: 3940, y: 748, label: 'Pick dusklily by the mine' }
 ];
 
 export function clamp(value, minimum, maximum) {
@@ -36,9 +48,13 @@ export function surfaceAt(surface, x) {
   return null;
 }
 
+export function groundAt(x) {
+  return surfaceAt(trail, clamp(x, 0, WORLD_WIDTH));
+}
+
 export function createPlayer(saved) {
-  const ground = surfaces.find(surface => surface.id === saved?.ground) ?? surfaces[0];
-  const x = Number.isFinite(saved?.x) ? clamp(saved.x, LEFT_EDGE, RIGHT_EDGE) : SPAWN_X;
+  const ground = byId.get(saved?.ground) ?? trail;
+  const x = Number.isFinite(saved?.x) ? clamp(saved.x, 23, WORLD_WIDTH - 23) : SPAWN_X;
   const y = surfaceAt(ground, x);
   if (y === null) return createPlayer();
   return { x, y, velocityY: 0, direction: 1, ground: ground.id, jumps: 0, moving: false };
@@ -56,16 +72,13 @@ export function movePlayer(player, direction, dt) {
   const previousX = player.x;
   const previousY = player.y;
   if (direction) player.direction = direction;
-  player.x = clamp(player.x + direction * RUN_SPEED * dt, LEFT_EDGE, RIGHT_EDGE);
+  player.x = clamp(player.x + direction * RUN_SPEED * dt, 23, WORLD_WIDTH - 23);
   player.moving = Math.abs(player.x - previousX) > .01;
 
   if (player.ground) {
-    let support = surfaces.find(surface => surface.id === player.ground);
-    if (player.ground === 'trail' && previousX < 885 && player.x >= 885) support = surfaces[1];
-    if (player.ground === 'roots' && player.x < 885) support = surfaces[0];
+    const support = byId.get(player.ground);
     const y = surfaceAt(support, player.x);
     if (y !== null) {
-      player.ground = support.id;
       player.y = y;
       return;
     }
@@ -75,18 +88,43 @@ export function movePlayer(player, direction, dt) {
 
   player.velocityY += GRAVITY * dt;
   player.y += player.velocityY * dt;
-  if (player.velocityY < 0) return;
-  for (const surface of surfaces) {
-    const y = surfaceAt(surface, player.x);
-    if (y === null || previousY > y + 1 || player.y < y) continue;
-    player.y = y;
-    player.ground = surface.id;
+  const floor = groundAt(player.x);
+  let contact = player.y >= floor ? { id: trail.id, y: floor, time: 1 } : null;
+
+  if (player.velocityY >= 0) {
+    for (const surface of surfaces.slice(1)) {
+      const first = surface.points[0][0];
+      const last = surface.points.at(-1)[0];
+      if (player.x < first || player.x > last) continue;
+      const oldX = clamp(previousX, first, last);
+      const oldY = surfaceAt(surface, oldX);
+      const y = surfaceAt(surface, player.x);
+      const above = oldY - previousY;
+      const below = player.y - y;
+      if (above < 0 || below < 0) continue;
+      const time = above / (above + below || 1);
+      if (!contact || time < contact.time || (time === contact.time && y < contact.y)) {
+        contact = { id: surface.id, y, time };
+      }
+    }
+  }
+
+  if (contact) {
+    player.y = contact.y;
+    player.ground = contact.id;
     player.velocityY = 0;
     player.jumps = 0;
   }
 }
 
-export function nearbyLandmark(player) {
-  return landmarks.find(landmark => Math.abs(landmark.x - player.x) < landmark.radius &&
-    Math.abs(landmark.y - player.y) < 44);
+export function nearbyLandmark(player, collected) {
+  const candidates = [...landmarks, ...flowers.filter(flower => !collected.has(flower.id))];
+  return candidates.reduce((nearest, item) => {
+    const dx = Math.abs(item.x - player.x);
+    const dy = Math.abs(item.y - player.y);
+    if (dx > (item.radius ?? 57) || dy > 48) return nearest;
+    if (!nearest) return item;
+    const previousDistance = Math.hypot(nearest.x - player.x, nearest.y - player.y);
+    return Math.hypot(dx, dy) < previousDistance ? item : nearest;
+  }, undefined);
 }
