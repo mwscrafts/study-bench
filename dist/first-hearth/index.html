@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth playtest</title>
-  <link rel="stylesheet" href="./playtest.css?v=14">
+  <link rel="stylesheet" href="./playtest.css?v=15">
 </head>
 <body>
   <main class="page">
@@ -98,6 +98,35 @@
                   <textarea id="notice-text" maxlength="140" rows="2" placeholder="Leave a little note…" required></textarea>
                   <button id="notice-submit" class="primary" type="submit">Pin note</button>
                 </form>
+                <div id="admin-panel" class="admin-panel" hidden>
+                  <p class="eyebrow">LOCAL TEST PANEL</p>
+                  <p class="admin-copy">This saved adventure is marked as a test run. Its time will not go on the public board.</p>
+                  <label for="admin-item">Give an item</label>
+                  <div class="admin-grant-row">
+                    <select id="admin-item">
+                      <option value="berries">Berries</option><option value="wood">Wood</option>
+                      <option value="flint">Flint</option><option value="iron">Iron ore</option>
+                      <option value="shadows">Shadow essence</option><option value="crystals">Crystals</option>
+                      <option value="dusklilies">Dusklilies</option><option value="fish">Fish</option>
+                      <option value="driftwood">Driftwood</option><option value="berrySeeds">Berry seeds</option>
+                      <option value="catnipSeed">Catnip seed</option><option value="net">Casting net</option>
+                      <option value="soakedBook">Soaked book</option><option value="tideglass">Tideglass</option>
+                      <option value="godslayer">Godslayer</option><option value="hatchet">Hatchet</option>
+                      <option value="pickaxe">Pickaxe</option><option value="ironSword">Iron sword</option>
+                      <option value="shadowBlade">Shadow blade</option><option value="helmet">Iron helmet</option>
+                      <option value="charm">Shockwave charm</option><option value="flowerCrown">Flower crown</option>
+                      <option value="brassKey">Brass key</option>
+                    </select>
+                    <input id="admin-amount" type="number" min="1" max="99" value="1" aria-label="Amount">
+                  </div>
+                  <button id="admin-grant" class="primary" type="button">Give selected</button>
+                  <div class="admin-actions">
+                    <button id="admin-godslayer" class="secondary" type="button">Give and equip Godslayer</button>
+                    <button id="admin-boss-test" class="secondary" type="button">Start boss test</button>
+                    <button id="admin-restore" class="secondary" type="button">Restore health and Composure</button>
+                    <button id="admin-close" class="secondary" type="button">Close test panel</button>
+                  </div>
+                </div>
                 <p id="notice-status" role="status"></p>
                 <ol id="notice-list" aria-live="polite"></ol>
               </div>
@@ -154,6 +183,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=24"></script>
+  <script type="module" src="./playtest.mjs?v=25"></script>
 </body>
 </html>

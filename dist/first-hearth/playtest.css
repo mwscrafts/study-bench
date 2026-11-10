@@ -257,3 +257,10 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 @media (orientation: landscape) and (max-height: 580px) {
   .trial-hud { top: 9px; width: min(300px, 43%); }
 }
+
+.admin-panel { display: grid; gap: 8px; margin: 8px 0; padding: 10px; border: 1px solid #d4b77966; border-radius: 8px; background: #132a21; }
+.admin-panel .eyebrow { margin: 0; color: #e6c88e; }
+.admin-copy { margin: 0; color: #d6debd; font-size: 11px; line-height: 1.4; }
+.admin-grant-row { display: grid; grid-template-columns: 1fr 76px; gap: 7px; }
+.admin-grant-row select, .admin-grant-row input { min-width: 0; padding: 8px; border: 1px solid #c9bea477; border-radius: 6px; background: #f5efdd; color: #23382f; font: inherit; }
+.admin-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }

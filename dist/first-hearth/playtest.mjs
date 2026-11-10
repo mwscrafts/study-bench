@@ -77,6 +77,7 @@ let campTokens = 0;
 let hutDecorations = new Set();
 let equipped = null;
 let inventoryOpen = false;
+let testRun = false;
 let swing = 0;
 let wave = 0;
 let cooldown = 0;
@@ -940,7 +941,7 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 14, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
+      version: 15, testRun, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
@@ -955,6 +956,7 @@ function saveCamp() {
 
 function begin(save) {
   if (!sprites) return;
+  testRun = save?.testRun === true;
   avatar = save?.avatar ?? avatar;
   const chosenName = el('player-name').value.trim() || save?.publicName || 'Adventurer';
   publicName = typeof chosenName === 'string' && chosenName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(chosenName)
@@ -1012,7 +1014,7 @@ function begin(save) {
   el('inventoryButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1788,6 +1790,9 @@ function renderNoticeList(notices) {
 async function openPlayerNoticeboard() {
   el('line').textContent = 'Messages stay on the website for the next visitor. Keep notes kind and short.';
   el('choices').replaceChildren();
+  el('admin-panel').hidden = true;
+  el('notice-form').hidden = false;
+  el('notice-list').hidden = false;
   el('noticeboard-panel').hidden = false;
   el('notice-status').textContent = 'Loading notes…';
   try {
@@ -1841,6 +1846,10 @@ function altarDialogue() {
 }
 
 function showScores() {
+  if (testRun) {
+    setDialogue('This is a test run, so its time stays off the public high-score board.', []);
+    return;
+  }
   setDialogue(endings[victory.ending].text + ' I’m proud of you. Time ' +
     formatTime(victory.timeMs) + '. The King dropped the village gate key. Enter the gate to the right after posting your time.', [['Back', endingDialogue]]);
   openTimeBoard(el, victory, saveCamp);
@@ -1850,7 +1859,8 @@ function endingDialogue() {
   el('time-board').hidden = true;
   const time = ' Time ' + formatTime(victory.timeMs) + '.';
   if (victory.ending) {
-    setDialogue(endings[victory.ending].text + ' I’m proud of you.' + time, [['View time board', showScores]]);
+    setDialogue(endings[victory.ending].text + ' I’m proud of you.' + time,
+      testRun ? [] : [['View time board', showScores]]);
     return;
   }
   const choices = Object.keys(endings).filter(ending => ending === 'break' || tools.flowerCrown).map(ending =>
@@ -2165,6 +2175,17 @@ el('notice-form').addEventListener('submit', async event => {
   event.preventDefault();
   const text = el('notice-text').value.trim();
   if (!text) return;
+  if (text.toLowerCase() === 'alabaster') {
+    testRun = true;
+    el('notice-text').value = '';
+    el('notice-form').hidden = true;
+    el('notice-list').hidden = true;
+    el('admin-panel').hidden = false;
+    el('notice-status').textContent = 'Test mode is on. This adventure will not submit a high score.';
+    saveCamp();
+    el('admin-item').focus({ preventScroll: true });
+    return;
+  }
   el('notice-submit').disabled = true;
   el('notice-status').textContent = 'Pinning your note…';
   try {
@@ -2180,6 +2201,82 @@ el('notice-form').addEventListener('submit', async event => {
   } catch (error) {
     el('notice-status').textContent = error.message || 'The shared board could not be reached.';
   } finally { el('notice-submit').disabled = false; }
+});
+function debugStatus(message) {
+  testRun = true;
+  updateNotes();
+  saveCamp();
+  updatePrompt();
+  el('notice-status').textContent = message + ' · Test run; no high score will be posted.';
+}
+
+function grantTestItem(kind, amount = 1) {
+  const count = clamp(Math.floor(Number(amount) || 1), 1, 99);
+  switch (kind) {
+    case 'berries': berries += count; break;
+    case 'wood': tools.debugWood = (tools.debugWood || 0) + count; break;
+    case 'flint': tools.flint = true; break;
+    case 'iron': ironStock += count; break;
+    case 'shadows': shadowStock += count; break;
+    case 'crystals': crystalNodes.slice(0, count).forEach(node => crystals.add(node.id)); break;
+    case 'dusklilies':
+      knownFlowers.slice(0, count).forEach(flower => collected.add(flower.id));
+      if (quest === 'unoffered') quest = 'accepted';
+      break;
+    case 'fish': fishing.fish += count; break;
+    case 'driftwood': fishing.driftwood += count; break;
+    case 'berrySeeds': berrySeeds += count; break;
+    case 'catnipSeed': catnipUnlocked = true; break;
+    case 'net': hasNet = true; break;
+    case 'soakedBook': fishing.book = true; break;
+    case 'tideglass': fishing.tideglass = 'caught'; break;
+    case 'godslayer': fishing.godslayer = true; equipped = 'godslayer'; break;
+    case 'hatchet': tools.hatchet = true; equipped = 'hatchet'; break;
+    case 'pickaxe': tools.pickaxe = true; tools.flint = false; equipped = 'pickaxe'; break;
+    case 'ironSword': tools.ironSword = true; equipped = 'ironSword'; break;
+    case 'shadowBlade': tools.shadowBlade = true; equipped = 'shadowBlade'; break;
+    case 'helmet': tools.helmet = true; break;
+    case 'charm': tools.charm = true; break;
+    case 'flowerCrown': tools.flowerCrown = true; hearthLearned = true; quest = 'complete'; break;
+    case 'brassKey': quest = 'complete'; break;
+  }
+  const option = el('admin-item').selectedOptions[0];
+  const label = option && el('admin-item').value === kind ? option.textContent : kind;
+  debugStatus(label + ' added');
+}
+
+function giveBossTestKit() {
+  testRun = true;
+  health = 100; composure = 100; berries = Math.max(berries, 12);
+  ironStock += 12; shadowStock += 12;
+  crystals = new Set(crystalNodes.map(node => node.id));
+  tools.hatchet = true; tools.pickaxe = true; tools.ironSword = true;
+  tools.shadowBlade = true; tools.helmet = true; tools.charm = true;
+  tools.flowerCrown = true; hearthLearned = true; quest = 'complete';
+  fishing.godslayer = true; equipped = 'godslayer';
+}
+
+el('admin-grant').addEventListener('click', () => {
+  grantTestItem(el('admin-item').value, el('admin-amount').value);
+});
+el('admin-godslayer').addEventListener('click', () => grantTestItem('godslayer'));
+el('admin-boss-test').addEventListener('click', () => {
+  giveBossTestKit();
+  victory = null; endingScene = null;
+  closeDialogue();
+  enterRegion('king', { x: TRIAL_START, ground: 'king-floor' });
+  trial = startTrial();
+  updateTrialHud(); updatePrompt(); saveCamp();
+});
+el('admin-restore').addEventListener('click', () => {
+  health = 100; composure = 100;
+  debugStatus('Health and Composure restored');
+});
+el('admin-close').addEventListener('click', () => {
+  el('admin-panel').hidden = true;
+  el('notice-form').hidden = false;
+  el('notice-list').hidden = false;
+  el('notice-status').textContent = 'This adventure remains marked as a test run.';
 });
 el('pause').addEventListener('click', () => setPause(!paused));
 el('resume').addEventListener('click', () => setPause(false));
