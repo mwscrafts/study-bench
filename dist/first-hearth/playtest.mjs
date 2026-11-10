@@ -423,7 +423,7 @@ function updateNotes() {
     : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
     : 'Explore the trail and find Mara by the fire.';
   const mineLoot = 'Iron ore · ' + iron.size + ' / ' + oreNodes.length + (hasNet ? ' · Casting net' : '');
-  const equipment = tools.pickaxe ? 'Hatchet · Pickaxe'
+  const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : 'Ask Mara for a hatchet';
   el('quest-tracker').textContent = region === 'mine' ? mineLoot : clue;
@@ -431,7 +431,14 @@ function updateNotes() {
     ? [hasNet ? 'Casting net' : 'Find Ivo’s casting net', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
     : equipment;
-  el('health-notes').textContent = '♥ ' + health + '/100 · Berries ' + berries + (equipped ? ' · ' + gear[equipped][1] : '');
+  el('hpText').textContent = health;
+  el('hpBar').style.width = health + '%';
+  el('healthMeter').setAttribute('aria-valuenow', String(health));
+  el('supply-wood').textContent = spareWood(tools);
+  el('supply-flint').textContent = Number(tools.flint);
+  el('supply-crystal').textContent = crystals.size;
+  el('supply-iron').textContent = iron.size;
+  el('supply-berries').textContent = berries;
   el('health-notes').hidden = false;
   el('tool-notes').hidden = false;
   el('quest-tracker').hidden = false;

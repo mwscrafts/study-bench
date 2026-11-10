@@ -13,11 +13,11 @@
     <header class="mast">
       <a href="/" class="home">← Back home</a>
       <span class="mast-mark">✦ &nbsp; The First Hearth</span>
-      <span class="edition">Playtest 06</span>
+      <span class="edition">Playtest 06.1</span>
     </header>
     <div class="title">
       <div>
-        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 06</p>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 06.1</p>
         <h1 id="region-title">Alder <em>Camp</em></h1>
       </div>
       <p id="region-intro">Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.</p>
@@ -27,17 +27,23 @@
         <div class="game-location"><span class="spark">✦</span> <strong id="location-name">Reedbank Trail</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
         <div class="game-actions">
           <button id="sky-toggle" type="button" title="Preview the sky at different times">Sky: Auto</button>
-          <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>Bag</button>
           <button id="pause" type="button" aria-label="Pause or resume">Pause</button>
           <button id="fullscreen" type="button" aria-label="Toggle fullscreen">⛶</button>
         </div>
       </div>
       <div class="scene">
         <canvas id="world" tabindex="0" aria-label="Alder Camp game world. Move with arrows or A and D, jump with Space, and interact with E."></canvas>
-        <div class="scene-notes">
-          <div id="quest-tracker" class="quest-tracker" aria-live="polite" hidden></div>
-          <div id="tool-notes" class="quest-tracker" aria-live="polite" hidden></div>
-          <div id="health-notes" class="quest-tracker" hidden></div>
+        <div class="hud">
+          <div id="health-notes" class="vitals" hidden>
+            <div>
+              <span aria-hidden="true">♥ <b id="hpText">100</b></span>
+              <div id="healthMeter" class="meter" role="meter" aria-label="Health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="hpBar"></i></div>
+            </div>
+          </div>
+          <div class="scene-notes">
+            <div id="quest-tracker" class="quest-tracker" aria-live="polite" hidden></div>
+            <div id="tool-notes" class="quest-tracker" aria-live="polite" hidden></div>
+          </div>
         </div>
         <div id="status" class="status" role="status" aria-live="polite" hidden></div>
         <div id="start" class="overlay">
@@ -87,6 +93,18 @@
             <h2>Taking a break.</h2>
             <button id="resume" type="button" class="primary">Keep exploring →</button>
           </div>
+        </div>
+      </div>
+      <div class="inventory">
+        <div class="supplies" aria-label="Supplies">
+          <span title="Wood"><i class="wood-icon" aria-hidden="true">▰</i><b id="supply-wood">0</b><small>Wood</small></span>
+          <span title="Flint"><i class="stone-icon" aria-hidden="true">⬟</i><b id="supply-flint">0</b><small>Flint</small></span>
+          <span title="Crystal"><i class="crystal-icon" aria-hidden="true">◆</i><b id="supply-crystal">0</b><small>Crystal</small></span>
+          <span title="Iron ore"><i class="iron-icon" aria-hidden="true">▧</i><b id="supply-iron">0</b><small>Ore</small></span>
+          <span title="Berries"><i class="berry-icon" aria-hidden="true">●</i><b id="supply-berries">3</b><small>Berries</small></span>
+        </div>
+        <div class="quickbar">
+          <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>▣ Backpack <kbd>I</kbd></button>
         </div>
       </div>
       <div class="control-deck">
