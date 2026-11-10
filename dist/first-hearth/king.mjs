@@ -18,7 +18,8 @@ export const kingLandmarks = [
   spot('king-return', 170, 'Return to Crown Overlook'),
   spot('lantern-rest', 1035, 'Read the lantern inscription'),
   spot('night-altar', 2010, 'Inspect the altar'),
-  spot('fallen-crown', 3560, 'Look at the fallen crown', 110)
+  spot('fallen-crown', 3560, 'Look at the fallen crown', 110),
+  spot('village-gate', 3760, 'Unlock the village gate', 92)
 ];
 
 export const ARENA = { left: 2900, right: 3815, ground: 620, gate: 2820 };

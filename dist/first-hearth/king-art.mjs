@@ -1,5 +1,5 @@
 import { poly, path, orb, random, stone } from './camp-art.mjs';
-import { kingTerrain, kingLandmarks, ARENA, MAX_BOSS_HP } from './king.mjs';
+import { kingTerrain, kingLandmarks, ARENA, MAX_BOSS_HP } from './king.mjs?v=10';
 
 const { width, height, floor, ledges } = kingTerrain;
 const stoneLight = '#909587';
@@ -69,6 +69,12 @@ function glow(ctx,x,y,r,color) {
 export function paintKingGrounds(ctx, trial, victory, clock) {
   const rest=kingLandmarks[1];
   const altar=kingLandmarks[2];
+  if (victory?.ending) {
+    const gate=kingLandmarks.find(item => item.id === 'village-gate');
+    glow(ctx,gate.x,gate.y-85,120,'#f4d49a7c');
+    path(ctx,[[gate.x-44,gate.y],[gate.x-44,gate.y-135],[gate.x,gate.y-165],
+      [gate.x+44,gate.y-135],[gate.x+44,gate.y]],'#dec89c',12);
+  }
   for(const [x,y] of [[rest.x-113,rest.y-44],[rest.x+113,rest.y-44]]) {
     glow(ctx,x,y,94,'#e6ae6554');
     poly(ctx,[[x-9,y+13],[x-10,y-12],[x+9,y-12],[x+10,y+13]],'#715941');

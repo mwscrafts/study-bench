@@ -14,9 +14,10 @@ import { renderInventory } from './backpack.mjs?v=09';
 import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs?v=09';
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
-  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=09';
-import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs';
-import { readVictory, openTimeBoard } from './time-board.mjs';
+  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=10';
+import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=10';
+import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
+import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt } from './village.mjs?v=10';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -79,6 +80,10 @@ let trial = null;
 let victory = null;
 let swingCombat = false;
 let fireworksElapsed = Infinity;
+let difficulty = 'easy';
+let fishFed = 0;
+let endingScene = null;
+let finaleDelay = 0;
 let notice = '';
 let noticeUntil = 0;
 let savedFooting = { x: player.x, ground: player.ground };
@@ -117,7 +122,11 @@ const regions = {
     title: ['King’s', 'Grounds'],
     intro: 'Cross the ruins to the altar when you are ready to face the Hollow King.',
     terrain: kingTerrain, landmarks: kingLandmarks, flowers: [], buildArt: buildKingArt, location: kingLocation
-  }
+  },
+  village: { title: ['Lantern', 'Village'], intro: 'The gate opens onto a village celebrating your safe return.',
+    terrain: villageTerrain, landmarks: villageLandmarks, flowers: [], buildArt: buildVillageArt, location: villageLocation },
+  house: { title: ['Homecoming', 'House'], intro: 'The village has been waiting for you and Alvin.',
+    terrain: houseTerrain, landmarks: houseLandmarks, flowers: [], buildArt: buildHouseArt, location: houseLocation }
 };
 const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
 const knownFlowers = Object.values(regions).flatMap(area => area.flowers);
@@ -134,6 +143,10 @@ const gates = {
   'king-trail': { region: 'king' },
   'king-return': { region: 'crownwood', footing: { x: 5375, ground: 'overlook' } }
 };
+gates['village-gate'] = { region: 'village' };
+gates['village-return'] = { region: 'king', footing: { x: 3670, ground: 'king-floor' } };
+gates['celebration-house'] = { region: 'house' };
+gates['house-return'] = { region: 'village', footing: { x: 1920, ground: 'village-road' } };
 const liftGates = {
   lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
   'mine-lift': { region: 'camp', footing: { x: 2300, ground: 'trail' } }
@@ -157,6 +170,8 @@ const conversations = {
     greeting: 'The old lift reaches Mara’s clearing. One of the bearings is cracked. Ivo needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
   },
   'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
+  'home-welcome': { name: 'The neighbors', role: 'HOMECOMING',
+    greeting: 'You made it home! We lit every window hoping you and Alvin would come back. Come in and celebrate with us.' },
   'lantern-rest': {
     name: 'Lantern Rest', role: 'KING’S GROUNDS',
     greeting: 'Rest here or return through Crownwood. Lighting the altar starts the final night. Use the Action button to strike, and jump over the King’s charges and shockwaves.'
@@ -278,7 +293,7 @@ function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
-  const outdoors = region !== 'mine' && region !== 'hearth';
+  const outdoors = region !== 'mine' && region !== 'hearth' && region !== 'house';
   if (outdoors) {
     const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
     paintSky(ctx, camera, sky.from, 1, animationClock);
@@ -336,8 +351,8 @@ function paint() {
     paintBeachDetails(ctx, camera, animationClock, night, casting);
   } else if (region === 'hearth') {
     paintHearthDetails(ctx, animationClock, night, hearthLearned);
-  } else {
-    paintKingGrounds(ctx, trial, victory, animationClock);
+  } else if (region === 'king') {
+    paintKingGrounds(ctx, trial, endingScene && !endingScene.struck ? { ...victory, ending: null } : victory, animationClock);
     if (trial?.stage === 'shadows') trial.shadows.forEach((shadow, index) =>
       paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock));
     paintFireworks(ctx, camera, fireworksElapsed);
@@ -348,7 +363,7 @@ function paint() {
   });
   if (playing) {
     shadow(cat.x, cat.y, 17);
-    drawSprite(ctx, sprites.alvin, cat.x, cat.y, 44, cat.direction,
+    drawSprite(ctx, sprites.alvin, cat.x, cat.y, 44 * (1 + fishFed / 4), cat.direction,
       -Math.abs(Math.sin(cat.gait)) * 2.2, Math.sin(cat.gait) * .035);
     if (region === 'king' && victory && fireworksElapsed < 1.8) {
       ctx.strokeStyle = '#462d26';
@@ -383,14 +398,14 @@ function updateCat(dt) {
   while (tracker.length > 1 && tracker[1].time <= cutoff) tracker.shift();
   const trail = tracker[0];
   const support = terrain.byId.get(trail.ground);
-  let targetX = trail.x - trail.direction * 62;
+  let targetX = trail.x - trail.direction * (55 + fishFed * 4);
   if (support) {
     targetX = clamp(targetX, support.points[0][0] + 8, support.points.at(-1)[0] - 8);
   }
   targetX = clamp(targetX, 19, terrain.width - 19);
   let targetY = support ? surfaceAt(support, targetX) : trail.y;
   if (atFallsRail()) {
-    const rail = crownwoodLandmarks[1];
+    const rail = crownwoodLandmarks.find(item => item.id === 'mist-drop');
     targetX = rail.x - 35;
     targetY = surfaceAt(terrain.byId.get('rope-bridge'), targetX);
   }
@@ -404,22 +419,27 @@ function updateCat(dt) {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting && !inventoryOpen && trial?.stage !== 'alvin';
+  return playing && !paused && !talking && !casting && !inventoryOpen &&
+    trial?.stage !== 'alvin' && finaleDelay <= 0 && !endingScene;
 }
 
 function atFallsRail() {
-  return region === 'crownwood' && player.ground === 'rope-bridge' && Math.abs(player.x - crownwoodLandmarks[1].x) < 188;
+  return region === 'crownwood' && player.ground === 'rope-bridge' &&
+    Math.abs(player.x - crownwoodLandmarks.find(item => item.id === 'mist-drop').x) < 188;
 }
 
 function updateCamera(snap = false, dt = 0) {
   const showFalls = atFallsRail();
-  const targetZoom = showFalls ? Math.min(camera.baseZoom, camera.pixelHeight / 445) : camera.baseZoom;
+  const focusAlvin = region === 'king' && (trial?.stage === 'alvin' || trial?.stage === 'won' && finaleDelay > 0);
+  const targetZoom = focusAlvin ? Math.min(camera.baseZoom, camera.pixelWidth / (Math.abs(cat.x - trial.boss.x) + 280))
+    : showFalls ? Math.min(camera.baseZoom, camera.pixelHeight / 445) : camera.baseZoom;
   const factor = snap ? 1 : 1 - Math.exp(-dt * 6);
   camera.zoom += (targetZoom - camera.zoom) * factor;
   camera.width = camera.pixelWidth / camera.zoom;
   camera.height = camera.pixelHeight / camera.zoom;
-  const x = clamp(player.x - camera.width * .46, 0, Math.max(0, terrain.width - camera.width));
-  const followY = player.y - camera.height * (showFalls ? .31 : .76);
+  const focusX = focusAlvin ? (cat.x + trial.boss.x) / 2 : player.x;
+  const x = clamp(focusX - camera.width * .5, 0, Math.max(0, terrain.width - camera.width));
+  const followY = (focusAlvin ? ARENA.ground : player.y) - camera.height * (showFalls ? .31 : .76);
   const y = clamp(followY, 0, Math.max(0, terrain.height - camera.height));
   camera.x += (x - camera.x) * factor;
   camera.y += (y - camera.y) * factor;
@@ -453,7 +473,8 @@ function currentFlowers() {
 function currentLandmarks() {
   if (region === 'king' && trial && !victory) return [];
   return regions[region].landmarks.filter(item =>
-    (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory));
+    (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
+    (item.id !== 'village-gate' || victory?.ending));
 }
 
 function updatePrompt() {
@@ -508,6 +529,8 @@ function updateNotes() {
     : equipment;
   el('hpText').textContent = health;
   el('hpBar').style.width = health + '%';
+  el('berryCount').textContent = berries;
+  el('quickBerry').disabled = !playing || berries < 1 || health >= 100;
   el('healthMeter').setAttribute('aria-valuenow', String(health));
   el('health-notes').hidden = false;
   el('tool-notes').hidden = region === 'hearth';
@@ -519,7 +542,8 @@ function updateNotes() {
       : ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
-    : region === 'king' ? (victory?.ending ? endings[victory.ending].name : 'The altar calls the final night')
+    : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right' : 'The altar calls the final night')
+    : region === 'village' || region === 'house' ? 'The village is celebrating your safe return'
     : 'Trail entrances found · ' + destinations + ' / 3';
 }
 
@@ -535,7 +559,7 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 9, avatar, region,
+      version: 10, avatar, region, difficulty, fishFed,
       footing: trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing
@@ -546,6 +570,11 @@ function saveCamp() {
 function begin(save) {
   if (!sprites) return;
   avatar = save?.avatar ?? avatar;
+  difficulty = save ? (save.difficulty === 'hard' ? 'hard' : 'easy') : difficulty;
+  for (const choice of document.querySelectorAll('[data-difficulty]')) {
+    choice.setAttribute('aria-pressed', String(choice.dataset.difficulty === difficulty));
+  }
+  fishFed = Number.isSafeInteger(save?.fishFed) ? clamp(save.fishFed, 0, 8) : 0;
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
   visited = new Set(knownLandmarks.filter(landmark => Array.isArray(save?.visited) && save.visited.includes(landmark.id)).map(landmark => landmark.id));
   const savedFlowers = Array.isArray(save?.flowers)
@@ -576,7 +605,7 @@ function begin(save) {
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -888,6 +917,7 @@ function inventoryItems() {
   if (fishing.book) items.push(['▤', 'Soaked book', 1, bookClue]);
   if (hearthLearned) items.push(['▤', 'Ember note', 1, hearthNote]);
   if (tools.flowerCrown) items.push(['✿', 'Flower crown', 1, 'Mara’s crown can free the King from the shadows.']);
+  if (victory?.ending) items.push(['⚿', 'Village gate key', 1, 'Opens the gate to the right of the Crown Arena.']);
   if (tools.charm) items.push(['◇', 'Shockwave charm', 1, 'Softens the King’s shockwaves.']);
   if (tools.helmet) items.push(['♧', 'Iron helmet', 1, 'Reduces incoming damage by 25%.']);
   if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Ivo to repair the lift.']);
@@ -898,6 +928,17 @@ function inventoryItems() {
 
 function refreshInventory() {
   renderInventory(el, inventoryItems(), ownsGear, equipped, equipTool, berries, health);
+  el('bagFeed').disabled = !fishing.fish || fishFed >= 8;
+  el('bagFeed').textContent = 'Feed Alvin a fish · ' + fishing.fish + ' fish · ' + Math.round((1 + fishFed / 4) * 100) + '% size';
+}
+
+function feedAlvin() {
+  if (!playing || !inventoryOpen || fishing.fish < 1 || fishFed >= 8) return;
+  fishing.fish--;
+  fishFed++;
+  refreshInventory();
+  updateNotes();
+  saveCamp();
 }
 
 function equipTool(id) {
@@ -1143,7 +1184,8 @@ function altarDialogue() {
 }
 
 function showScores() {
-  setDialogue('Times are ranked separately for each ending.', [['Back', endingDialogue]]);
+  setDialogue(endings[victory.ending].text + ' I’m proud of you. Time ' +
+    formatTime(victory.timeMs) + '. The King dropped the village gate key. Enter the gate to the right after posting your time.', [['Back', endingDialogue]]);
   openTimeBoard(el, victory, saveCamp);
 }
 
@@ -1157,10 +1199,10 @@ function endingDialogue() {
   const choices = Object.keys(endings).filter(ending => ending === 'break' || tools.flowerCrown).map(ending =>
     [endings[ending].name, () => {
       victory.ending = ending;
-      fireworksElapsed = 0;
-      updateNotes();
       saveCamp();
-      endingDialogue();
+      closeDialogue();
+      endingScene = { elapsed: 0, struck: false, target: kingLandmarks.find(item => item.id === 'fallen-crown').x - 55 };
+      clearControls();
     }]);
   setDialogue('Alvin lands the last hit and winks. I’m proud of you.' + time, choices);
 }
@@ -1195,8 +1237,9 @@ function updateKingTrial(dt) {
   const before = trial.stage;
   const damage = advanceTrial(trial, player, dt);
   if (damage && animationClock >= hitUntil) {
-    const reduced = before === 'duel' && damage === 24 && tools.charm ? Math.ceil(damage * .5) : damage;
-    health = Math.max(0, health - (tools.helmet ? Math.ceil(reduced * .75) : reduced));
+    const baseHit = difficulty === 'hard' ? 20 : 8;
+    const hit = before === 'duel' && damage === 24 && tools.charm ? Math.ceil(baseHit * .5) : baseHit;
+    health = Math.max(0, health - (tools.helmet ? Math.ceil(hit * .75) : hit));
     if (!health) {
       retreatFromTrial(true);
       return;
@@ -1218,11 +1261,9 @@ function updateKingTrial(dt) {
     cat.gait = 0;
   }
   if (trial.stage === 'won') {
-    victory = { runId: crypto.randomUUID(), timeMs: Math.round(trial.time * 1000), ending: null, name: null };
-    fireworksElapsed = 0;
+    victory = { runId: crypto.randomUUID(), timeMs: Math.round(trial.time * 1000), ending: null, name: null, difficulty };
+    finaleDelay = 1.2;
     saveCamp();
-    openDialogue('fallen-crown');
-    endingDialogue();
   }
   updateTrialHud();
 }
@@ -1236,7 +1277,8 @@ function updateShadows() {
   const hit = creatures.some(creature =>
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
   if (!hit) return;
-  health = Math.max(0, health - (tools.helmet ? Math.ceil((34 + Math.min(nightIndex, 8) * 3) * .75) : 34 + Math.min(nightIndex, 8) * 3));
+  const hitDamage = difficulty === 'hard' ? 20 : 8;
+  health = Math.max(0, health - (tools.helmet ? Math.ceil(hitDamage * .75) : hitDamage));
   hitUntil = animationClock + 1.8;
   if (health === 0) {
     health = 100;
@@ -1257,6 +1299,41 @@ function frame(time) {
   if (casting && animationClock - casting.start >= .92) finishCast();
   if (fireworksElapsed < 8) fireworksElapsed += dt;
   if (trial?.stage === 'alvin' && !paused) updateKingTrial(dt);
+  if (trial?.stage === 'alvin' && !paused) updateCamera(false, dt);
+  if (finaleDelay > 0 && !paused) {
+    finaleDelay = Math.max(0, finaleDelay - dt);
+    updateCamera(false, dt);
+    if (!finaleDelay) {
+      openDialogue('fallen-crown');
+      endingDialogue();
+    }
+  }
+  if (endingScene && !paused) {
+    endingScene.elapsed += dt;
+    if (Math.abs(player.x - endingScene.target) > 5 && endingScene.elapsed < 1.7) {
+      player.direction = Math.sign(endingScene.target - player.x);
+      player.x += player.direction * Math.min(Math.abs(endingScene.target - player.x), dt * 390);
+      player.y = groundAt(player.x, terrain);
+      player.moving = true;
+      gait += dt * 15;
+    } else player.moving = false;
+    if (!endingScene.struck && endingScene.elapsed >= 1.7) {
+      endingScene.struck = true;
+      swing = SWING_TIME;
+      swingDirection = player.direction;
+      fireworksElapsed = 0;
+      puff(particles, player.x + player.direction * 55, player.y - 50, '#f2d996', 20);
+    }
+    if (swing > 0) swing = Math.max(0, swing - dt);
+    if (endingScene.elapsed >= 2.7) {
+      endingScene = null;
+      savedFooting = { x: player.x, ground: 'king-floor' };
+      updateNotes(); saveCamp();
+      openDialogue('fallen-crown');
+      showScores();
+    }
+    updateCamera(false, dt);
+  }
   if (controlsActive()) {
     const right = heldKeys.has('d') || heldKeys.has('arrowright') || [...heldPointers.values()].includes(1);
     const left = heldKeys.has('a') || heldKeys.has('arrowleft') || [...heldPointers.values()].includes(-1);
@@ -1306,6 +1383,14 @@ for (const button of document.querySelectorAll('[data-avatar]')) {
     }
   });
 }
+for (const button of document.querySelectorAll('[data-difficulty]')) {
+  button.addEventListener('click', () => {
+    difficulty = button.dataset.difficulty;
+    for (const choice of document.querySelectorAll('[data-difficulty]')) {
+      choice.setAttribute('aria-pressed', String(choice === button));
+    }
+  });
+}
 el('begin').addEventListener('click', () => begin());
 el('continue').addEventListener('click', () => begin(getSavedCamp()));
 el('close-dialogue').addEventListener('click', closeDialogue);
@@ -1326,6 +1411,8 @@ el('fullscreen').addEventListener('click', async () => {
 el('inventoryButton').addEventListener('click', () => inventoryOpen ? closeInventory() : openInventory());
 el('closeInventory').addEventListener('click', closeInventory);
 el('bagEat').addEventListener('click', eatBerry);
+el('bagFeed').addEventListener('click', feedAlvin);
+el('quickBerry').addEventListener('click', eatBerry);
 
 const moveKeys = new Set(['a', 'd', 'arrowleft', 'arrowright']);
 const jumpKeys = new Set([' ', 'w', 'arrowup']);

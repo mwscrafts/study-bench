@@ -1,4 +1,4 @@
-import { formatTime } from './king.mjs';
+import { formatTime } from './king.mjs?v=10';
 
 const BOARD = '/first-hearth/api/times';
 export const MAX_TIME_MS = 60 * 60 * 1000;
@@ -8,7 +8,8 @@ export function readVictory(value, hearthLearned) {
     || !Number.isSafeInteger(value.timeMs) || value.timeMs <= 0 || value.timeMs > MAX_TIME_MS) return null;
   const ending = value.ending === 'break' || (value.ending === 'free' && hearthLearned) ? value.ending : null;
   const name = typeof value.name === 'string' && value.name.length <= 20 ? value.name : null;
-  return { runId: value.runId, timeMs: value.timeMs, ending, name: ending ? name : null };
+  return { runId: value.runId, timeMs: value.timeMs, ending, name: ending ? name : null,
+    difficulty: value.difficulty === 'hard' ? 'hard' : 'easy' };
 }
 
 export function openTimeBoard(el, victory, save) {
@@ -18,7 +19,7 @@ export function openTimeBoard(el, victory, save) {
   const submit = el('time-submit');
   const status = el('time-status');
   const list = el('time-list');
-  const url = BOARD + '?ending=' + victory.ending;
+  const url = BOARD + '?ending=' + victory.ending + (victory.difficulty === 'hard' ? '-hard' : '');
   panel.hidden = false;
   form.hidden = !!victory.name;
   input.value = '';

@@ -44,7 +44,7 @@ export class HearthTimes extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url);
     const ending = url.searchParams.get('ending');
-    if (ending !== 'break' && ending !== 'free') return response({ error: 'Unknown ending' }, 400);
+    if (!['break','free','break-hard','free-hard'].includes(ending)) return response({ error: 'Unknown ending' }, 400);
     const scores = () => this.sql.exec(
       'SELECT name, timeMs FROM times WHERE ending = ? ORDER BY timeMs, runId LIMIT 20', ending
     ).toArray();
