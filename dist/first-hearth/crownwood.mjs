@@ -3,7 +3,8 @@ import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs';
 const floor = { id: 'understory', points: [[0,678],[485,678],[730,712],[1130,754],[1470,784],[1830,806],[2590,817],[3010,796],[3460,765],[4080,768],[4570,812],[5760,825]] };
 const bridge = { id: 'rope-bridge', points: [[1630,370],[1860,365],[2190,354],[2450,343],[2690,334],[2880,338],[3160,359],[3420,357],[3720,339],[4010,327],[4190,311]] };
 const crystals = { id: 'crystal-shelf', points: [[2015,184],[2080,174],[2370,170],[2485,178]] };
-const mist = { id: 'mist-shelf', points: [[3090,677],[3235,640],[3410,618],[3585,618],[3870,626],[4050,650]] };
+// Keep the shelf above the understory's double-jump reach.
+const mist = { id: 'mist-shelf', points: [[3090,534],[3235,522],[3410,502],[3585,502],[3870,510],[4050,532]] };
 const three = { id: 'bough-three', points: [[1230,447],[1290,435],[1570,430],[1675,430]] };
 const crown = { id: 'overlook', points: [[4770,152],[4835,145],[5200,145],[5480,169],[5760,166]] };
 export const crownwoodTerrain = defineTerrain(5760, 935, 273, [
@@ -22,8 +23,8 @@ function spot(surface, id, x, label, radius = 75) {
 
 export const crownwoodLandmarks = [
   spot(floor, 'camp-return', 180, 'Return to Alder Camp', 92),
-  spot(bridge, 'mist-drop', 3380, 'Drop to the ledge below', 84),
-  spot(mist, 'first-hearth', 3690, 'Enter behind the falls'),
+  { ...spot(bridge, 'mist-drop', 3380, 'Drop to the ledge below', 84), ground: bridge.id },
+  { ...spot(mist, 'first-hearth', 3690, 'Enter behind the falls'), ground: mist.id },
   spot(crown, 'king-trail', 5530, 'Enter the King’s Grounds', 100)
 ];
 
@@ -34,10 +35,10 @@ export const crystalNodes = [
 ];
 
 export function crownwoodLocation(player) {
-  if (player.ground === mist.id || (player.x > 3090 && player.x < 4070 && player.y > 455)) return 'Mist Shelf';
+  if (player.ground === mist.id) return 'Mist Shelf';
   if (player.ground === crystals.id) return 'Crystal Shelf';
   if (player.x < 505) return 'Root Landing';
-  if (player.ground === floor.id && player.x < 3090) return 'Lower Root Trail';
+  if (player.ground === floor.id) return 'Lower Root Trail';
   if (player.x < 1750) return 'Three Boughs';
   if (player.x < 2670) return 'High Branch';
   if (player.x < 4080) return 'Rope Bridge';

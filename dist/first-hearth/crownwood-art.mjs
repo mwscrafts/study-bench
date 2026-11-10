@@ -1,6 +1,6 @@
 import { surfaceAt } from './terrain.mjs';
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
-import { crownwoodTerrain, crownwoodLandmarks, crystalNodes } from './crownwood.mjs';
+import { crownwoodTerrain, crownwoodLandmarks, crystalNodes } from './crownwood.mjs?v=08.1';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;
 const bridge = crownwoodTerrain.byId.get('rope-bridge');
@@ -73,8 +73,10 @@ function ravine(ctx) {
   poly(ctx,[[3512,412],[3568,398],[3630,431],[3663,520],[3610,622],[3481,636],[3500,534]],'#607e76');
   poly(ctx,[[3595,423],[3628,423],[3621,519],[3662,591],[3630,670],[3577,732],[3495,732],[3561,658],[3573,560]],'#97c9be83');
   poly(ctx,[[3615,425],[3628,425],[3618,530],[3641,593],[3605,677],[3560,721],[3529,716],[3573,664],[3602,593],[3589,526]],'#caf0db84');
-  poly(ctx,[[3621,623],[3631,588],[3660,558],[3711,553],[3753,581],[3772,625]],'#233c42');
-  path(ctx,[[3620,620],[3632,583],[3659,554],[3715,549],[3758,577],[3775,622]],'#839e8a',5);
+  const opening = [[-69,2],[-58,-38],[-31,-67],[25,-72],[68,-44],[84,3]]
+    .map(([x,y]) => [hearth.x+x,hearth.y+y]);
+  poly(ctx,opening,'#233c42');
+  path(ctx,opening,'#839e8a',5);
   poly(ctx,[[3621,430],[3652,439],[3659,521],[3690,571],[3682,633],[3653,692],[3627,683],[3652,612],[3640,561],[3626,520]],'#b8e9d98a');
   for(const [x,y,w,h] of [[3360,662,93,46],[3690,688,145,49],[3900,680,145,43],[3498,753,153,48]]) stone(ctx,x,y,w,h,'#59736a');
 }
@@ -123,7 +125,7 @@ export function buildCrownwoodArt() {
   sign(ctx,campGate.x,campGate.y,'← Alder Camp',-1);
   sign(ctx,452,678,'Three Boughs ↗');
   sign(ctx,king.x,king.y,'King’s Grounds →');
-  sign(ctx,3265,635,'← Lower Root Trail',-1);
+  sign(ctx,3265,surfaceAt(floor,3265),'← Lower Root Trail',-1);
   sign(ctx,4410,797,'← Lower Root Trail',-1);
   sign(ctx,1200,760,'← Root Landing',-1);
   const gateX=king.x+116;

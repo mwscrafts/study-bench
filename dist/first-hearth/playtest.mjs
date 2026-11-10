@@ -1,8 +1,8 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs';
-import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=08.1';
+import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=08.1';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
@@ -434,7 +434,7 @@ function currentLandmarks() {
 }
 
 function updatePrompt() {
-  const items = currentLandmarks().filter(item => item.id !== 'mist-drop' || player.ground === 'rope-bridge');
+  const items = currentLandmarks().filter(item => !item.ground || item.ground === player.ground);
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
   if (region === 'mine') items.push(...oreNodes.filter(node => !iron.has(node.id)));
