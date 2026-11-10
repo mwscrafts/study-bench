@@ -8,6 +8,7 @@ export const houseTerrain = defineTerrain(1360, 900, 140, [houseFloor]);
 const spot = (surface, id, x, label) => ({ id, x, y: surfaceAt(surface,x), radius: 100, label });
 export const villageLandmarks = [
   spot(villageFloor,'village-return',115,'Return to King’s Grounds'),
+  spot(villageFloor,'restored-king',1300,'Talk to the King'),
   spot(villageFloor,'celebration-house',2020,'Enter the celebration house')
 ];
 export const houseLandmarks = [
@@ -70,4 +71,13 @@ export function buildHouseArt() {
     person(ctx,x,650,color);
   }
   return canvas;
+}
+
+export function paintRestoredKing(ctx) {
+  const x = 1300;
+  const y = surfaceAt(villageFloor, x);
+  person(ctx, x, y, '#486273');
+  for (const [dx, color] of [[-10,'#f4bfca'],[0,'#e7d5a0'],[10,'#d1b5e3']]) {
+    orb(ctx,x+dx,y-83,5,color);
+  }
 }

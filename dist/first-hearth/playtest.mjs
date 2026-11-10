@@ -15,9 +15,9 @@ import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './he
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=10';
-import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=10';
+import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=11';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
-import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt } from './village.mjs?v=10';
+import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -172,6 +172,8 @@ const conversations = {
   'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
   'home-welcome': { name: 'The neighbors', role: 'HOMECOMING',
     greeting: 'You made it home! We lit every window hoping you and Alvin would come back. Come in and celebrate with us.' },
+  'restored-king': { name: 'The King', role: 'LANTERN VILLAGE',
+    greeting: 'I remember Mara’s flowers. Thank you for bringing me back to my people. Tell her I’m coming home.' },
   'lantern-rest': {
     name: 'Lantern Rest', role: 'KING’S GROUNDS',
     greeting: 'Rest here or return through Crownwood. Lighting the altar starts the final night. Use the Action button to strike, and jump over the King’s charges and shockwaves.'
@@ -352,10 +354,12 @@ function paint() {
   } else if (region === 'hearth') {
     paintHearthDetails(ctx, animationClock, night, hearthLearned);
   } else if (region === 'king') {
-    paintKingGrounds(ctx, trial, endingScene && !endingScene.struck ? { ...victory, ending: null } : victory, animationClock);
+    paintKingGrounds(ctx, trial, endingScene && !endingScene.struck ? { ...victory, ending: null } : victory, animationClock, endingScene);
     if (trial?.stage === 'shadows') trial.shadows.forEach((shadow, index) =>
       paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock));
     paintFireworks(ctx, camera, fireworksElapsed);
+  } else if (region === 'village' && victory?.ending === 'free') {
+    paintRestoredKing(ctx);
   }
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
@@ -430,14 +434,15 @@ function atFallsRail() {
 
 function updateCamera(snap = false, dt = 0) {
   const showFalls = atFallsRail();
-  const focusAlvin = region === 'king' && (trial?.stage === 'alvin' || trial?.stage === 'won' && finaleDelay > 0);
-  const targetZoom = focusAlvin ? Math.min(camera.baseZoom, camera.pixelWidth / (Math.abs(cat.x - trial.boss.x) + 280))
+  const focusAlvin = region === 'king' && (trial?.stage === 'alvin' || trial?.stage === 'won' && finaleDelay > 0 || !!endingScene);
+  const focusPartnerX = endingScene ? trial?.boss?.x ?? kingLandmarks[3].x : trial?.boss?.x;
+  const targetZoom = focusAlvin ? Math.min(camera.baseZoom, camera.pixelWidth / (Math.abs((endingScene ? player.x : cat.x) - focusPartnerX) + 280))
     : showFalls ? Math.min(camera.baseZoom, camera.pixelHeight / 445) : camera.baseZoom;
   const factor = snap ? 1 : 1 - Math.exp(-dt * 6);
   camera.zoom += (targetZoom - camera.zoom) * factor;
   camera.width = camera.pixelWidth / camera.zoom;
   camera.height = camera.pixelHeight / camera.zoom;
-  const focusX = focusAlvin ? (cat.x + trial.boss.x) / 2 : player.x;
+  const focusX = focusAlvin ? ((endingScene ? player.x : cat.x) + focusPartnerX) / 2 : player.x;
   const x = clamp(focusX - camera.width * .5, 0, Math.max(0, terrain.width - camera.width));
   const followY = (focusAlvin ? ARENA.ground : player.y) - camera.height * (showFalls ? .31 : .76);
   const y = clamp(followY, 0, Math.max(0, terrain.height - camera.height));
@@ -474,7 +479,8 @@ function currentLandmarks() {
   if (region === 'king' && trial && !victory) return [];
   return regions[region].landmarks.filter(item =>
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
-    (item.id !== 'village-gate' || victory?.ending));
+    (item.id !== 'village-gate' || victory?.ending) &&
+    (item.id !== 'restored-king' || victory?.ending === 'free'));
 }
 
 function updatePrompt() {
@@ -1201,7 +1207,10 @@ function endingDialogue() {
       victory.ending = ending;
       saveCamp();
       closeDialogue();
-      endingScene = { elapsed: 0, struck: false, target: kingLandmarks.find(item => item.id === 'fallen-crown').x - 55 };
+      const goal = ending === 'free' ? trial?.boss?.x ?? kingLandmarks[3].x : kingLandmarks[3].x;
+      const target = goal + (player.x > goal ? 76 : -76);
+      endingScene = { ending, elapsed: 0, struck: false, target,
+        actionAt: Math.max(1.7, Math.abs(player.x - target) / (ending === 'free' ? 260 : 390) + .15) };
       clearControls();
     }]);
   setDialogue('Alvin lands the last hit and winks. I’m proud of you.' + time, choices);
@@ -1310,22 +1319,23 @@ function frame(time) {
   }
   if (endingScene && !paused) {
     endingScene.elapsed += dt;
-    if (Math.abs(player.x - endingScene.target) > 5 && endingScene.elapsed < 1.7) {
+    if (Math.abs(player.x - endingScene.target) > 5 && endingScene.elapsed < endingScene.actionAt) {
       player.direction = Math.sign(endingScene.target - player.x);
-      player.x += player.direction * Math.min(Math.abs(endingScene.target - player.x), dt * 390);
+      player.x += player.direction * Math.min(Math.abs(endingScene.target - player.x), dt * (endingScene.ending === 'free' ? 260 : 390));
       player.y = groundAt(player.x, terrain);
       player.moving = true;
       gait += dt * 15;
     } else player.moving = false;
-    if (!endingScene.struck && endingScene.elapsed >= 1.7) {
+    if (!endingScene.struck && endingScene.elapsed >= endingScene.actionAt) {
       endingScene.struck = true;
-      swing = SWING_TIME;
+      if (endingScene.ending === 'break') swing = SWING_TIME;
       swingDirection = player.direction;
       fireworksElapsed = 0;
-      puff(particles, player.x + player.direction * 55, player.y - 50, '#f2d996', 20);
+      puff(particles, player.x + player.direction * 55, player.y - 85,
+        endingScene.ending === 'free' ? '#d9e5b2' : '#f2d996', 20);
     }
     if (swing > 0) swing = Math.max(0, swing - dt);
-    if (endingScene.elapsed >= 2.7) {
+    if (endingScene.elapsed >= endingScene.actionAt + 1.2) {
       endingScene = null;
       savedFooting = { x: player.x, ground: 'king-floor' };
       updateNotes(); saveCamp();

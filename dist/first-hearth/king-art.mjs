@@ -66,7 +66,7 @@ function glow(ctx,x,y,r,color) {
   orb(ctx,x,y,r,light);
 }
 
-export function paintKingGrounds(ctx, trial, victory, clock) {
+export function paintKingGrounds(ctx, trial, victory, clock, endingScene = null) {
   const rest=kingLandmarks[1];
   const altar=kingLandmarks[2];
   if (victory?.ending) {
@@ -89,11 +89,11 @@ export function paintKingGrounds(ctx, trial, victory, clock) {
     for(let i=0;i<5;i++) path(ctx,[[x-28+i*14,y-137],[x-28+i*14,y]],'#b69bd488',4);
   }
   const ending = victory?.ending;
-  if (ending) {
+  if (ending === 'break') {
     const {x,y}=kingLandmarks[3];
-    const spark=ending==='free'?'#e6c78b':'#bdb6db';
+    const spark='#bdb6db';
     path(ctx,[[x-32,y-3],[x-46,y-23],[x-16,y-15],[x,y-29],[x+19,y-16],[x+42,y-22],[x+30,y-3]],spark,4);
-    if(ending==='free') glow(ctx,x,y-9,80,'#e8c87973');
+    glow(ctx,x,y-9,80,'#e8c87973');
   }
   if(!trial) return;
   for(const wave of trial.waves) {
@@ -101,14 +101,49 @@ export function paintKingGrounds(ctx, trial, victory, clock) {
     const y=ARENA.ground;
     poly(ctx,[[x-21,y],[x-10,y-15],[x,y-7],[x+13,y-31],[x+25,y]],'#c5aee7');
   }
-  if(trial.boss) paintKing(ctx,trial.boss,clock);
+  if(trial.boss) paintKing(ctx,trial.boss,clock,victory,endingScene);
+}
+
+function flowerCrown(ctx,x,y,scale=1) {
+  path(ctx,[[x-20*scale,y],[x-10*scale,y-6*scale],[x,y-2*scale],
+    [x+11*scale,y-7*scale],[x+20*scale,y]],'#a9c38a',4*scale);
+  for(const [dx,dy,color] of [[-15,-2,'#f1bfd0'],[-5,-5,'#e8d69b'],[6,-5,'#d5b8e5'],[16,-3,'#f4d9b6']])
+    orb(ctx,x+dx*scale,y+dy*scale,3.8*scale,color);
 }
 
 // Adapts Emberwild's crowned silhouette and charge indicator to the new arena.
-function paintKing(ctx,boss,clock) {
+function paintKing(ctx,boss,clock,victory,endingScene) {
   const y=ARENA.ground;
   if(boss.hp<=0) {
-    path(ctx,[[boss.x-44,y-5],[boss.x-27,y-17],[boss.x-12,y-8],[boss.x+11,y-18],[boss.x+30,y-6]],'#aa97bd',5);
+    const free = victory?.ending === 'free' || endingScene?.ending === 'free';
+    const progress = free ? endingScene ? Math.max(0,Math.min(1,(endingScene.elapsed-endingScene.actionAt)/.9)) : 1 : 0;
+    if(progress<1) {
+      ctx.save(); ctx.globalAlpha=1-progress;
+      poly(ctx,[[boss.x-50,y-3],[boss.x-42,y-24],[boss.x-4,y-28],[boss.x+36,y-14],[boss.x+46,y-3]],'#303e48');
+      orb(ctx,boss.x-32,y-29,14,'#655b74');
+      path(ctx,[[boss.x-47,y-46],[boss.x-33,y-55],[boss.x-19,y-45]],'#b4a0ca',4);
+      ctx.restore();
+    }
+    if(free) {
+      if(endingScene && progress===0) {
+        const approach=Math.max(0,Math.min(1,(endingScene.elapsed-endingScene.actionAt+.45)/.45));
+        if(approach>0) {
+          const from=endingScene.target, to=boss.x;
+          flowerCrown(ctx,from+(to-from)*approach,y-66-12*approach,.72);
+        }
+      }
+      if(progress>0) {
+        ctx.save(); ctx.globalAlpha=progress;
+        glow(ctx,boss.x,y-76,100,'#f7e2ac70');
+        poly(ctx,[[boss.x-17,y],[boss.x-20,y-43],[boss.x+19,y-43],[boss.x+18,y]],'#486273');
+        path(ctx,[[boss.x-14,y-39],[boss.x-27,y-16]],'#486273',8);
+        path(ctx,[[boss.x+14,y-39],[boss.x+28,y-16]],'#486273',8);
+        orb(ctx,boss.x,y-64,16,'#d7ae8d');
+        poly(ctx,[[boss.x-16,y-71],[boss.x-11,y-84],[boss.x+9,y-84],[boss.x+16,y-71]],'#533c32');
+        flowerCrown(ctx,boss.x,y-80,.8);
+        ctx.restore();
+      }
+    }
     return;
   }
   const enraged=boss.hp<=MAX_BOSS_HP/2;
