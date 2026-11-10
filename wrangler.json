@@ -5,12 +5,16 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/first-hearth/api/times"]
+    "run_worker_first": ["/first-hearth/api/times", "/first-hearth/api/presence"]
   },
   "durable_objects": {
-    "bindings": [{ "name": "HEARTH_TIMES", "class_name": "HearthTimes" }]
+    "bindings": [
+      { "name": "HEARTH_TIMES", "class_name": "HearthTimes" },
+      { "name": "HEARTH_PRESENCE", "class_name": "HearthPresence" }
+    ]
   },
   "migrations": [
-    { "tag": "hearth-times-v1", "new_sqlite_classes": ["HearthTimes"] }
+    { "tag": "hearth-times-v1", "new_sqlite_classes": ["HearthTimes"] },
+    { "tag": "hearth-presence-v1", "new_sqlite_classes": ["HearthPresence"] }
   ]
 }

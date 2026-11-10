@@ -45,6 +45,8 @@ h2 em { color: #f0cb8d; }
 .difficulty { display: flex; justify-content: center; gap: 8px; margin: 8px auto; }
 .difficulty button { min-width: 86px; padding: 7px 12px; border: 1px solid #c9bea449; border-radius: 7px; color: #fbf0d9; background: #334c3c; }
 .difficulty button[aria-pressed="true"] { border-color: #edc889; background: #496047; }
+.player-name { display: block; margin: 7px auto 11px; color: #e2e0cc; font-size: 12px; }
+.player-name input { display: block; width: min(230px,100%); margin: 5px auto 0; padding: 7px 9px; border: 1px solid #c9bea477; border-radius: 6px; background: #f5efdd; color: #23382f; font: inherit; }
 .character { display: grid; justify-items: center; min-width: 108px; gap: 1px; padding: 5px 7px 7px; border-radius: 9px; border: 1px solid #c9bea449; background: #334c3c; color: #fbf0d9; font-size: 12px; }
 .character[aria-pressed="true"] { border-color: #edc889; background: #496047; }
 .character canvas { width: 74px; height: 76px; }
@@ -101,6 +103,8 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .characters { margin: 5px auto; }
   .character canvas { width: 50px; height: 52px; }
   .start-card > p:not(.eyebrow) { margin: 3px 0; }
+  .player-name { margin: 3px auto 5px; }
+  .player-name input { padding: 4px 7px; margin-top: 2px; }
   .start-card .eyebrow { margin: 0 0 3px; }
   .primary, .secondary, .choices button { min-height: 32px; padding: 4px 10px; }
   #continue { margin-top: 0; }

@@ -6,18 +6,18 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth playtest</title>
-  <link rel="stylesheet" href="./playtest.css?v=10">
+  <link rel="stylesheet" href="./playtest.css?v=12">
 </head>
 <body>
   <main class="page">
     <header class="mast">
       <a href="/" class="home">← Back home</a>
       <span class="mast-mark">✦ &nbsp; The First Hearth</span>
-      <span class="edition">Playtest 11</span>
+      <span class="edition">Playtest 12</span>
     </header>
     <div class="title">
       <div>
-        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 10</p>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 12</p>
         <h1 id="region-title">Alder <em>Camp</em></h1>
       </div>
       <p id="region-intro">Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.</p>
@@ -26,6 +26,7 @@
       <div class="game-bar">
         <div class="game-location"><span class="spark">✦</span> <strong id="location-name">Reedbank Trail</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
         <div class="game-actions">
+          <button id="presence-toggle" type="button" aria-pressed="true" title="Switch between public and solo play">Public</button>
           <button id="sky-toggle" type="button" title="Preview the sky at different times">Sky: Auto</button>
           <button id="pause" type="button" aria-label="Pause or resume">Pause</button>
           <button id="fullscreen" type="button" aria-label="Toggle fullscreen">⛶</button>
@@ -64,6 +65,7 @@
               <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
               <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
             </div>
+            <label class="player-name" for="player-name">Name shown to other players <input id="player-name" type="text" maxlength="16" autocomplete="nickname" placeholder="Adventurer"></label>
             <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
             <button id="continue" type="button" class="secondary" hidden>Continue saved playtest →</button>
             <p id="load-error" class="error" role="alert" hidden>Camp art didn’t load. Refresh to try again.</p>
@@ -138,6 +140,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=11"></script>
+  <script type="module" src="./playtest.mjs?v=12"></script>
 </body>
 </html>

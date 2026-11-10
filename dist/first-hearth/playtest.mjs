@@ -23,6 +23,7 @@ const el = id => document.getElementById(id);
 const world = el('world');
 const ctx = world.getContext('2d');
 const SAVE_KEY = 'first-hearth:alder-camp:v1';
+const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
 const skyModes = ['auto', 'day', 'dusk', 'night', 'dawn'];
 const skyLabels = { day: 'Daylight', dusk: 'Dusk', night: 'Night', dawn: 'Dawn' };
@@ -87,6 +88,14 @@ let finaleDelay = 0;
 let notice = '';
 let noticeUntil = 0;
 let savedFooting = { x: player.x, ground: player.ground };
+let publicName = 'Adventurer';
+let onlineEnabled = true;
+try { onlineEnabled = localStorage.getItem(PRESENCE_KEY) !== 'solo'; } catch { /* Online play still works. */ }
+let presenceSocket = null;
+let presenceRetry = null;
+let lastPoseAt = 0;
+let lastPose = '';
+const peers = new Map();
 
 const regions = {
   camp: {
@@ -241,6 +250,114 @@ function drawPortrait(canvas, sprite) {
   drawSprite(context, sprite, canvas.width * .55, canvas.height - 4, canvas.height - 8);
 }
 
+function updatePresenceButton() {
+  const button = el('presence-toggle');
+  const connected = presenceSocket?.readyState === WebSocket.OPEN;
+  button.textContent = onlineEnabled ? connected ? 'Public · ' + (peers.size + 1) : 'Public…' : 'Solo';
+  button.setAttribute('aria-pressed', String(onlineEnabled));
+  button.title = onlineEnabled ? 'Public world. Switch to solo play.' : 'Solo play. Switch to the public world.';
+}
+
+function disconnectPresence() {
+  clearTimeout(presenceRetry);
+  presenceRetry = null;
+  const socket = presenceSocket;
+  presenceSocket = null;
+  if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, 'Leaving world');
+  peers.clear();
+  lastPose = '';
+  updatePresenceButton();
+}
+
+function addPeer(id, pose) {
+  if (typeof id !== 'string' || !pose || pose.region !== region) return;
+  const existing = peers.get(id);
+  peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y });
+  updatePresenceButton();
+}
+
+function connectPresence() {
+  if (!onlineEnabled || !playing || document.hidden || presenceSocket) return;
+  const url = new URL('/first-hearth/api/presence', location.href);
+  url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  let socket;
+  try { socket = new WebSocket(url.href); } catch { updatePresenceButton(); return; }
+  presenceSocket = socket;
+  updatePresenceButton();
+  socket.onopen = () => {
+    if (socket !== presenceSocket) return;
+    lastPoseAt = 0;
+    sendPose(true);
+    updatePresenceButton();
+  };
+  socket.onmessage = event => {
+    if (socket !== presenceSocket) return;
+    let message;
+    try { message = JSON.parse(event.data); } catch { return; }
+    if (message.type === 'snapshot' && Array.isArray(message.peers)) {
+      peers.clear();
+      for (const peer of message.peers) addPeer(peer.id, peer.pose);
+      updatePresenceButton();
+    } else if (message.type === 'pose') addPeer(message.id, message.pose);
+    else if (message.type === 'left') {
+      peers.delete(message.id);
+      updatePresenceButton();
+    }
+  };
+  socket.onclose = () => {
+    if (socket !== presenceSocket) return;
+    presenceSocket = null;
+    peers.clear();
+    updatePresenceButton();
+    if (onlineEnabled && playing && !document.hidden)
+      presenceRetry = setTimeout(() => { presenceRetry = null; connectPresence(); }, 2500);
+  };
+  socket.onerror = () => { if (socket.readyState < WebSocket.CLOSING) socket.close(); };
+}
+
+function sendPose(force = false) {
+  if (presenceSocket?.readyState !== WebSocket.OPEN || !playing) return;
+  const now = performance.now();
+  if (!force && now - lastPoseAt < 95) return;
+  const pose = {
+    region, x: Math.round(player.x * 10) / 10, y: Math.round(player.y * 10) / 10,
+    direction: player.direction, moving: controlsActive() && player.moving,
+    gait: gait % (Math.PI * 2), swing, avatar, tool: equipped,
+    helmet: tools.helmet, name: publicName
+  };
+  const message = JSON.stringify({ type: 'pose', pose });
+  if (force || message !== lastPose || now - lastPoseAt > 1200) {
+    presenceSocket.send(message);
+    lastPose = message;
+    lastPoseAt = now;
+  }
+}
+
+function paintPeers() {
+  for (const peer of peers.values()) {
+    const pose = peer.pose;
+    if (pose.region !== region || !sprites?.[pose.avatar]) continue;
+    peer.x += (pose.x - peer.x) * .38;
+    peer.y += (pose.y - peer.y) * .38;
+    const bob = pose.moving ? -Math.abs(Math.sin(pose.gait)) * 4 : 0;
+    const tilt = (pose.moving ? Math.sin(pose.gait) * .045 : 0) + pose.swing * -.23;
+    shadow(peer.x,peer.y,22);
+    drawSprite(ctx,sprites[pose.avatar],peer.x,peer.y,97,pose.direction,bob,tilt);
+    if (pose.helmet) {
+      ctx.fillStyle = '#a3b9b5';
+      ctx.beginPath(); ctx.ellipse(peer.x,peer.y-69+bob,19,10,0,Math.PI,0); ctx.fill();
+      ctx.fillRect(peer.x-21,peer.y-70+bob,42,4);
+    }
+    paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt);
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    const label = pose.name || 'Adventurer';
+    const width = Math.min(165,ctx.measureText(label).width + 16);
+    ctx.fillStyle = '#142b25df'; ctx.fillRect(peer.x-width/2,peer.y-121,width,19);
+    ctx.fillStyle = '#fff1d5'; ctx.textAlign = 'center';
+    ctx.fillText(label,peer.x,peer.y-107,150);
+  }
+}
+
 function skyState() {
   if (region === 'king' && (trial || victory)) {
     const phase = victory ? 'dawn' : 'night';
@@ -365,6 +482,7 @@ function paint() {
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
   });
+  paintPeers();
   if (playing) {
     shadow(cat.x, cat.y, 17);
     drawSprite(ctx, sprites.alvin, cat.x, cat.y, 44 * (1 + fishFed / 4), cat.direction,
@@ -565,7 +683,7 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 10, avatar, region, difficulty, fishFed,
+      version: 10, avatar, region, difficulty, fishFed, publicName,
       footing: trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing
@@ -576,6 +694,9 @@ function saveCamp() {
 function begin(save) {
   if (!sprites) return;
   avatar = save?.avatar ?? avatar;
+  const chosenName = el('player-name').value.trim() || save?.publicName || 'Adventurer';
+  publicName = typeof chosenName === 'string' && chosenName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(chosenName)
+    ? chosenName : 'Adventurer';
   difficulty = save ? (save.difficulty === 'hard' ? 'hard' : 'easy') : difficulty;
   for (const choice of document.querySelectorAll('[data-difficulty]')) {
     choice.setAttribute('aria-pressed', String(choice.dataset.difficulty === difficulty));
@@ -616,6 +737,7 @@ function begin(save) {
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
   enterRegion(savedRegion, footing);
+  connectPresence();
   if (region === 'king' && victory && !victory.ending) {
     openDialogue('fallen-crown');
     endingDialogue();
@@ -652,6 +774,9 @@ function enterRegion(next, footing) {
   cat.y = player.y;
   cat.gait = 0;
   tracker.length = 0;
+  peers.clear();
+  updatePresenceButton();
+  sendPose(true);
   const [firstWord, secondWord] = area.title;
   const title = firstWord + ' ' + secondWord;
   document.title = region === 'hearth' ? title : title + ' · The First Hearth';
@@ -1381,6 +1506,7 @@ function frame(time) {
       saveCamp();
     }
   }
+  sendPose();
   paint();
   requestAnimationFrame(frame);
 }
@@ -1403,6 +1529,12 @@ for (const button of document.querySelectorAll('[data-difficulty]')) {
 }
 el('begin').addEventListener('click', () => begin());
 el('continue').addEventListener('click', () => begin(getSavedCamp()));
+el('presence-toggle').addEventListener('click', () => {
+  onlineEnabled = !onlineEnabled;
+  try { localStorage.setItem(PRESENCE_KEY, onlineEnabled ? 'public' : 'solo'); } catch { /* Session toggle still works. */ }
+  if (onlineEnabled) connectPresence(); else disconnectPresence();
+  updatePresenceButton();
+});
 el('close-dialogue').addEventListener('click', closeDialogue);
 el('pause').addEventListener('click', () => setPause(!paused));
 el('resume').addEventListener('click', () => setPause(false));
@@ -1492,12 +1624,14 @@ el('jump').addEventListener('click', event => {
 });
 el('interact').addEventListener('click', interact);
 window.addEventListener('blur', clearControls);
-window.addEventListener('pagehide', saveCamp);
+window.addEventListener('pagehide', () => { saveCamp(); disconnectPresence(); });
+window.addEventListener('pageshow', connectPresence);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     clearControls();
     saveCamp();
-  }
+    disconnectPresence();
+  } else connectPresence();
 });
 new ResizeObserver(resize).observe(world);
 
@@ -1518,7 +1652,10 @@ async function boot() {
     drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);
     el('begin').disabled = false;
     el('begin').textContent = 'Enter Alder Camp →';
-    el('continue').hidden = !getSavedCamp();
+    const saved = getSavedCamp();
+    el('continue').hidden = !saved;
+    if (saved?.publicName) el('player-name').value = saved.publicName;
+    updatePresenceButton();
     resize();
     requestAnimationFrame(frame);
   } catch (error) {
