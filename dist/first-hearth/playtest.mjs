@@ -61,6 +61,9 @@ let pickedBushes = new Set();
 let berrySeeds = 3;
 let berryPlots = [null, null, null];
 let catnipUnlocked = false;
+let alvinCatnipVisits = 0;
+let catCombat = null;
+let catCombatReadyAt = 0;
 let catnipReadyAt = 0;
 let catnipShowUntil = 0;
 let catnipLeap = null;
@@ -635,7 +638,7 @@ function paint() {
     const catX = indoor ? 665 : cat.x;
     const catY = indoor ? 596 : cat.y;
     shadow(catX, catY, 17);
-    drawSprite(ctx, sprites.alvin, catX, catY, indoor ? 37 : 44 * (1 + fishFed / 4), indoor ? 1 : cat.direction,
+    drawSprite(ctx, sprites.alvin, catX, catY, (indoor ? 37 : 44) * (1 + fishFed / 4), indoor ? 1 : cat.direction,
       indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2, indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
     if (indoor && petHeartsUntil > animationClock) {
       const left = petHeartsUntil-animationClock;
@@ -668,6 +671,73 @@ function paint() {
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
+}
+
+function updateAlvinCombat() {
+  if (alvinCatnipVisits < 3 || region === 'hut' || victory || trial?.stage === 'alvin') return false;
+  if (!catCombat) {
+    if (animationClock < catCombatReadyAt) return false;
+    let kind = null, target = null;
+    if (trial?.stage === 'shadows') {
+      kind = 'trial';
+      target = trial.shadows.filter(item => Math.hypot(item.x-cat.x,item.y-cat.y) < 280)
+        .sort((a,b) => Math.hypot(a.x-cat.x,a.y-cat.y)-Math.hypot(b.x-cat.x,b.y-cat.y))[0];
+    } else if (trial?.stage === 'duel' && trial.boss?.hp > 1) {
+      kind = 'trial';
+      target = Math.hypot(trial.boss.x-cat.x, ARENA.ground-cat.y) < 300 ? trial.boss : null;
+    } else if (!trial) {
+      kind = 'field';
+      target = creatures.filter(item => Math.hypot(item.x-cat.x,item.y-cat.y) < 280)
+        .sort((a,b) => Math.hypot(a.x-cat.x,a.y-cat.y)-Math.hypot(b.x-cat.x,b.y-cat.y))[0];
+    }
+    if (!target) return false;
+    const direction = Math.sign(target.x-cat.x) || cat.direction;
+    catCombat = { kind, index: target.index, target, direction, startedAt: animationClock,
+      fromX: cat.x, fromY: cat.y, strikeX: target.x-direction*35, strikeY: kind === 'trial' && trial?.stage === 'duel' ? ARENA.ground : target.y, hit: false };
+    catCombatReadyAt = animationClock + 2.8;
+  }
+  const attack = catCombat;
+  const elapsed = animationClock - attack.startedAt;
+  if (elapsed < .28) {
+    const t = clamp(elapsed/.28,0,1);
+    cat.x = attack.fromX+(attack.strikeX-attack.fromX)*t;
+    cat.y = attack.fromY+(attack.strikeY-attack.fromY)*t-Math.sin(Math.PI*t)*48;
+    cat.direction = attack.direction;
+  } else if (elapsed < .7) {
+    const t = clamp((elapsed-.28)/.42,0,1);
+    cat.x = attack.strikeX+(attack.fromX-attack.strikeX)*t;
+    cat.y = attack.strikeY+(attack.fromY-attack.strikeY)*t;
+  }
+  if (!attack.hit && elapsed >= .28) {
+    attack.hit = true;
+    const power = 6 + fishFed;
+    if (attack.kind === 'trial' && trial) {
+      const result = attackTrial(trial, { x:cat.x, y:cat.y, direction:attack.direction }, 'hatchet', power/37);
+      if (result?.damage > 0) {
+        puff(particles,result.x,result.y-44,'#d9b8ea',8);
+        floater(floaters,result.x,result.y-90,'Alvin −'+result.damage);
+        updateTrialHud(); saveCamp();
+      }
+    } else if (attack.kind === 'field') {
+      const target = creatures.find(item => item.index === attack.index);
+      if (target) {
+        const id = region + ':' + nightIndex + ':' + target.index;
+        const remaining = (shadowHealth.get(id) ?? 60 + Math.min(nightIndex,8)*18) - power;
+        shadowHealth.set(id,remaining);
+        puff(particles,target.x,target.y-44,'#d9b8ea',8);
+        floater(floaters,target.x,target.y-90,'Alvin −'+power);
+        if (remaining <= 0) {
+          defeatedShadows.add(id);
+          creatures = creatures.filter(item => item !== target);
+          shadowStock++;
+          floater(floaters,target.x,target.y-116,'+1 shadow');
+          updateNotes(); saveCamp();
+        }
+      }
+    }
+  }
+  if (elapsed >= .7) { catCombat = null; return false; }
+  return true;
 }
 
 function updateCat(dt) {
@@ -871,7 +941,7 @@ function saveCamp() {
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing,
-      berrySeeds, berryPlots, catnipUnlocked, catnipReadyAt, minecartOre, minecartUpdatedAt,
+      berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
       activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations]
     }));
@@ -921,6 +991,8 @@ function begin(save) {
   berryPlots = Array.isArray(save?.berryPlots) ? Array.from({length:3}, (_,i) =>
     Number.isSafeInteger(save.berryPlots[i]) && save.berryPlots[i] > 0 ? save.berryPlots[i] : null) : [null,null,null];
   catnipUnlocked = save?.catnipUnlocked === true;
+  alvinCatnipVisits = Number.isSafeInteger(save?.alvinCatnipVisits) ? clamp(save.alvinCatnipVisits, 0, 3) : 0;
+  catCombat = null; catCombatReadyAt = 0;
   catnipReadyAt = Number.isSafeInteger(save?.catnipReadyAt) ? save.catnipReadyAt : 0;
   minecartUpdatedAt = Number.isSafeInteger(save?.minecartUpdatedAt) ? save.minecartUpdatedAt : Date.now();
   minecartCapacity = save?.minecartCapacity === 12 ? 12 : 8;
@@ -978,6 +1050,7 @@ function enterRegion(next, footing) {
   if (region === 'hut') { cat.x = 665; cat.y = 596; }
   cat.gait = 0;
   catnipLeap = null;
+  catCombat = null;
   tracker.length = 0;
   peers.clear();
   updatePresenceButton();
@@ -1144,14 +1217,19 @@ function catnipDialogue() {
   }
   const wait = catnipReadyAt-Date.now();
   if (wait > 0) {
-    setDialogue('Alvin already had his turn in the catnip. It will grow back in about ' + Math.ceil(wait/60000) + ' minute(s).');
+    setDialogue('Alvin already had his turn in the catnip. His battle bond is ' + alvinCatnipVisits + ' / 3. It will grow back in about ' + Math.ceil(wait/60000) + ' minute(s).');
     return;
   }
   catnipReadyAt = Date.now()+CATNIP_GROW_MS;
+  const priorBond = alvinCatnipVisits;
+  alvinCatnipVisits = Math.min(3, alvinCatnipVisits + 1);
   catnipShowUntil = animationClock+2.8;
   catnipLeap = { start:animationClock, fromX:cat.x, fromY:cat.y, duration:1.4 };
   saveCamp();
-  notice = 'Alvin dives into the catnip. Hearts everywhere.';
+  notice = alvinCatnipVisits === 3 && priorBond < 3
+    ? 'Alvin learned to fight by your side! His first attacks are gentle.'
+    : alvinCatnipVisits < 3 ? 'Alvin dives into the catnip. Battle bond · ' + alvinCatnipVisits + ' / 3.'
+    : 'Alvin dives into the catnip. Hearts everywhere.';
   noticeUntil = animationClock+2.8;
   closeDialogue();
 }
@@ -1455,6 +1533,10 @@ function feedAlvin() {
   if (!playing || !inventoryOpen || fishing.fish < 1 || fishFed >= 8) return;
   fishing.fish--;
   fishFed++;
+  notice = alvinCatnipVisits >= 3
+    ? 'Alvin grew and feels stronger in a fight.'
+    : 'Alvin grew. Three catnip visits unlock his battle strength.';
+  noticeUntil = animationClock + 2.6;
   refreshInventory();
   updateNotes();
   saveCamp();
@@ -2032,7 +2114,9 @@ function frame(time) {
     updateShadows(dt);
     updateComposure(dt);
     updateKingTrial(dt);
-    if (trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) updateCat(dt);
+    if (trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) {
+      if (!updateAlvinCombat()) updateCat(dt);
+    }
     updateCamera(false, dt);
     updateLocation();
     updatePrompt();
