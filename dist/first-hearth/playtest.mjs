@@ -1474,20 +1474,20 @@ function emberBoxDialogue() {
 }
 
 function openDialogue(id) {
+  const info = conversations[id] ?? { name: 'Alder Camp', role: 'CAMP KEEPSAKE' };
   el('time-board').hidden = true;
   el('noticeboard-panel').hidden = true;
-  const info = conversations[id];
+  const portrait = id === 'mara' || id === 'ivo' ? sprites[id] : null;
+  el('speaker').textContent = info.name;
+  el('speaker-role').textContent = info.role;
+  el('portrait').hidden = !portrait;
+  if (portrait) drawPortrait(el('portrait'), portrait);
   talking = true;
+  el('dialogue').hidden = false;
   clearControls();
   updatePrompt();
   updateNotes();
   saveCamp();
-  el('speaker').textContent = info.name;
-  el('speaker-role').textContent = info.role;
-  const portrait = id === 'mara' || id === 'ivo' ? sprites[id] : null;
-  el('portrait').hidden = !portrait;
-  if (portrait) drawPortrait(el('portrait'), portrait);
-  el('dialogue').hidden = false;
 }
 
 function isStrikeTool(id) {
