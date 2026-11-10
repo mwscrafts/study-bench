@@ -13,11 +13,11 @@
     <header class="mast">
       <a href="/" class="home">← Back home</a>
       <span class="mast-mark">✦ &nbsp; The First Hearth</span>
-      <span class="edition">Playtest 05</span>
+      <span class="edition">Playtest 06</span>
     </header>
     <div class="title">
       <div>
-        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 05</p>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 06</p>
         <h1 id="region-title">Alder <em>Camp</em></h1>
       </div>
       <p id="region-intro">Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.</p>
@@ -27,6 +27,7 @@
         <div class="game-location"><span class="spark">✦</span> <strong id="location-name">Reedbank Trail</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
         <div class="game-actions">
           <button id="sky-toggle" type="button" title="Preview the sky at different times">Sky: Auto</button>
+          <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>Bag</button>
           <button id="pause" type="button" aria-label="Pause or resume">Pause</button>
           <button id="fullscreen" type="button" aria-label="Toggle fullscreen">⛶</button>
         </div>
@@ -36,6 +37,7 @@
         <div class="scene-notes">
           <div id="quest-tracker" class="quest-tracker" aria-live="polite" hidden></div>
           <div id="tool-notes" class="quest-tracker" aria-live="polite" hidden></div>
+          <div id="health-notes" class="quest-tracker" hidden></div>
         </div>
         <div id="status" class="status" role="status" aria-live="polite" hidden></div>
         <div id="start" class="overlay">
@@ -64,6 +66,21 @@
             </div>
           </section>
         </div>
+        <div id="inventoryOverlay" class="overlay" hidden>
+          <section class="backpack-panel" role="dialog" aria-modal="true" aria-labelledby="bagTitle">
+            <div class="panel-head">
+              <div><p class="eyebrow">EVERYTHING YOU HAVE EARNED</p><h2 id="bagTitle">Your backpack.</h2></div>
+              <button id="closeInventory" class="secondary bag-close" type="button" aria-label="Close backpack">×</button>
+            </div>
+            <p id="bagHealth" class="bag-health"></p>
+            <button class="bag-eat" id="bagEat" type="button">Eat a berry</button>
+            <h3 class="bag-heading">Equipment</h3>
+            <div id="weaponRack"></div>
+            <h3 class="bag-heading">Supplies</h3>
+            <div class="bag-grid" id="bagItems"></div>
+            <small>Tap a tool to equip it. Gear, materials, and berries save with your adventure.</small>
+          </section>
+        </div>
         <div id="paused" class="overlay" hidden>
           <div class="pause-card">
             <p class="eyebrow">A MOMENT TO BREATHE</p>
@@ -77,9 +94,9 @@
           <button class="pad" id="left" type="button" aria-label="Move left">←</button>
           <button class="pad" id="right" type="button" aria-label="Move right">→</button>
         </div>
-        <span class="key-guide"><kbd>A</kbd> <kbd>D</kbd> Move &nbsp; <kbd>Space</kbd> Double-jump &nbsp; <kbd>E</kbd> Interact</span>
+        <span class="key-guide"><kbd>A</kbd> <kbd>D</kbd> Move &nbsp; <kbd>Space</kbd> Double-jump &nbsp; <kbd>E</kbd> Action &nbsp; <kbd>I</kbd> Bag</span>
         <div class="act-controls">
-          <button class="pad action" id="interact" type="button" disabled aria-label="Interact"><span>✦</span><small>Interact</small></button>
+          <button class="pad action" id="interact" type="button" disabled aria-label="Interact or swing tool"><span>⚒</span><small id="action-label">Interact</small></button>
           <button class="pad jump" id="jump" type="button" aria-label="Jump"><span>↑</span><small>Jump</small></button>
         </div>
       </div>

@@ -8,6 +8,9 @@ import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs';
+import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
+  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs';
+import { renderInventory } from './backpack.mjs';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -33,7 +36,17 @@ let tools = readTools();
 let fishing = readFishing();
 let casting = null;
 let nightIndex = 0;
-let shadowHits = 0;
+let health = 100;
+let berries = 3;
+let pickedBushes = new Set();
+let equipped = null;
+let inventoryOpen = false;
+let swing = 0;
+let cooldown = 0;
+let swingTarget = null;
+let swingDirection = 1;
+let particles = [];
+let floaters = [];
 let hitUntil = 0;
 let creatures = [];
 let player = createPlayer();
@@ -257,6 +270,7 @@ function paint() {
     shadow(mara.x, mara.y, 24);
     drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
     paintCraftingProps(ctx, tools);
+    for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
   } else if (region === 'crownwood') {
     if (camera.x < 4100 && camera.x + camera.width > 3200) paintCrownwoodWater(ctx, animationClock);
     crystalNodes.forEach(node => {
@@ -284,10 +298,13 @@ function paint() {
   }
   if (player.ground) shadow(player.x, player.y, 22);
   if (animationClock < hitUntil && Math.floor(animationClock * 13) % 2) ctx.globalAlpha = .52;
-  drawSprite(ctx, sprites[avatar], player.x, player.y, 97, player.direction,
-    player.moving && player.ground ? -Math.abs(Math.sin(gait)) * 4 : 0,
-    player.moving ? Math.sin(gait) * .045 : 0);
+  const bob = player.moving && player.ground ? -Math.abs(Math.sin(gait)) * 4 : 0;
+  const tilt = (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
+  const facing = swing > 0 ? swingDirection : player.direction;
+  drawSprite(ctx, sprites[avatar], player.x, player.y, 97, facing, bob, tilt);
+  if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
   ctx.globalAlpha = 1;
+  paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
 }
 
@@ -318,7 +335,7 @@ function updateCat(dt) {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting;
+  return playing && !paused && !talking && !casting && !inventoryOpen;
 }
 
 function atFallsRail() {
@@ -374,6 +391,7 @@ function updatePrompt() {
   if (region === 'mine') items.push(...oreNodes.filter(node => !iron.has(node.id)));
   if (region === 'camp') {
     items.push(...timberTrees.filter(tree => !tools.chopped.includes(tree.id)));
+    items.push(...berryBushes.filter(bush => !pickedBushes.has(bush.id)));
     if (!tools.flint && !tools.pickaxe) items.push(flint);
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
@@ -383,7 +401,10 @@ function updatePrompt() {
   selectedLandmark = current;
   if (el('status').textContent !== message) el('status').textContent = message;
   el('status').hidden = !message;
-  el('interact').disabled = !current;
+  const canSwing = equipped === 'hatchet' || equipped === 'pickaxe';
+  el('interact').disabled = !controlsActive() || (!current && !canSwing);
+  const actionLabel = !current && canSwing ? 'Swing' : 'Interact';
+  if (el('action-label').textContent !== actionLabel) el('action-label').textContent = actionLabel;
 }
 
 function updateLocation() {
@@ -402,14 +423,16 @@ function updateNotes() {
     : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
     : 'Explore the trail and find Mara by the fire.';
   const mineLoot = 'Iron ore · ' + iron.size + ' / ' + oreNodes.length + (hasNet ? ' · Casting net' : '');
-  const gear = tools.pickaxe ? 'Hatchet · Pickaxe'
+  const equipment = tools.pickaxe ? 'Hatchet · Pickaxe'
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : 'Ask Mara for a hatchet';
   el('quest-tracker').textContent = region === 'mine' ? mineLoot : clue;
   el('tool-notes').textContent = region === 'beach'
     ? [hasNet ? 'Casting net' : 'Find Ivo’s casting net', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
-    : gear;
+    : equipment;
+  el('health-notes').textContent = '♥ ' + health + '/100 · Berries ' + berries + (equipped ? ' · ' + gear[equipped][1] : '');
+  el('health-notes').hidden = false;
   el('tool-notes').hidden = false;
   el('quest-tracker').hidden = false;
   const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
@@ -433,7 +456,7 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 5, avatar, region, footing: savedFooting, phaseClock, nightIndex, shadowHits,
+      version: 6, avatar, region, footing: savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
@@ -457,16 +480,23 @@ function begin(save) {
   tools = readTools(save?.tools);
   fishing = readFishing(save?.fishing);
   nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
-  const savedHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
+  const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
+  health = Number.isInteger(save?.health) ? clamp(save.health, 1, 100) : 100 - legacyHits * 34;
+  berries = Number.isSafeInteger(save?.berries) ? Math.max(0, save.berries) : 3;
+  const savedBushes = Array.isArray(save?.pickedBushes) ? save.pickedBushes : [];
+  pickedBushes = new Set(berryBushes.filter(bush => savedBushes.includes(bush.id)).map(bush => bush.id));
+  equipped = ownsGear(save?.equipped) ? save.equipped
+    : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
+  el('inventoryButton').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
-  enterRegion(savedRegion, footing, savedHits);
+  enterRegion(savedRegion, footing);
 }
 
-function enterRegion(next, footing, previousHits = 0) {
+function enterRegion(next, footing) {
   region = next;
   const area = regions[next];
   terrain = area.terrain;
@@ -478,7 +508,11 @@ function enterRegion(next, footing, previousHits = 0) {
   }
   backgrounds[next] ??= area.buildArt();
   player = createPlayer(footing, terrain);
-  shadowHits = previousHits;
+  swing = 0;
+  cooldown = 0;
+  swingTarget = null;
+  particles = [];
+  floaters = [];
   noticeUntil = 0;
   hitUntil = 0;
   creatures = [];
@@ -531,6 +565,7 @@ function maraDialogue() {
   const tool = [tools.hatchet ? 'How do I make a pickaxe?' : 'Can I get a gathering tool?', () => {
     if (!tools.hatchet) {
       tools.hatchet = true;
+      equipped = 'hatchet';
       updateNotes();
       saveCamp();
     }
@@ -621,6 +656,7 @@ function workbenchDialogue() {
   setDialogue(materials + 'It’ll mine iron and crystals.', [
     ['Craft pickaxe', () => {
       tools.pickaxe = true;
+      equipped = 'pickaxe';
       tools.flint = false;
       updateNotes();
       saveCamp();
@@ -637,6 +673,9 @@ function dockDialogue(result) {
     return;
   }
   const choices = [['Cast the net', () => {
+    equipped = 'net';
+    updateNotes();
+    saveCamp();
     casting = { start: animationClock, x: player.x, y: player.y };
     closeDialogue();
     clearControls();
@@ -675,42 +714,166 @@ function openDialogue(id) {
   el('dialogue').hidden = false;
 }
 
+function ownsGear(id) {
+  if (id === 'net') return hasNet;
+  return (id === 'hatchet' || id === 'pickaxe') && tools[id];
+}
+
+function inventoryItems() {
+  const items = [
+    ['▰', 'Wood', spareWood(tools), 'Chopped from marked pines.'],
+    ['⬟', 'Flint', Number(tools.flint), 'Loose stone used at the camp workbench.'],
+    ['◆', 'Crystal', crystals.size, 'Gathered with a pickaxe in Crownwood.'],
+    ['▧', 'Iron ore', iron.size, 'Mined with a pickaxe in Embervein.'],
+    ['●', 'Berries', berries, 'Saved until you eat them. Restores up to 25 health.'],
+    ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Mara for a brass key.']
+  ];
+  if (quest === 'complete') items.push(['⚿', 'Brass key', 1, 'Mara’s key. Look for an old box behind falling water.']);
+  if (fishing.book) items.push(['▤', 'Soaked book', 1, bookClue]);
+  if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Ivo to repair the lift.']);
+  if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
+  if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
+  if (fishing.godslayer) items.push(['†', 'Godslayer', 1, 'A rare catch from Lantern Dock.']);
+  return items;
+}
+
+function refreshInventory() {
+  renderInventory(el, inventoryItems(), ownsGear, equipped, equipTool, berries, health);
+}
+
+function equipTool(id) {
+  if (!ownsGear(id)) return;
+  if (equipped !== id) {
+    swingTarget = null;
+    swing = 0;
+  }
+  equipped = id;
+  updateNotes();
+  updatePrompt();
+  saveCamp();
+  if (inventoryOpen) {
+    refreshInventory();
+    el('weaponRack').children[Object.keys(gear).indexOf(id)].focus({ preventScroll: true });
+  }
+}
+
+function openInventory() {
+  if (!controlsActive()) return;
+  inventoryOpen = true;
+  clearControls();
+  el('inventoryOverlay').hidden = false;
+  refreshInventory();
+  updatePrompt();
+  el('closeInventory').focus({ preventScroll: true });
+}
+
+function closeInventory() {
+  inventoryOpen = false;
+  el('inventoryOverlay').hidden = true;
+  clearControls();
+  updatePrompt();
+  world.focus({ preventScroll: true });
+}
+
+function eatBerry() {
+  if ((!controlsActive() && !inventoryOpen) || berries < 1 || health >= 100) return;
+  berries--;
+  const heal = Math.min(BERRY_HEAL, 100 - health);
+  health += heal;
+  floater(floaters, player.x, player.y - 97, '+' + heal + ' health', '#b5dda1');
+  updateNotes();
+  saveCamp();
+  if (inventoryOpen) {
+    refreshInventory();
+    if (el('bagEat').disabled) el('closeInventory').focus({ preventScroll: true });
+  }
+}
+
+function gather(item) {
+  const { id, x, y } = item;
+  if (crystalNodes.includes(item)) {
+    crystals.add(id);
+    notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
+    puff(particles, x, y - 24, '#a3e4cf');
+    floater(floaters, x, y - 65, '+1 crystal');
+  } else if (oreNodes.includes(item)) {
+    iron.add(id);
+    notice = 'Iron ore mined · ' + iron.size + ' / ' + oreNodes.length;
+    puff(particles, x, y - 24, '#dfb595');
+    floater(floaters, x, y - 65, '+1 iron ore');
+  } else if (item === netChest) {
+    hasNet = true;
+    if (!equipped) equipped = 'net';
+    notice = 'Casting net taken';
+  } else if (item === flint) {
+    tools.flint = true;
+    notice = 'Flint picked up';
+  } else if (timberTrees.includes(item)) {
+    tools.chopped.push(id);
+    notice = 'Wood gathered';
+    puff(particles, x, y - 32, '#c4b98b');
+    floater(floaters, x, y - 65, '+1 wood');
+  } else if (berryBushes.includes(item)) {
+    pickedBushes.add(id);
+    berries += 3;
+    notice = 'Berries saved to backpack';
+    puff(particles, x, y - 24, '#ce8c8d');
+    floater(floaters, x, y - 65, '+3 berries');
+  } else {
+    collected.add(id);
+    notice = 'Dusklily picked · ' + collected.size + ' / 3';
+  }
+  noticeUntil = animationClock + 1.6;
+  updateNotes();
+  updatePrompt();
+  saveCamp();
+}
+
+function startSwing(item) {
+  if (cooldown > 0) return;
+  cooldown = TOOL_COOLDOWN;
+  swing = SWING_TIME;
+  swingTarget = item;
+  swingDirection = item ? Math.sign(item.x - player.x) || player.direction : player.direction;
+  player.direction = swingDirection;
+}
+
+function updateSwing(dt) {
+  cooldown = Math.max(0, cooldown - dt);
+  swing = Math.max(0, swing - dt);
+  if (!swingTarget || swing > SWING_IMPACT) return;
+  const item = swingTarget;
+  swingTarget = null;
+  if (nearbyLandmark(player, [item])) gather(item);
+}
+
 function interact() {
-  if (!controlsActive() || !selectedLandmark) return;
+  if (!controlsActive() || swingTarget) return;
   const item = selectedLandmark;
+  if (!item) {
+    if (equipped === 'hatchet' || equipped === 'pickaxe') startSwing();
+    return;
+  }
   const id = item.id;
   const mineral = crystalNodes.includes(item) || oreNodes.includes(item);
   const tree = timberTrees.includes(item);
-  if ((mineral && !tools.pickaxe) || (tree && !tools.hatchet)) {
-    openDialogue('tool-needed');
-    setDialogue(mineral ? 'Craft a pickaxe at the Alder Camp workbench to mine this.'
-      : 'Ask Mara for her hatchet to chop marked pines.');
+  if (mineral || tree) {
+    const required = mineral ? 'pickaxe' : 'hatchet';
+    if (equipped === required) {
+      startSwing(item);
+    } else {
+      const hint = ownsGear(required) ? 'Open your backpack and equip the ' + gear[required][1].toLowerCase() + '.'
+        : mineral ? 'Craft a pickaxe at the Alder Camp workbench to mine this.'
+        : 'Ask Mara for her hatchet to chop marked pines.';
+      openDialogue('tool-needed');
+      setDialogue(hint);
+      return;
+    }
+    world.focus({ preventScroll: true });
     return;
   }
-  if (currentFlowers().includes(item) || mineral || item === netChest || item === flint || tree) {
-    if (crystalNodes.includes(item)) {
-      crystals.add(id);
-      notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
-    } else if (oreNodes.includes(item)) {
-      iron.add(id);
-      notice = 'Iron ore mined · ' + iron.size + ' / ' + oreNodes.length;
-    } else if (item === netChest) {
-      hasNet = true;
-      notice = 'Casting net taken';
-    } else if (item === flint) {
-      tools.flint = true;
-      notice = 'Flint picked up';
-    } else if (tree) {
-      tools.chopped.push(id);
-      notice = 'Wood gathered';
-    } else {
-      collected.add(id);
-      notice = 'Dusklily picked · ' + collected.size + ' / 3';
-    }
-    noticeUntil = animationClock + 1.6;
-    updateNotes();
-    updatePrompt();
-    saveCamp();
+  if (currentFlowers().includes(item) || item === netChest || item === flint || berryBushes.includes(item)) {
+    gather(item);
     world.focus({ preventScroll: true });
     return;
   }
@@ -744,7 +907,7 @@ function closeDialogue() {
 }
 
 function setPause(value) {
-  if (!playing || talking) return;
+  if (!playing || talking || inventoryOpen) return;
   paused = value;
   el('paused').hidden = !value;
   el('pause').textContent = value ? 'Resume' : 'Pause';
@@ -762,22 +925,19 @@ function updateShadows() {
   const area = regions[region];
   if (!area.shadows) return;
   creatures = area.shadows(phaseClock, nightIndex);
-  if (creatures.length === 0) {
-    shadowHits = 0;
-    return;
-  }
-  if (animationClock < hitUntil) return;
+  if (creatures.length === 0 || animationClock < hitUntil) return;
   const hit = creatures.some(creature =>
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
   if (!hit) return;
-  shadowHits++;
+  health = Math.max(0, health - 34);
   hitUntil = animationClock + 1.8;
-  if (shadowHits >= 3) {
-    shadowHits = 0;
+  if (health === 0) {
+    health = 100;
     enterRegion(region);
     notice = 'Alvin led you back to ' + area.retreat + '.';
   } else {
-    notice = 'Shadow hit · ' + (3 - shadowHits) + ' before retreat';
+    notice = 'Shadow hit · ' + health + ' health left';
+    updateNotes();
     saveCamp();
   }
   noticeUntil = animationClock + 1.7;
@@ -786,7 +946,7 @@ function updateShadows() {
 function frame(time) {
   const dt = Math.min(.08, (time - (lastFrame || time)) / 1000);
   lastFrame = time;
-  if (!paused && !talking) animationClock += dt;
+  if (!paused && !talking && !inventoryOpen) animationClock += dt;
   if (casting && animationClock - casting.start >= .92) finishCast();
   if (controlsActive()) {
     const right = heldKeys.has('d') || heldKeys.has('arrowright') || [...heldPointers.values()].includes(1);
@@ -799,6 +959,8 @@ function frame(time) {
     }
     if (player.ground) savedFooting = { x: player.x, ground: player.ground };
     if (player.moving) gait += dt * 15;
+    updateSwing(dt);
+    [particles, floaters] = advanceGatheringEffects(particles, floaters, dt);
     phaseClock += dt;
     if (phaseClock >= DAY_LENGTH) {
       phaseClock -= DAY_LENGTH;
@@ -843,11 +1005,25 @@ el('fullscreen').addEventListener('click', async () => {
   } catch { el('fullscreen').disabled = true; }
 });
 
+el('inventoryButton').addEventListener('click', () => inventoryOpen ? closeInventory() : openInventory());
+el('closeInventory').addEventListener('click', closeInventory);
+el('bagEat').addEventListener('click', eatBerry);
+
 const moveKeys = new Set(['a', 'd', 'arrowleft', 'arrowright']);
 const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (key === 'i' && !event.repeat) {
+    if (inventoryOpen) closeInventory();
+    else openInventory();
+    return;
+  }
+  if (inventoryOpen) {
+    if (key === 'escape') closeInventory();
+    if (key === 'q' && !event.repeat) eatBerry();
+    return;
+  }
   if (key === 'escape' && talking) {
     closeDialogue();
     return;
@@ -865,7 +1041,15 @@ window.addEventListener('keydown', event => {
     event.preventDefault();
     if (!event.repeat) jump(player);
   }
-  if (key === 'e' && !event.repeat) interact();
+  if (event.repeat) return;
+  if (key === 'e') interact();
+  if (key === 'q') eatBerry();
+  if (key === '1') equipTool('hatchet');
+  if (key === '2') equipTool('pickaxe');
+  if (key === 'x') {
+    const owned = Object.keys(gear).filter(ownsGear);
+    if (owned.length) equipTool(owned[(owned.indexOf(equipped) + 1) % owned.length]);
+  }
 });
 window.addEventListener('keyup', event => heldKeys.delete(event.key.toLowerCase()));
 

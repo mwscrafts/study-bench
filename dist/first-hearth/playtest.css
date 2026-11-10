@@ -128,3 +128,34 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .dialogue { padding: 8px 14px; }
   .dialogue #line { font-size: 13px; margin: 6px 0; }
 }
+
+/* Backpack styles ported from Emberwild and scoped to this game. */
+.game-actions .inventory-button { border: 1px solid #61715a; color: #fff0ce; }
+.backpack-panel {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  text-align: left;
+  padding: 20px;
+  background: #1b342c;
+  border: 1px solid #e9c79055;
+  border-radius: 14px;
+  box-shadow: 0 10px 26px #0e201c66;
+}
+.backpack-panel .panel-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.backpack-panel .bag-close { font-size: 21px; padding: 4px 12px; }
+.bag-health { font-size: 12px; color: #d6debd; margin: 9px 0; }
+.bag-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 5px 0 12px; }
+.bag-item { padding: 9px; border: 1px solid #6c806044; background: #27483855; border-radius: 5px; }
+.bag-item strong { font-size: 12px; color: #e6ddc1; font-weight: 500; display: block; }
+.bag-item small, .backpack-panel > small { font-size: 10px; color: #bacdb6; }
+.bag-eat { background: #a9bf8c; border: 0; border-radius: 4px; color: #243b2b; width: 100%; font-size: 12px; padding: 9px; }
+.bag-heading { font: 400 19px Georgia,serif; color: #e3d8b5; margin: 13px 0 6px; }
+#weaponRack { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.weapon-card { text-align: left; min-height: 42px; border: 1px solid #63735d; border-radius: 5px; background: #254638; color: #d9dcc0; font-size: 11px; padding: 7px; }
+.weapon-card.selected { border-color: #ccb1e1; background: #695b773d; color: #ead5fa; }
+@media (max-width: 390px) {
+  .game-location .spark { display: none; }
+  .backpack-panel { padding: 13px; }
+  .weapon-card { font-size: 10px; }
+}
