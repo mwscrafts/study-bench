@@ -1,4 +1,4 @@
-import { defineTerrain, surfaceAt } from './terrain.mjs';
+import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs';
 
 const floor = { id: 'understory', points: [[0,678],[485,678],[730,712],[1130,754],[1470,784],[1830,806],[2590,817],[3010,796],[3460,765],[4080,768],[4570,812],[5760,825]] };
 const bridge = { id: 'rope-bridge', points: [[1630,370],[1860,365],[2190,354],[2450,343],[2690,334],[2880,338],[3160,359],[3420,357],[3720,339],[4010,327],[4190,311]] };
@@ -52,13 +52,5 @@ const patrols = [
 ];
 
 export function crownwoodShadows(phase, nightIndex) {
-  if (phase < 70 || phase >= 111) return [];
-  const tempo = 1 + Math.min(nightIndex, 6) * .16;
-  return patrols.map(({surface, left, right, offset}, index) => {
-    const t = (phase - 70) * tempo + offset;
-    const x = left + (.5 + .5 * Math.sin(t * .75)) * (right - left);
-    const hop = Math.max(0, Math.sin(t * 2.5));
-    const y = surfaceAt(surface, x) - hop * (27 + Math.min(nightIndex, 6) * 5);
-    return { x, y, index };
-  });
+  return patrolShadows(patrols, phase, nightIndex);
 }

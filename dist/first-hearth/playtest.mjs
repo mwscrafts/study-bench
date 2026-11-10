@@ -3,6 +3,8 @@ import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower } from './camp-art.mjs';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs';
+import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -17,11 +19,13 @@ const camera = { x: 0, y: 0, width: VIEW_WIDTH, height: 600, zoom: 1, density: 1
 const tracker = [];
 const cat = { x: SPAWN_X - 72, y: groundAt(SPAWN_X), direction: 1, gait: 0 };
 let sprites;
-let camp;
-let crownwood;
+const backgrounds = {};
 let region = 'camp';
 let terrain = campTerrain;
 let crystals = new Set();
+let iron = new Set();
+let hasNet = false;
+let ivoQuest = false;
 let nightIndex = 0;
 let shadowHits = 0;
 let hitUntil = 0;
@@ -45,17 +49,40 @@ let notice = '';
 let noticeUntil = 0;
 let savedFooting = { x: player.x, ground: player.ground };
 
+const regions = {
+  camp: {
+    title: ['Alder', 'Camp'],
+    intro: 'Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.',
+    terrain: campTerrain, landmarks, flowers, buildArt: buildCampArt
+  },
+  crownwood: {
+    title: ['Crownwood', 'Canopy'],
+    intro: 'Climb Three Boughs, cross the rope bridge, and look for a way down to the falls.',
+    terrain: crownwoodTerrain, landmarks: crownwoodLandmarks, flowers: [crownwoodFlower],
+    buildArt: buildCrownwoodArt, location: crownwoodLocation, shadows: crownwoodShadows, retreat: 'Root Landing'
+  },
+  mine: {
+    title: ['Embervein', 'Mine'],
+    intro: 'Follow the lanterns down to Ivo, look for iron seams, and find the old lift.',
+    terrain: mineTerrain, landmarks: mineLandmarks, flowers: [],
+    buildArt: buildMineArt, location: mineLocation, shadows: mineShadows, retreat: 'Timber Shaft'
+  }
+};
+const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
+const knownFlowers = Object.values(regions).flatMap(area => area.flowers);
+
 const conversations = {
   mara: { name: 'Mara', role: 'FORGE KEEPER' },
+  ivo: { name: 'Ivo', role: 'KEEPER OF EMBERVEIN' },
   lift: {
     name: 'The old lift',
     role: 'MARA’S CLEARING',
     greeting: 'The lift goes down to Ivo’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
   },
-  mine: {
-    name: 'Embervein Mine',
-    role: 'TIMBER GATE',
-    greeting: 'Lantern light slips through the timbers. Ivo’s mine starts here. Look for a dusklily on the path beside the door.'
+  'mine-lift': {
+    name: 'The lift base',
+    role: 'EMBERVEIN MINE',
+    greeting: 'The old lift reaches Mara’s clearing. One of the bearings is cracked. Ivo needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
   },
   'first-hearth': {
     name: 'A passage behind the falls',
@@ -149,7 +176,7 @@ function drawFirelight(x, y, radius, strength) {
 }
 
 function paintMarker(landmark) {
-  const height = landmark.id === 'mara' ? 121 : 103;
+  const height = landmark.id === 'mara' || landmark.id === 'ivo' ? 125 : 103;
   const y = landmark.y - height + Math.sin(animationClock * 2) * 4;
   ctx.save();
   ctx.translate(landmark.x, y);
@@ -179,14 +206,16 @@ function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
-  paintHorizon(ctx, camera, sky.from, 1, animationClock);
-  if (sky.from !== sky.to) paintHorizon(ctx, camera, sky.to, sky.mix, animationClock);
-  ctx.drawImage(region === 'crownwood' ? crownwood : camp, 0, 0);
+  if (region !== 'mine') {
+    paintHorizon(ctx, camera, sky.from, 1, animationClock);
+    if (sky.from !== sky.to) paintHorizon(ctx, camera, sky.to, sky.mix, animationClock);
+  }
+  ctx.drawImage(backgrounds[region], 0, 0);
   const phase = sky.mix > .35 ? sky.to : sky.from;
   const clockText = phase === 'night' && skyMode === 'auto' ? 'Night ' + (nightIndex + 1) : skyLabels[phase];
   if (el('time-label').textContent !== clockText) el('time-label').textContent = clockText;
   const night = (sky.from === 'night' ? 1 - sky.mix : 0) + (sky.to === 'night' ? sky.mix : 0);
-  paintCampTint(ctx, camera, night);
+  if (region !== 'mine') paintCampTint(ctx, camera, night);
   if (region === 'camp') {
     drawFirelight(2258, 595, 132, .18 + night * .42);
     drawFirelight(2150, 582, 90, .08 + night * .25);
@@ -200,13 +229,21 @@ function paint() {
     const mara = landmarks[0];
     shadow(mara.x, mara.y, 24);
     drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
-  } else {
+  } else if (region === 'crownwood') {
     if (camera.x < 4100 && camera.x + camera.width > 3200) paintCrownwoodWater(ctx, animationClock);
     crystalNodes.forEach(node => {
       if (!crystals.has(node.id)) paintCrystal(ctx, node, animationClock);
     });
-    creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
+  } else {
+    paintMineLights(ctx, camera, animationClock, night);
+    paintMineChest(ctx, hasNet);
+    for (const node of oreNodes) {
+      if (!iron.has(node.id)) paintOre(ctx, node, animationClock);
+    }
+    shadow(ivo.x, ivo.y, 26);
+    drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
   }
+  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
   });
@@ -293,17 +330,18 @@ function clearControls() {
 }
 
 function currentFlowers() {
-  return region === 'camp' ? flowers : [crownwoodFlower];
+  return regions[region].flowers;
 }
 
 function currentLandmarks() {
-  return region === 'camp' ? landmarks : crownwoodLandmarks;
+  return regions[region].landmarks.filter(item => item !== netChest || !hasNet);
 }
 
 function updatePrompt() {
   const items = currentLandmarks().filter(item => item.id !== 'mist-drop' || player.ground === 'rope-bridge');
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
+  if (region === 'mine') items.push(...oreNodes.filter(node => !iron.has(node.id)));
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const message = current ? current.label + ' · E / Interact'
     : controlsActive() && animationClock < noticeUntil ? notice : '';
@@ -314,12 +352,12 @@ function updatePrompt() {
 }
 
 function updateLocation() {
-  const location = region === 'crownwood' ? crownwoodLocation(player)
-    : player.x < 1140 ? 'Reedbank Trail'
+  const campLocation = player.x < 1140 ? 'Reedbank Trail'
     : player.x < 1830 ? 'Pine Gate'
     : player.x < 2680 ? 'Mara’s Clearing'
     : player.x < 3800 ? 'Root Fork'
     : player.x < 4300 ? 'Timber Gate' : 'Shore Trail';
+  const location = regions[region].location?.(player) ?? campLocation;
   if (el('location-name').textContent !== location) el('location-name').textContent = location;
 }
 
@@ -328,11 +366,13 @@ function updateNotes() {
     : quest === 'accepted' ? 'Mara’s dusklilies · ' + collected.size + ' / 3'
     : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
     : 'Explore the trail and find Mara by the fire.';
-  el('quest-tracker').textContent = clue;
+  const mineLoot = 'Iron ore · ' + iron.size + ' / ' + oreNodes.length + (hasNet ? ' · Casting net' : '');
+  el('quest-tracker').textContent = region === 'mine' ? mineLoot : clue;
   el('quest-tracker').hidden = false;
   const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
+    : region === 'mine' ? (ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
     : 'Trail entrances found · ' + destinations + ' / 3';
 }
 
@@ -348,8 +388,8 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 3, avatar, region, footing: savedFooting, phaseClock, nightIndex, shadowHits,
-      visited: [...visited], flowers: [...collected], quest, crystals: [...crystals]
+      version: 4, avatar, region, footing: savedFooting, phaseClock, nightIndex, shadowHits,
+      visited: [...visited], flowers: [...collected], quest, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -358,25 +398,31 @@ function begin(save) {
   if (!sprites) return;
   avatar = save?.avatar ?? avatar;
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
-  visited = new Set([...landmarks, ...crownwoodLandmarks].filter(landmark => Array.isArray(save?.visited) && save.visited.includes(landmark.id)).map(landmark => landmark.id));
+  visited = new Set(knownLandmarks.filter(landmark => Array.isArray(save?.visited) && save.visited.includes(landmark.id)).map(landmark => landmark.id));
   const savedFlowers = Array.isArray(save?.flowers) ? save.flowers : [];
-  collected = new Set([...flowers, crownwoodFlower].filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
+  collected = new Set(knownFlowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
   quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
   const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
   crystals = new Set(crystalNodes.filter(node => savedCrystals.includes(node.id)).map(node => node.id));
+  const savedIron = Array.isArray(save?.iron) ? save.iron : [];
+  iron = new Set(oreNodes.filter(node => savedIron.includes(node.id)).map(node => node.id));
+  hasNet = save?.hasNet === true;
+  ivoQuest = save?.ivoQuest === true;
   nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
   const savedHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
-  enterRegion(save?.region === 'crownwood' ? 'crownwood' : 'camp', footing, savedHits);
+  const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
+  enterRegion(savedRegion, footing, savedHits);
 }
 
 function enterRegion(next, footing, previousHits = 0) {
   region = next;
-  terrain = next === 'camp' ? campTerrain : crownwoodTerrain;
-  if (next === 'crownwood' && !crownwood) crownwood = buildCrownwoodArt();
+  const area = regions[next];
+  terrain = area.terrain;
+  backgrounds[next] ??= area.buildArt();
   player = createPlayer(footing, terrain);
   shadowHits = previousHits;
   noticeUntil = 0;
@@ -387,14 +433,13 @@ function enterRegion(next, footing, previousHits = 0) {
   cat.y = player.y;
   cat.gait = 0;
   tracker.length = 0;
-  const inCamp = next === 'camp';
-  document.title = (inCamp ? 'Alder Camp' : 'Crownwood Canopy') + ' · The First Hearth';
-  el('region-title').firstChild.textContent = inCamp ? 'Alder ' : 'Crownwood ';
-  el('region-title').lastElementChild.textContent = inCamp ? 'Camp' : 'Canopy';
-  el('region-intro').textContent = inCamp
-    ? 'Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.'
-    : 'Climb Three Boughs, cross the rope bridge, and look for a way down to the falls.';
-  world.setAttribute('aria-label', (inCamp ? 'Alder Camp' : 'Crownwood Canopy') +
+  const [firstWord, secondWord] = area.title;
+  const title = firstWord + ' ' + secondWord;
+  document.title = title + ' · The First Hearth';
+  el('region-title').firstChild.textContent = firstWord + ' ';
+  el('region-title').lastElementChild.textContent = secondWord;
+  el('region-intro').textContent = area.intro;
+  world.setAttribute('aria-label', title +
     ' game world. Move with arrows or A and D, jump with Space, and interact with E.');
   clearControls();
   updateNotes();
@@ -455,14 +500,45 @@ function maraDialogue() {
   }
 }
 
+function ivoDialogue() {
+  const net = hasNet ? 'You’ve got my casting net.' : 'Take the casting net from my chest.';
+  setDialogue('Mind the dark past these lamps. Take a breather here if you need one.', [
+    ['What happened to the lift?', () => {
+      const request = 'A bearing cracked. Bring me 1 tideglass gemstone from the beach and I can get the lift back to Mara’s clearing. ' + net;
+      if (ivoQuest) {
+        setDialogue(request, [['Back', ivoDialogue]]);
+        return;
+      }
+      setDialogue(request + ' Will you bring one back?', [
+        ['Yes, I’ll look for one', () => {
+          ivoQuest = true;
+          updateNotes();
+          saveCamp();
+          setDialogue('Thanks. The shore path keeps going past the timber door. When the beach opens, cast the net off Lantern Dock.');
+        }],
+        ['Maybe later', () => setDialogue('Fair enough. There’s always the timber shaft.', [['Back', ivoDialogue]])]
+      ]);
+    }],
+    ['What do you know about the King?', () => setDialogue(
+      'His trail climbs above Crownwood. Mara knows the old stories better than I do. I just know the shadows keep clear of a good lamp.',
+      [['Back', ivoDialogue]])]
+  ]);
+}
+
 function interact() {
   if (!controlsActive() || !selectedLandmark) return;
   const item = selectedLandmark;
   const id = item.id;
-  if (currentFlowers().includes(item) || crystalNodes.includes(item)) {
+  if (currentFlowers().includes(item) || crystalNodes.includes(item) || oreNodes.includes(item) || item === netChest) {
     if (crystalNodes.includes(item)) {
       crystals.add(id);
       notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
+    } else if (oreNodes.includes(item)) {
+      iron.add(id);
+      notice = 'Iron ore mined · ' + iron.size + ' / ' + oreNodes.length;
+    } else if (item === netChest) {
+      hasNet = true;
+      notice = 'Casting net taken';
     } else {
       collected.add(id);
       notice = 'Dusklily picked · ' + collected.size + ' / 3';
@@ -477,6 +553,14 @@ function interact() {
   visited.add(id);
   if (id === 'canopy') {
     enterRegion('crownwood');
+    return;
+  }
+  if (id === 'mine') {
+    enterRegion('mine');
+    return;
+  }
+  if (id === 'mine-return') {
+    enterRegion('camp', { x: 4180, ground: 'trail' });
     return;
   }
   if (id === 'camp-return') {
@@ -499,11 +583,13 @@ function interact() {
   saveCamp();
   el('speaker').textContent = info.name;
   el('speaker-role').textContent = info.role;
-  el('portrait').hidden = id !== 'mara';
-  if (id === 'mara') drawPortrait(el('portrait'), sprites.mara);
+  const portrait = id === 'mara' || id === 'ivo' ? sprites[id] : null;
+  el('portrait').hidden = !portrait;
+  if (portrait) drawPortrait(el('portrait'), portrait);
   el('dialogue').hidden = false;
   if (id === 'mara') maraDialogue();
-  else setDialogue(info.greeting + (id === 'mine' || id === 'shore' ? ' The next region opens in a later playtest.' : ''));
+  else if (id === 'ivo') ivoDialogue();
+  else setDialogue(info.greeting + (id === 'shore' ? ' The beach opens in a later playtest.' : ''));
 }
 
 function closeDialogue() {
@@ -529,8 +615,9 @@ function setPause(value) {
 }
 
 function updateShadows() {
-  if (region !== 'crownwood') return;
-  creatures = crownwoodShadows(phaseClock, nightIndex);
+  const area = regions[region];
+  if (!area.shadows) return;
+  creatures = area.shadows(phaseClock, nightIndex);
   if (creatures.length === 0) {
     shadowHits = 0;
     return;
@@ -543,8 +630,8 @@ function updateShadows() {
   hitUntil = animationClock + 1.8;
   if (shadowHits >= 3) {
     shadowHits = 0;
-    enterRegion('crownwood');
-    notice = 'Alvin led you back to Root Landing.';
+    enterRegion(region);
+    notice = 'Alvin led you back to ' + area.retreat + '.';
   } else {
     notice = 'Shadow hit · ' + (3 - shadowHits) + ' before retreat';
     saveCamp();
@@ -675,12 +762,13 @@ async function boot() {
     const [party, keepers] = await Promise.all([
       loadImage('./party.webp'), loadImage('./keepers.webp')
     ]);
-    camp = buildCampArt();
+    backgrounds.camp = buildCampArt();
     sprites = {
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
       alvin: spriteBounds(party, 2 / 3, 1, .65),
-      mara: spriteBounds(keepers, .5, 1, .55)
+      mara: spriteBounds(keepers, .5, 1, .55),
+      ivo: spriteBounds(keepers, 0, .5, .52)
     };
     drawPortrait(el('choose-boy').querySelector('canvas'), sprites.boy);
     drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);

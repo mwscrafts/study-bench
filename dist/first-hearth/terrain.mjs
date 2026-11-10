@@ -29,7 +29,7 @@ export const landmarks = [
   { id: 'mara', x: 2080, y: 610, label: 'Talk to Mara', radius: 94 },
   { id: 'lift', x: 2425, y: 610, label: 'Inspect the lift', radius: 76 },
   { id: 'canopy', x: 3745, y: 260, label: 'Enter Crownwood', radius: 92 },
-  { id: 'mine', x: 4050, y: 748, label: 'Mine doorway', radius: 95 },
+  { id: 'mine', x: 4050, y: 748, label: 'Enter Embervein Mine', radius: 95 },
   { id: 'shore', x: 4660, y: 718, label: 'Shore trail', radius: 88 }
 ];
 
@@ -131,4 +131,16 @@ export function nearbyLandmark(player, candidates) {
     const previousDistance = Math.hypot(nearest.x - player.x, nearest.y - player.y);
     return Math.hypot(dx, dy) < previousDistance ? item : nearest;
   }, undefined);
+}
+
+export function patrolShadows(patrols, phase, nightIndex) {
+  if (phase < 70 || phase >= 111) return [];
+  const tempo = 1 + Math.min(nightIndex, 6) * .16;
+  return patrols.map(({surface, left, right, offset}, index) => {
+    const t = (phase - 70) * tempo + offset;
+    const x = left + (.5 + .5 * Math.sin(t * .75)) * (right - left);
+    const hop = Math.max(0, Math.sin(t * 2.5));
+    const y = surfaceAt(surface, x) - hop * (27 + Math.min(nightIndex, 6) * 5);
+    return { x, y, index };
+  });
 }
