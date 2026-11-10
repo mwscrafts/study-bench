@@ -6,18 +6,18 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth playtest</title>
-  <link rel="stylesheet" href="./playtest.css?v=07">
+  <link rel="stylesheet" href="./playtest.css?v=08">
 </head>
 <body>
   <main class="page">
     <header class="mast">
       <a href="/" class="home">← Back home</a>
       <span class="mast-mark">✦ &nbsp; The First Hearth</span>
-      <span class="edition">Playtest 07</span>
+      <span class="edition">Playtest 08</span>
     </header>
     <div class="title">
       <div>
-        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 07</p>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 08</p>
         <h1 id="region-title">Alder <em>Camp</em></h1>
       </div>
       <p id="region-intro">Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.</p>
@@ -45,6 +45,11 @@
             <div id="tool-notes" class="quest-tracker" aria-live="polite" hidden></div>
           </div>
         </div>
+        <div id="trial-hud" class="trial-hud" hidden>
+          <div><strong>The Hollow King</strong><span id="trial-time"></span></div>
+          <div id="king-meter" class="king-meter" hidden><i id="king-fill"></i><span id="king-hp"></span></div>
+          <p id="trial-hint" aria-live="polite"></p>
+        </div>
         <div id="status" class="status" role="status" aria-live="polite" hidden></div>
         <div id="start" class="overlay">
           <div class="start-card">
@@ -68,6 +73,15 @@
               <h2 id="speaker"></h2>
               <p id="line"></p>
               <div id="choices" class="choices"></div>
+              <div id="time-board" class="time-board" hidden>
+                <form id="time-form">
+                  <label for="time-name">Name on the public board</label>
+                  <input id="time-name" name="player" maxlength="20" required autocomplete="off">
+                  <button id="time-submit" class="primary" type="submit">Post time</button>
+                </form>
+                <p id="time-status" role="status"></p>
+                <ol id="time-list"></ol>
+              </div>
               <button id="close-dialogue" type="button" class="secondary">Keep exploring →</button>
             </div>
           </section>
@@ -92,6 +106,7 @@
             <p class="eyebrow">A MOMENT TO BREATHE</p>
             <h2>Taking a break.</h2>
             <button id="resume" type="button" class="primary">Keep exploring →</button>
+            <button id="leave-trial" type="button" class="secondary" hidden>Return to Lantern Rest</button>
           </div>
         </div>
       </div>
@@ -117,6 +132,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=07"></script>
+  <script type="module" src="./playtest.mjs?v=08"></script>
 </body>
 </html>

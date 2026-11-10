@@ -13,6 +13,10 @@ import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes,
 import { renderInventory } from './backpack.mjs';
 import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs';
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
+import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
+  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs';
+import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs';
+import { readVictory, openTimeBoard } from './time-board.mjs';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -67,6 +71,10 @@ let visited = new Set();
 let collected = new Set();
 let quest = 'unoffered';
 let hearthLearned = false;
+let trial = null;
+let victory = null;
+let swingCombat = false;
+let fireworksElapsed = Infinity;
 let notice = '';
 let noticeUntil = 0;
 let savedFooting = { x: player.x, ground: player.ground };
@@ -100,6 +108,11 @@ const regions = {
     intro: 'Follow the sheltered passage into the ember chamber.',
     terrain: hearthTerrain, landmarks: hearthLandmarks, flowers: [],
     buildArt: buildHearthArt, location: hearthLocation
+  },
+  king: {
+    title: ['King’s', 'Grounds'],
+    intro: 'Cross the ruins to the altar when you are ready to face the Hollow King.',
+    terrain: kingTerrain, landmarks: kingLandmarks, flowers: [], buildArt: buildKingArt, location: kingLocation
   }
 };
 const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
@@ -113,7 +126,9 @@ const gates = {
   'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } },
   'first-hearth': { region: 'hearth' },
   'hearth-return': { region: 'crownwood', footing: { x: 3445, ground: 'mist-shelf' } },
-  'hearth-notch': { region: 'crownwood', footing: { x: 3975, ground: 'mist-shelf' } }
+  'hearth-notch': { region: 'crownwood', footing: { x: 3975, ground: 'mist-shelf' } },
+  'king-trail': { region: 'king' },
+  'king-return': { region: 'crownwood', footing: { x: 5375, ground: 'overlook' } }
 };
 const liftGates = {
   lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
@@ -137,11 +152,12 @@ const conversations = {
     greeting: 'The old lift reaches Mara’s clearing. One of the bearings is cracked. Ivo needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
   },
   'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
-  'king-trail': {
-    name: 'The King’s Grounds',
-    role: 'CROWN OVERLOOK',
-    greeting: 'The trail ends at an arch overlooking the ruins. The King’s Grounds open in a later playtest.'
+  'lantern-rest': {
+    name: 'Lantern Rest', role: 'KING’S GROUNDS',
+    greeting: 'Rest here or return through Crownwood. Lighting the altar starts the final night. Use the Action button to strike, and jump over the King’s charges and shockwaves.'
   },
+  'night-altar': { name: 'The night altar', role: 'ALTAR TERRACE' },
+  'fallen-crown': { name: 'The fallen crown', role: 'CROWN ARENA' },
   'tide-arch': {
     name: 'Tide Arch', role: 'COASTAL OVERLOOK',
     greeting: 'Through the arch you can see the lights of the dock. The trail back to Alder Camp follows the shore and climbs through the pines.'
@@ -204,6 +220,10 @@ function drawPortrait(canvas, sprite) {
 }
 
 function skyState() {
+  if (region === 'king' && (trial || victory)) {
+    const phase = victory ? 'dawn' : 'night';
+    return { from: phase, to: phase, mix: 0 };
+  }
   if (skyMode !== 'auto') return { from: skyMode, to: skyMode, mix: 0 };
   const time = phaseClock % DAY_LENGTH;
   if (time < 38) return { from: 'day', to: 'day', mix: 0 };
@@ -261,7 +281,8 @@ function paint() {
   }
   ctx.drawImage(backgrounds[region], 0, 0);
   const phase = sky.mix > .35 ? sky.to : sky.from;
-  const clockText = phase === 'night' && skyMode === 'auto' ? 'Night ' + (nightIndex + 1) : skyLabels[phase];
+  const clockText = region === 'king' && trial && !victory ? 'Final night'
+    : phase === 'night' && skyMode === 'auto' ? 'Night ' + (nightIndex + 1) : skyLabels[phase];
   if (el('time-label').textContent !== clockText) el('time-label').textContent = clockText;
   const night = (sky.from === 'night' ? 1 - sky.mix : 0) + (sky.to === 'night' ? sky.mix : 0);
   if (outdoors) paintCampTint(ctx, camera, night);
@@ -295,8 +316,13 @@ function paint() {
     drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
   } else if (region === 'beach') {
     paintBeachDetails(ctx, camera, animationClock, night, casting);
-  } else {
+  } else if (region === 'hearth') {
     paintHearthDetails(ctx, animationClock, night, hearthLearned);
+  } else {
+    paintKingGrounds(ctx, trial, victory, animationClock);
+    if (trial?.stage === 'shadows') trial.shadows.forEach((shadow, index) =>
+      paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock));
+    paintFireworks(ctx, camera, fireworksElapsed);
   }
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
@@ -306,6 +332,15 @@ function paint() {
     shadow(cat.x, cat.y, 17);
     drawSprite(ctx, sprites.alvin, cat.x, cat.y, 44, cat.direction,
       -Math.abs(Math.sin(cat.gait)) * 2.2, Math.sin(cat.gait) * .035);
+    if (region === 'king' && victory && fireworksElapsed < 1.8) {
+      ctx.strokeStyle = '#462d26';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(cat.x + 13, cat.y - 27);
+      ctx.lineTo(cat.x + 17, cat.y - 25);
+      ctx.lineTo(cat.x + 21, cat.y - 28);
+      ctx.stroke();
+    }
   }
   if (player.ground) shadow(player.x, player.y, 22);
   if (animationClock < hitUntil && Math.floor(animationClock * 13) % 2) ctx.globalAlpha = .52;
@@ -346,7 +381,7 @@ function updateCat(dt) {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting && !inventoryOpen;
+  return playing && !paused && !talking && !casting && !inventoryOpen && trial?.stage !== 'alvin';
 }
 
 function atFallsRail() {
@@ -393,7 +428,9 @@ function currentFlowers() {
 }
 
 function currentLandmarks() {
-  return regions[region].landmarks.filter(item => item !== netChest || !hasNet);
+  if (region === 'king' && trial && !victory) return [];
+  return regions[region].landmarks.filter(item =>
+    (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory));
 }
 
 function updatePrompt() {
@@ -413,7 +450,7 @@ function updatePrompt() {
   selectedLandmark = current;
   if (el('status').textContent !== message) el('status').textContent = message;
   el('status').hidden = !message;
-  const canSwing = equipped === 'hatchet' || equipped === 'pickaxe';
+  const canSwing = isStrikeTool(equipped);
   el('interact').disabled = !controlsActive() || (!current && !canSwing);
   const actionLabel = !current && canSwing ? 'Swing' : 'Interact';
   if (el('action-label').textContent !== actionLabel) el('action-label').textContent = actionLabel;
@@ -457,6 +494,7 @@ function updateNotes() {
       : ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
+    : region === 'king' ? (victory?.ending ? endings[victory.ending].name : 'The altar calls the final night')
     : 'Trail entrances found · ' + destinations + ' / 3';
 }
 
@@ -472,8 +510,9 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 7, avatar, region, footing: savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
-      visited: [...visited], flowers: [...collected], quest, hearthLearned, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
+      version: 8, avatar, region,
+      footing: trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
+      visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -488,6 +527,7 @@ function begin(save) {
   collected = new Set(knownFlowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
   quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
   hearthLearned = quest === 'complete' && save?.hearthLearned === true;
+  victory = readVictory(save?.victory, hearthLearned);
   const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
   crystals = new Set(crystalNodes.filter(node => savedCrystals.includes(node.id)).map(node => node.id));
   const savedIron = Array.isArray(save?.iron) ? save.iron : [];
@@ -506,15 +546,22 @@ function begin(save) {
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
   enterRegion(savedRegion, footing);
+  if (region === 'king' && victory && !victory.ending) {
+    openDialogue('fallen-crown');
+    endingDialogue();
+  }
 }
 
 function enterRegion(next, footing) {
   region = next;
+  trial = null;
+  fireworksElapsed = Infinity;
+  updateTrialHud();
   const area = regions[next];
   terrain = area.terrain;
   // Keep camp and the current area cached to bound memory on mobile.
@@ -528,6 +575,7 @@ function enterRegion(next, footing) {
   swing = 0;
   cooldown = 0;
   swingTarget = null;
+  swingCombat = false;
   particles = [];
   floaters = [];
   noticeUntil = 0;
@@ -736,6 +784,7 @@ function emberBoxDialogue() {
 }
 
 function openDialogue(id) {
+  el('time-board').hidden = true;
   const info = conversations[id];
   talking = true;
   clearControls();
@@ -750,8 +799,13 @@ function openDialogue(id) {
   el('dialogue').hidden = false;
 }
 
+function isStrikeTool(id) {
+  return id === 'hatchet' || id === 'pickaxe' || id === 'godslayer';
+}
+
 function ownsGear(id) {
   if (id === 'net') return hasNet;
+  if (id === 'godslayer') return fishing.godslayer;
   return (id === 'hatchet' || id === 'pickaxe') && tools[id];
 }
 
@@ -770,7 +824,6 @@ function inventoryItems() {
   if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Ivo to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
-  if (fishing.godslayer) items.push(['†', 'Godslayer', 1, 'A rare catch from Lantern Dock.']);
   return items;
 }
 
@@ -782,6 +835,7 @@ function equipTool(id) {
   if (!ownsGear(id)) return;
   if (equipped !== id) {
     swingTarget = null;
+    swingCombat = false;
     swing = 0;
   }
   equipped = id;
@@ -871,6 +925,7 @@ function startSwing(item) {
   cooldown = TOOL_COOLDOWN;
   swing = SWING_TIME;
   swingTarget = item;
+  swingCombat = !item && !!trial && ['shadows','duel'].includes(trial.stage);
   swingDirection = item ? Math.sign(item.x - player.x) || player.direction : player.direction;
   player.direction = swingDirection;
 }
@@ -878,7 +933,16 @@ function startSwing(item) {
 function updateSwing(dt) {
   cooldown = Math.max(0, cooldown - dt);
   swing = Math.max(0, swing - dt);
-  if (!swingTarget || swing > SWING_IMPACT) return;
+  if (swing > SWING_IMPACT) return;
+  if (swingCombat) {
+    swingCombat = false;
+    const result = attackTrial(trial, { ...player, direction: swingDirection }, equipped);
+    if (result) {
+      puff(particles, result.x, result.y - 44, '#cbb0e8', 9);
+      floater(floaters, result.x, result.y - 95, result.damage ? '−' + result.damage : 'Guarded');
+    }
+  }
+  if (!swingTarget) return;
   const item = swingTarget;
   swingTarget = null;
   if (nearbyLandmark(player, [item])) gather(item);
@@ -888,7 +952,7 @@ function interact() {
   if (!controlsActive() || swingTarget) return;
   const item = selectedLandmark;
   if (!item) {
-    if (equipped === 'hatchet' || equipped === 'pickaxe') startSwing();
+    if (isStrikeTool(equipped)) startSwing();
     return;
   }
   const id = item.id;
@@ -934,12 +998,15 @@ function interact() {
   else if (id === 'workbench') workbenchDialogue();
   else if (id === 'dock') dockDialogue();
   else if (id === 'ember-box') emberBoxDialogue();
+  else if (id === 'night-altar') altarDialogue();
+  else if (id === 'fallen-crown') endingDialogue();
   else setDialogue(conversations[id].greeting);
 }
 
 function closeDialogue() {
   talking = false;
   el('dialogue').hidden = true;
+  el('time-board').hidden = true;
   updatePrompt();
   world.focus({ preventScroll: true });
 }
@@ -948,6 +1015,7 @@ function setPause(value) {
   if (!playing || talking || inventoryOpen) return;
   paused = value;
   el('paused').hidden = !value;
+  el('leave-trial').hidden = !trial || !!victory;
   el('pause').textContent = value ? 'Resume' : 'Pause';
   clearControls();
   updatePrompt();
@@ -957,6 +1025,113 @@ function setPause(value) {
   } else {
     world.focus({ preventScroll: true });
   }
+}
+
+function altarDialogue() {
+  if (victory) {
+    setDialogue('The final night is over. You can return to the crown to see your result.');
+    return;
+  }
+  const tool = ['hatchet','pickaxe','godslayer'].find(ownsGear);
+  if (!tool) {
+    setDialogue('Bring a tool you can strike with. Mara can lend you a hatchet at Alder Camp.');
+    return;
+  }
+  setDialogue('Light the altar to start the final night and its timer. Clear the shadows to open the arena gate.', [
+    ['Light the altar', () => {
+      if (!isStrikeTool(equipped)) equipTool(tool);
+      closeDialogue();
+      enterRegion('king', { x: TRIAL_START, ground: 'king-floor' });
+      trial = startTrial();
+      updateTrialHud();
+      updatePrompt();
+      saveCamp();
+    }]
+  ]);
+}
+
+function showScores() {
+  setDialogue('Times are ranked separately for each ending.', [['Back', endingDialogue]]);
+  openTimeBoard(el, victory, saveCamp);
+}
+
+function endingDialogue() {
+  el('time-board').hidden = true;
+  const time = ' Time ' + formatTime(victory.timeMs) + '.';
+  if (victory.ending) {
+    setDialogue(endings[victory.ending].text + ' I’m proud of you.' + time, [['View time board', showScores]]);
+    return;
+  }
+  const choices = Object.keys(endings).filter(ending => ending === 'break' || hearthLearned).map(ending =>
+    [endings[ending].name, () => {
+      victory.ending = ending;
+      fireworksElapsed = 0;
+      updateNotes();
+      saveCamp();
+      endingDialogue();
+    }]);
+  setDialogue('Alvin lands the last hit and winks. I’m proud of you.' + time, choices);
+}
+
+function retreatFromTrial(defeated = false) {
+  paused = false;
+  el('paused').hidden = true;
+  el('pause').textContent = 'Pause';
+  if (defeated) health = 100;
+  enterRegion('king', { x: REST_X, ground: 'king-floor' });
+  notice = defeated ? 'Alvin led you back to Lantern Rest.' : 'The altar goes quiet.';
+  noticeUntil = animationClock + 2.4;
+}
+
+function updateTrialHud() {
+  const active = trial && !victory;
+  el('trial-hud').hidden = !active;
+  if (!active) return;
+  const boss = trial.boss;
+  el('king-meter').hidden = !boss;
+  el('trial-time').textContent = formatTime(trial.time * 1000);
+  const hint = trialHint(trial);
+  if (el('trial-hint').textContent !== hint) el('trial-hint').textContent = hint;
+  if (boss) {
+    el('king-hp').textContent = boss.hp + ' / ' + MAX_BOSS_HP;
+    el('king-fill').style.width = boss.hp / MAX_BOSS_HP * 100 + '%';
+  }
+}
+
+function updateKingTrial(dt) {
+  if (!trial || victory) return;
+  const before = trial.stage;
+  const damage = advanceTrial(trial, player, dt);
+  if (damage && animationClock >= hitUntil) {
+    health = Math.max(0, health - damage);
+    if (!health) {
+      retreatFromTrial(true);
+      return;
+    }
+    hitUntil = animationClock + 1.2;
+    updateNotes();
+    saveCamp();
+  }
+  if (trial.stage === 'alvin' && before !== 'alvin') {
+    trial.catFrom = { x: cat.x, y: cat.y };
+    clearControls();
+  }
+  if (trial.stage === 'alvin' || trial.stage === 'won') {
+    const t = trial.pounce;
+    const target = trial.boss.x;
+    cat.x = trial.catFrom.x + (target - trial.catFrom.x) * t;
+    cat.y = trial.catFrom.y + (ARENA.ground - trial.catFrom.y) * t - Math.sin(Math.PI * t) * 160;
+    cat.direction = Math.sign(target - trial.catFrom.x) || 1;
+    cat.gait = 0;
+  }
+  if (trial.stage === 'won') {
+    victory = { runId: crypto.randomUUID(), timeMs: Math.round(trial.time * 1000), ending: null, name: null };
+    fireworksElapsed = 0;
+    saveCamp();
+    openDialogue('fallen-crown');
+    endingDialogue();
+  }
+  updateTrialHud();
 }
 
 function updateShadows() {
@@ -986,6 +1161,8 @@ function frame(time) {
   lastFrame = time;
   if (!paused && !talking && !inventoryOpen) animationClock += dt;
   if (casting && animationClock - casting.start >= .92) finishCast();
+  if (fireworksElapsed < 8) fireworksElapsed += dt;
+  if (trial?.stage === 'alvin' && !paused) updateKingTrial(dt);
   if (controlsActive()) {
     const right = heldKeys.has('d') || heldKeys.has('arrowright') || [...heldPointers.values()].includes(1);
     const left = heldKeys.has('a') || heldKeys.has('arrowleft') || [...heldPointers.values()].includes(-1);
@@ -994,6 +1171,10 @@ function frame(time) {
       const step = Math.min(remaining, 1 / 120);
       movePlayer(player, direction, step, terrain);
       remaining -= step;
+    }
+    if (region === 'king' && !victory) {
+      const [left, right] = trialBounds(trial) ?? [23, ARENA.gate - 32];
+      player.x = clamp(player.x, left, right);
     }
     if (player.ground) savedFooting = { x: player.x, ground: player.ground };
     if (player.moving) gait += dt * 15;
@@ -1005,7 +1186,8 @@ function frame(time) {
       nightIndex++;
     }
     updateShadows();
-    updateCat(dt);
+    updateKingTrial(dt);
+    if (trial?.stage !== 'alvin') updateCat(dt);
     updateCamera(false, dt);
     updateLocation();
     updatePrompt();
@@ -1032,6 +1214,7 @@ el('continue').addEventListener('click', () => begin(getSavedCamp()));
 el('close-dialogue').addEventListener('click', closeDialogue);
 el('pause').addEventListener('click', () => setPause(!paused));
 el('resume').addEventListener('click', () => setPause(false));
+el('leave-trial').addEventListener('click', () => retreatFromTrial());
 el('sky-toggle').addEventListener('click', () => {
   skyMode = skyModes[(skyModes.indexOf(skyMode) + 1) % skyModes.length];
   el('sky-toggle').textContent = 'Sky: ' + (skyLabels[skyMode] ?? 'Auto');

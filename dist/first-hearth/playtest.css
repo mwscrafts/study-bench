@@ -206,3 +206,32 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .backpack-panel { padding: 13px; }
   .weapon-card { font-size: 10px; }
 }
+
+.trial-hud {
+  position: absolute;
+  top: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(390px, 76%);
+  padding: 7px 10px;
+  border: 1px solid #ccbae65e;
+  border-radius: 8px;
+  background: #25293bea;
+  color: #f7e5f0;
+  font-size: 11px;
+  pointer-events: none;
+}
+.trial-hud > div:first-child { display: flex; justify-content: space-between; gap: 10px; }
+.trial-hud p { text-align: center; margin: 5px 0 0; }
+.king-meter { position: relative; height: 14px; margin-top: 6px; border-radius: 4px; overflow: hidden; background: #151725; }
+.king-meter i { display: block; height: 100%; background: #9a79b9; }
+.king-meter span { position: absolute; inset: 0; text-align: center; font-size: 10px; }
+#leave-trial { display: block; margin: 6px auto 0; }
+.time-board { margin-top: 12px; font-size: 12px; }
+.time-board form { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.time-board label { flex-basis: 100%; }
+.time-board input { flex: 1; min-width: 100px; padding: 6px; border: 1px solid #e9c79055; border-radius: 5px; }
+.time-board ol { padding-left: 22px; max-height: 86px; overflow: auto; }
+@media (orientation: landscape) and (max-height: 580px) {
+  .trial-hud { top: 9px; width: min(300px, 43%); }
+}

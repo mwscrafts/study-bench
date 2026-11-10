@@ -1,7 +1,16 @@
 {
   "name": "love",
+  "main": "worker/hearth-times.mjs",
   "compatibility_date": "2026-10-04",
   "assets": {
-    "directory": "./dist"
-  }
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/first-hearth/api/times"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "HEARTH_TIMES", "class_name": "HearthTimes" }]
+  },
+  "migrations": [
+    { "tag": "hearth-times-v1", "new_sqlite_classes": ["HearthTimes"] }
+  ]
 }

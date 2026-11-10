@@ -10,7 +10,8 @@ export const BERRY_HEAL = 25;
 export const gear = {
   hatchet: ['⚒', 'Woodcutter’s hatchet', 'Chop marked pines.'],
   pickaxe: ['⛏', 'Pickaxe', 'Mine iron and gather crystals.'],
-  net: ['◇', 'Casting net', 'Cast from Lantern Dock.']
+  net: ['◇', 'Casting net', 'Cast from Lantern Dock.'],
+  godslayer: ['†', 'Godslayer', 'A rare blade from the tide.']
 };
 
 export const berryBushes = [1165, 1835, 2590, 4360].map((x, index) =>
@@ -86,6 +87,10 @@ export function paintHeldTool(ctx, x, y, direction, equipped, swing, bob, tilt) 
   } else if (equipped === 'pickaxe') {
     poly(ctx,[[-13,-11],[-9,-17],[-2,-21],[7,-20],[15,-12],[6,-15],[-1,-16],[-7,-14]],'#a5bbbc');
     poly(ctx,[[-9,-17],[-2,-21],[7,-20],[13,-14],[5,-18],[-1,-18]],'#d7ddd2');
+  } else if (equipped === 'godslayer') {
+    poly(ctx,[[0,-39],[-5,-29],[-3,0],[3,0],[5,-29]],'#d6c3ed');
+    ctx.fillStyle = '#ddb67f';
+    ctx.fillRect(-8,-3,16,3);
   } else {
     ctx.strokeStyle = '#dbcba2';
     ctx.lineWidth = 2;
