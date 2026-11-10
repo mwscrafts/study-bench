@@ -47,6 +47,7 @@ export function crownwoodLocation(player) {
 }
 
 const patrols = [
+  { surface: floor, left: 420, right: 790, offset: 5.7 },
   { surface: three, left: 1295, right: 1420, offset: 0 },
   { surface: bridge, left: 2685, right: 3065, offset: 2.2 },
   { surface: bridge, left: 3650, right: 4010, offset: 4.5 },

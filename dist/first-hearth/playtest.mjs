@@ -1,9 +1,9 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=09';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=10';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=09';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs?v=10?v=10';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
@@ -83,6 +83,7 @@ let particles = [];
 let floaters = [];
 let hitUntil = 0;
 let creatures = [];
+let creatureCycleKey = '';
 let player = createPlayer();
 let avatar = 'boy';
 let playing = false;
@@ -1175,7 +1176,9 @@ function bedDialogue() {
     return;
   }
   setDialogue('Sleep until morning? You will wake with full health.', [['Sleep', () => {
-    phaseClock = 0; nightIndex++; health = 100; iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
+    phaseClock = 0; nightIndex++; health = 100; skyMode = 'auto';
+    el('sky-toggle').textContent = 'Sky: Auto';
+    iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
     updateShadows(); updateNotes(); saveCamp();
     setDialogue('Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
   }], ['Not yet', () => closeDialogue()]]);
@@ -1807,20 +1810,21 @@ function composureDamageFactor() {
 }
 
 function updateComposure(dt) {
-  if (region === 'hut') { composureDamageClock = 0; return; }
   if (victory) return;
   const previousComposure = Math.round(composure);
   let healthChanged = false;
-  const nearby = [...creatures, ...(trial?.shadows ?? [])];
-  if (trial?.boss && trial.boss.hp > 1 && trial.stage === 'duel') nearby.push(trial.boss);
-  let proximity = 0;
-  for (const ghost of nearby) {
-    const distance = Math.hypot(ghost.x - player.x, (ghost.y ?? player.y) - player.y);
-    if (distance < 320) proximity = Math.max(proximity, 1 - distance / 320);
-  }
-  if (proximity > 0) {
-    const fighting = swing > 0 || cooldown > 0 || swingCombat;
-    composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)));
+  if (region !== 'hut') {
+    const nearby = [...creatures, ...(trial?.shadows ?? [])];
+    if (trial?.boss && trial.boss.hp > 1 && trial.stage === 'duel') nearby.push(trial.boss);
+    let proximity = 0;
+    for (const ghost of nearby) {
+      const distance = Math.hypot(ghost.x - player.x, (ghost.y ?? player.y) - player.y);
+      if (distance < 320) proximity = Math.max(proximity, 1 - distance / 320);
+    }
+    if (proximity > 0) {
+      const fighting = swing > 0 || cooldown > 0 || swingCombat;
+      composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)));
+    }
   }
   if (composure <= 0) {
     composureDamageClock += dt;
@@ -1880,11 +1884,62 @@ function updateKingTrial(dt) {
   updateTrialHud();
 }
 
-function updateShadows() {
+function updateShadows(dt = 0) {
   const area = regions[region];
   if (!area.shadows) return;
-  creatures = area.shadows(phaseClock, nightIndex)
-    .filter(creature => !defeatedShadows.has(region + ':' + nightIndex + ':' + creature.index));
+  const cycleKey = region + ':' + nightIndex;
+  if (creatureCycleKey !== cycleKey) {
+    creatures = [];
+    creatureCycleKey = cycleKey;
+  }
+  const forcedNight = skyMode === 'night';
+  const shadowPhase = forcedNight ? 80 : phaseClock;
+  if (!forcedNight && skyMode !== 'auto') {
+    creatures = [];
+    return;
+  }
+  if (!forcedNight && (phaseClock < 70 || phaseClock >= 121)) {
+    creatures = [];
+    if (phaseClock < 70) creatureCycleKey = cycleKey;
+    return;
+  }
+  const current = new Map(creatures.map(creature => [creature.index, creature]));
+  if (shadowPhase < 111) {
+    for (const spawn of area.shadows(shadowPhase, nightIndex)) {
+      if (defeatedShadows.has(region + ':' + nightIndex + ':' + spawn.index)) continue;
+      const creature = current.get(spawn.index) ?? { ...spawn, aggro: false, homeX: spawn.x, homeY: spawn.y };
+      creature.homeX = spawn.x;
+      creature.homeY = spawn.y;
+      const dx = player.x - creature.x, dy = player.y - creature.y;
+      const distance = Math.hypot(dx, dy);
+      if (!creature.aggro && distance < 760) creature.aggro = true;
+      if (creature.aggro && distance > 1080) creature.aggro = false;
+      const targetX = creature.aggro ? player.x : spawn.x;
+      const targetY = creature.aggro ? player.y : spawn.y;
+      const gap = Math.hypot(targetX - creature.x, targetY - creature.y);
+      const speed = creature.aggro ? 104 + Math.min(nightIndex, 8) * 7 : 76;
+      if (gap > 0.5) {
+        const step = Math.min(gap, speed * dt);
+        creature.x += (targetX - creature.x) / gap * step;
+        creature.y += (targetY - creature.y) / gap * step;
+      }
+      current.set(spawn.index, creature);
+    }
+  } else {
+    for (const creature of current.values()) {
+      const dx = player.x - creature.x, dy = player.y - creature.y;
+      const distance = Math.hypot(dx, dy);
+      if (!creature.aggro && distance < 760) creature.aggro = true;
+      if (creature.aggro && distance > 1080) creature.aggro = false;
+      if (creature.aggro && distance > 0.5) {
+        const step = Math.min(distance, (104 + Math.min(nightIndex, 8) * 7) * dt);
+        creature.x += dx / distance * step;
+        creature.y += dy / distance * step;
+      }
+    }
+  }
+  creatures = [...current.values()].filter(creature =>
+    !defeatedShadows.has(region + ':' + nightIndex + ':' + creature.index));
   if (creatures.length === 0 || animationClock < hitUntil) return;
   const hit = creatures.some(creature =>
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
@@ -1974,7 +2029,7 @@ function frame(time) {
       defeatedShadows.clear();
       shadowHealth.clear();
     }
-    updateShadows();
+    updateShadows(dt);
     updateComposure(dt);
     updateKingTrial(dt);
     if (trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) updateCat(dt);

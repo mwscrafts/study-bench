@@ -38,6 +38,7 @@ export const mineLights = [
 ];
 
 const patrols = [
+  { surface: floor, left: 480, right: 860, offset: 5.1 },
   { surface: floor, left: 2740, right: 3070, offset: .2 },
   { surface: rib, left: 3220, right: 3475, offset: 2.1 },
   { surface: floor, left: 3600, right: 4060, offset: 4.5 }
