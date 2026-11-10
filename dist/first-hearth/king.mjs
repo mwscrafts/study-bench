@@ -55,9 +55,10 @@ export function trialBounds(trial) {
   return [ARENA.left, ARENA.right];
 }
 
-export function attackTrial(trial, player, gear) {
-  const power = gear === 'godslayer' ? Infinity : gear === 'shadowBlade' ? 100
+export function attackTrial(trial, player, gear, damageFactor = 1) {
+  const basePower = gear === 'godslayer' ? Infinity : gear === 'shadowBlade' ? 100
     : gear === 'ironSword' ? 68 : gear === 'pickaxe' ? 54 : 37;
+  const power = Number.isFinite(basePower) ? Math.max(1, Math.floor(basePower * damageFactor)) : basePower;
   const inReach = (x, y, range) =>
     Math.abs(x - player.x) <= range && Math.abs(y - player.y) <= 76 &&
     (x - player.x) * player.direction >= -22;

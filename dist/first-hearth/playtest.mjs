@@ -54,6 +54,8 @@ let fishing = readFishing();
 let casting = null;
 let nightIndex = 0;
 let health = 100;
+let composure = 100;
+let composureDamageClock = 0;
 let berries = 3;
 let pickedBushes = new Set();
 let berrySeeds = 3;
@@ -280,6 +282,25 @@ function drawPortrait(canvas, sprite) {
   const context = canvas.getContext('2d');
   context.clearRect(0, 0, canvas.width, canvas.height);
   drawSprite(context, sprite, canvas.width * .55, canvas.height - 4, canvas.height - 8);
+}
+
+function paintComposureWraith(context, x, y, clock) {
+  const sway = Math.sin(clock * 1.7) * 7;
+  const pulse = .48 + Math.sin(clock * 2.2) * .08;
+  context.save();
+  context.translate(x + sway, y - 5);
+  context.globalAlpha = pulse;
+  context.shadowColor = '#bd8aff'; context.shadowBlur = 24;
+  context.fillStyle = '#8f62bd';
+  context.beginPath();
+  context.moveTo(-39,0); context.quadraticCurveTo(-52,-44,-31,-87);
+  context.quadraticCurveTo(-20,-109,0,-111); context.quadraticCurveTo(29,-104,38,-72);
+  context.quadraticCurveTo(48,-37,35,-2); context.lineTo(21,-16); context.lineTo(8,-2);
+  context.lineTo(-5,-16); context.lineTo(-20,-1); context.closePath(); context.fill();
+  context.shadowBlur = 0; context.fillStyle = '#f0d6ff';
+  context.beginPath(); context.ellipse(-13,-72,4,8,-.2,0,Math.PI*2); context.fill();
+  context.beginPath(); context.ellipse(13,-72,4,8,.2,0,Math.PI*2); context.fill();
+  context.restore();
 }
 
 function paintWave(context, x, y, direction, remaining, bob = 0) {
@@ -593,6 +614,9 @@ function paint() {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
   });
   paintPeers();
+  if (playing && composure < 10 && region !== 'hut') {
+    paintComposureWraith(ctx, clamp(player.x - player.direction * 92, 45, terrain.width - 45), player.y, animationClock);
+  }
   if (playing) {
     const indoor = region === 'hut';
     const catX = indoor ? 665 : cat.x;
@@ -791,6 +815,9 @@ function updateNotes() {
     : equipment;
   el('hpText').textContent = health;
   el('hpBar').style.width = health + '%';
+  el('composureText').textContent = Math.round(composure);
+  el('composureBar').style.width = composure + '%';
+  el('composureMeter').setAttribute('aria-valuenow', String(Math.round(composure)));
   el('berryCount').textContent = berries;
   el('quickBerry').disabled = !playing || berries < 1 || health >= 100;
   el('healthMeter').setAttribute('aria-valuenow', String(health));
@@ -828,7 +855,7 @@ function saveCamp() {
       version: 14, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
-      phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
+      phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing,
       berrySeeds, berryPlots, catnipUnlocked, catnipReadyAt, minecartOre, minecartUpdatedAt,
@@ -872,6 +899,8 @@ function begin(save) {
   nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
   const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
   health = Number.isInteger(save?.health) ? clamp(save.health, 1, 100) : 100 - legacyHits * 34;
+  composure = Number.isFinite(save?.composure) ? clamp(save.composure, 0, 100) : 100;
+  composureDamageClock = 0;
   berries = Number.isSafeInteger(save?.berries) ? Math.max(0, save.berries) : 3;
   const savedBushes = Array.isArray(save?.pickedBushes) ? save.pickedBushes : [];
   pickedBushes = new Set(berryBushes.filter(bush => savedBushes.includes(bush.id)).map(bush => bush.id));
@@ -1141,8 +1170,11 @@ function bedDialogue() {
 }
 
 function petAlvin() {
+  if (region !== 'hut') return;
   petHeartsUntil = animationClock+2.2;
-  notice = 'Alvin leans into your hand and purrs.';
+  const restored = Math.min(25, 100 - composure);
+  composure = Math.min(100, composure + 25);
+  notice = restored > 0 ? 'Alvin purrs and restores ' + restored + ' Composure.' : 'Alvin leans into your hand and purrs.';
   noticeUntil = animationClock+2.2;
   closeDialogue();
 }
@@ -1520,15 +1552,16 @@ function updateSwing(dt) {
   if (swingCombat) {
     swingCombat = false;
     let result;
-    if (trial) result = attackTrial(trial, { ...player, direction: swingDirection }, equipped);
+    if (trial) result = attackTrial(trial, { ...player, direction: swingDirection }, equipped, composureDamageFactor());
     else {
       const target = creatures.filter(creature => Math.abs(creature.x - player.x) < 115 &&
         Math.abs(creature.y - player.y) < 78 && (creature.x - player.x) * swingDirection >= -22)
         .sort((a,b) => Math.abs(a.x-player.x)-Math.abs(b.x-player.x))[0];
       if (target) {
         const id = region + ':' + nightIndex + ':' + target.index;
-        const power = equipped === 'godslayer' ? 999 : equipped === 'shadowBlade' ? 100
+        const basePower = equipped === 'godslayer' ? 999 : equipped === 'shadowBlade' ? 100
           : equipped === 'ironSword' ? 70 : equipped === 'pickaxe' ? 45 : 32;
+        const power = equipped === 'godslayer' ? basePower : Math.max(1, Math.floor(basePower * composureDamageFactor()));
         const remaining = (shadowHealth.get(id) ?? 60 + Math.min(nightIndex, 8) * 18) - power;
         result = { x: target.x, y: target.y, damage: power };
         shadowHealth.set(id, remaining);
@@ -1757,6 +1790,47 @@ function updateTrialHud() {
   }
 }
 
+function composureDamageFactor() {
+  return .85 + .15 * (composure / 100);
+}
+
+function updateComposure(dt) {
+  if (region === 'hut') { composureDamageClock = 0; return; }
+  if (victory) return;
+  const previousComposure = Math.round(composure);
+  let healthChanged = false;
+  const nearby = [...creatures, ...(trial?.shadows ?? [])];
+  if (trial?.boss && trial.boss.hp > 1 && trial.stage === 'duel') nearby.push(trial.boss);
+  let proximity = 0;
+  for (const ghost of nearby) {
+    const distance = Math.hypot(ghost.x - player.x, (ghost.y ?? player.y) - player.y);
+    if (distance < 320) proximity = Math.max(proximity, 1 - distance / 320);
+  }
+  if (proximity > 0) {
+    const fighting = swing > 0 || cooldown > 0 || swingCombat;
+    composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)));
+  }
+  if (composure <= 0) {
+    composureDamageClock += dt;
+    while (composureDamageClock >= 1) {
+      composureDamageClock -= 1;
+      health = Math.max(0, health - 1);
+      healthChanged = true;
+      if (!health) {
+        if (trial) retreatFromTrial(true);
+        else {
+          health = 100;
+          enterRegion(region);
+          notice = 'Alvin led you back to safety.';
+          noticeUntil = animationClock + 2;
+        }
+        break;
+      }
+    }
+  } else composureDamageClock = 0;
+  if (healthChanged || Math.round(composure) !== previousComposure) updateNotes();
+}
+
 function updateKingTrial(dt) {
   if (!trial || victory) return;
   const before = trial.stage;
@@ -1764,7 +1838,8 @@ function updateKingTrial(dt) {
   if (damage && animationClock >= hitUntil) {
     const baseHit = difficulty === 'hard' ? 20 : 8;
     const hit = before === 'duel' && damage === 24 && tools.charm ? Math.ceil(baseHit * .5) : baseHit;
-    health = Math.max(0, health - (tools.helmet ? Math.ceil(hit * .75) : hit));
+    const composureHit = Math.ceil(hit * (1 + .15 * (1 - composure / 100)));
+    health = Math.max(0, health - (tools.helmet ? Math.ceil(composureHit * .75) : composureHit));
     if (!health) {
       retreatFromTrial(true);
       return;
@@ -1803,7 +1878,8 @@ function updateShadows() {
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
   if (!hit) return;
   const hitDamage = difficulty === 'hard' ? 20 : 8;
-  health = Math.max(0, health - (tools.helmet ? Math.ceil(hitDamage * .75) : hitDamage));
+  const composureHit = Math.ceil(hitDamage * (1 + .15 * (1 - composure / 100)));
+  health = Math.max(0, health - (tools.helmet ? Math.ceil(composureHit * .75) : composureHit));
   hitUntil = animationClock + 1.8;
   if (health === 0) {
     health = 100;
@@ -1887,6 +1963,7 @@ function frame(time) {
       shadowHealth.clear();
     }
     updateShadows();
+    updateComposure(dt);
     updateKingTrial(dt);
     if (trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) updateCat(dt);
     updateCamera(false, dt);

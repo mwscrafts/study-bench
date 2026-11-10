@@ -114,8 +114,10 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 }
 /* Emberwild's on-scene health meter and below-scene backpack strip. */
 .hud { pointer-events: none; position: absolute; inset: 20px 23px auto; display: flex; justify-content: space-between; align-items: start; gap: 10px; }
-.vitals { flex: none; }
+.vitals { flex: none; display: grid; gap: 7px; }
 .vitals > div { width: 110px; }
+.composure-vital span { color: #ddc7f3; }
+#composureBar { background: #a77bd4; box-shadow: 0 0 8px #a77bd477; }
 .vitals span { white-space: nowrap; font-size: 11px; color: #f5d7be; }
 .meter { height: 4px; background: #07272566; margin-top: 7px; border-radius: 4px; overflow: hidden; }
 .meter i { display: block; height: 100%; width: 100%; background: #cf9b81; transition: width .15s; }
