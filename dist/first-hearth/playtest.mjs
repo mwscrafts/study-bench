@@ -220,6 +220,7 @@ const conversations = {
   'catnip-garden': { name: 'Alvin’s catnip patch', role: 'ALDER CAMP' },
   minecart: { name: 'Ivo’s minecart', role: 'EMBER VEIN EXPRESS' },
   'hut-bed': { name: 'The little bed', role: 'A SAFE PLACE' },
+  'hut-decor': { name: 'Hut decorations', role: 'A SAFE PLACE' },
   'alvin-bed': { name: 'Alvin', role: 'HIS COZY BED' },
   'lantern-rest': {
     name: 'Lantern Rest', role: 'KING’S GROUNDS',
