@@ -1,6 +1,6 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
-  groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs?v=12';
-import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=10';
+  groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs?v=13';
+import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=11';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=10';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=09';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs?v=11';
@@ -18,7 +18,7 @@ import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, M
 import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
-import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=16';
+import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=17';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -186,10 +186,10 @@ gates['village-return'] = { region: 'king', footing: { x: 3670, ground: 'king-fl
 gates['celebration-house'] = { region: 'house' };
 gates['house-return'] = { region: 'village', footing: { x: 1920, ground: 'village-road' } };
 gates['hut-door'] = { region: 'hut' };
-gates['hut-exit'] = { region: 'camp', footing: { x: 3020, ground: 'trail' } };
+gates['hut-exit'] = { region: 'camp', footing: { x: 2705, ground: 'trail' } };
 const liftGates = {
   lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
-  'mine-lift': { region: 'camp', footing: { x: 2780, ground: 'trail' } }
+  'mine-lift': { region: 'camp', footing: { x: 2300, ground: 'trail' } }
 };
 
 const conversations = {
@@ -580,7 +580,7 @@ function paint() {
     shadow(mara.x, mara.y, 24);
     drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
     paintCraftingProps(ctx, tools);
-    if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2780,groundAt(2780)-127);
+    if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2415,groundAt(2415)-127);
     for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
     paintCampFacilities(ctx, { berryPlots, growMs:BERRY_GROW_MS, catnipUnlocked,
       catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && ivoQuest }, animationClock);
@@ -770,7 +770,7 @@ function updateCat(dt) {
 function updateCatnipLeap() {
   if (!catnipLeap || region !== 'camp') return false;
   const t = clamp((animationClock-catnipLeap.start)/catnipLeap.duration,0,1);
-  const targetX = 3390, targetY = groundAt(targetX);
+  const targetX = 3040, targetY = groundAt(targetX);
   cat.x = catnipLeap.fromX+(targetX-catnipLeap.fromX)*t;
   cat.y = catnipLeap.fromY+(targetY-catnipLeap.fromY)*t-Math.sin(Math.PI*t)*92;
   cat.direction = Math.sign(targetX-catnipLeap.fromX)||1;
