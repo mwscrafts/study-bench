@@ -142,7 +142,7 @@ export class HearthPresence extends DurableObject {
       if (old === server || old.deserializeAttachment()?.id !== playerId) continue;
       const peer = old.deserializeAttachment();
       if (peer?.pose) this.broadcast(this.ctx.getWebSockets().filter(other => other !== old),
-        peer.pose.region, { type: 'left', id: peer.id });
+        peer.pose.region, { type: 'left', id: peer.id, temporary: true });
       try { old.close(4000, 'Session reconnected'); } catch { /* An expired socket may already be closed. */ }
     }
     server.send(JSON.stringify({ type: 'ready', doors: [...this.doors] }));
@@ -156,7 +156,7 @@ export class HearthPresence extends DurableObject {
       const lastSeen = peer?.lastAt || peer?.connectedAt || 0;
       if (!lastSeen || now - lastSeen < 45000) continue;
       if (peer.pose) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
-        peer.pose.region, { type: 'left', id: peer.id });
+        peer.pose.region, { type: 'left', id: peer.id, temporary: true });
       try { socket.close(4000, 'Presence expired'); } catch { /* The peer may already be gone. */ }
     }
   }
@@ -208,17 +208,20 @@ export class HearthPresence extends DurableObject {
     }
   }
 
-  async webSocketClose(socket) {
+  async webSocketClose(socket, code, reason) {
     const peer = socket.deserializeAttachment();
-    if (peer?.pose) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
-      peer.pose.region, { type: 'left', id: peer.id });
+    const replacement = peer && this.ctx.getWebSockets().some(other =>
+      other !== socket && other.deserializeAttachment()?.id === peer.id);
+    const temporary = code !== 1000 || reason === 'Leaving world';
+    if (peer?.pose && !replacement) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
+      peer.pose.region, { type: 'left', id: peer.id, temporary });
     if (!this.ctx.getWebSockets().some(other => other !== socket)) {
       this.doors.clear();
       await this.ctx.storage.delete('opened-doors');
     }
   }
 
-  async webSocketError(socket) { await this.webSocketClose(socket); }
+  async webSocketError(socket) { await this.webSocketClose(socket, 1006, 'Socket error'); }
 }
 
 // A single, site-wide board lets visitors leave notes for someone who arrives later.

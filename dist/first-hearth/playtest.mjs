@@ -369,7 +369,7 @@ function disconnectPresence() {
 function addPeer(id, pose) {
   if (typeof id !== 'string' || !pose || pose.region !== region) return;
   const existing = peers.get(id);
-  peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y });
+  peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y, leftAt: null });
   updatePresenceButton();
 }
 
@@ -421,7 +421,9 @@ function connectPresence() {
       updatePresenceButton();
     } else if (message.type === 'pose') addPeer(message.id, message.pose);
     else if (message.type === 'left') {
-      peers.delete(message.id);
+      const peer = peers.get(message.id);
+      if (message.temporary && peer) peer.leftAt = Date.now();
+      else peers.delete(message.id);
       updatePresenceButton();
     }
   };
@@ -457,13 +459,19 @@ function sendPose(force = false) {
 }
 
 function paintPeers() {
-  for (const peer of peers.values()) {
+  for (const [id, peer] of peers) {
     const pose = peer.pose;
+    if (peer.leftAt) {
+      const faded = (Date.now() - peer.leftAt) / 5000;
+      if (faded >= 1) { peers.delete(id); updatePresenceButton(); continue; }
+    }
     if (pose.region !== region || !sprites?.[pose.avatar]) continue;
     peer.x += (pose.x - peer.x) * .38;
     peer.y += (pose.y - peer.y) * .38;
     const bob = pose.moving ? -Math.abs(Math.sin(pose.gait)) * 4 : 0;
     const tilt = (pose.moving ? Math.sin(pose.gait) * .045 : 0) + pose.swing * -.23;
+    ctx.save();
+    if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
     shadow(peer.x,peer.y,22);
     drawSprite(ctx,sprites[pose.avatar],peer.x,peer.y,97,pose.direction,bob,tilt);
     if (pose.helmet) {
@@ -479,6 +487,7 @@ function paintPeers() {
     ctx.fillStyle = '#142b25df'; ctx.fillRect(peer.x-width/2,peer.y-121,width,19);
     ctx.fillStyle = '#fff1d5'; ctx.textAlign = 'center';
     ctx.fillText(label,peer.x,peer.y-107,150);
+    ctx.restore();
   }
 }
 
