@@ -152,7 +152,7 @@ export function buildCampArt() {
   const rand = random(89463);
   ctx.lineJoin = 'round';
   for (let x = 35; x < WORLD_WIDTH; x += 63 + rand()*55) {
-    if (x > 1810 && x < 2550 || x > 3820 && x < 4310) continue;
+    if (x > 1570 && x < 2850 || x > 3820 && x < 4310) continue;
     const height = 130 + rand()*310;
     const y = groundAt(x)+8;
     pine(ctx,x,y,height,'#344f47','#4a6955');
@@ -160,9 +160,9 @@ export function buildCampArt() {
   }
   roots(ctx);
   forge(ctx);
-  tent(ctx,1960,groundAt(1960));
+  tent(ctx,1650,groundAt(1650));
   mine(ctx);
-  const liftX = 2415;
+  const liftX = 2780;
   const liftY = groundAt(liftX);
   path(ctx,[[liftX-51,liftY],[liftX-51,liftY-123],[liftX+43,liftY-123],[liftX+43,liftY]],'#786348',12);
   path(ctx,[[liftX-51,liftY-122],[liftX+37,liftY-27]],'#8c7953',6);
@@ -171,8 +171,8 @@ export function buildCampArt() {
   lantern(ctx, 4504, groundAt(4504));
   sign(ctx, 400, groundAt(400), 'Reedbank Trail');
   sign(ctx, 1220, groundAt(1220), 'Pine Gate');
-  sign(ctx, 2570, groundAt(2570), 'Alder Camp');
-  sign(ctx, 2650, groundAt(2650), 'Crownwood ↗');
+  sign(ctx, 3540, groundAt(3540), 'Alder Camp');
+  sign(ctx, 3630, groundAt(3630), 'Crownwood ↗');
   sign(ctx, 4290, groundAt(4290), 'Shore Trail →');
   sign(ctx, 3775, 260, 'Crownwood →');
   path(ctx,[[1141,612],[1141,513],[1165,503]],'#6d6250',13);

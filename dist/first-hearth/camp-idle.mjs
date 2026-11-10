@@ -4,10 +4,10 @@ import { poly, path, orb } from './camp-art.mjs';
 export const campFacilities = [
   { id: 'request-board', x: 2140, label: 'Read the request board', radius: 72 },
   { id: 'player-board', x: 2230, label: 'Read the player noticeboard', radius: 72 },
-  { id: 'minecart', x: 2360, label: 'Check Ivo’s ore cart', radius: 70 },
-  { id: 'berry-plot', x: 2890, label: 'Tend the berry plot', radius: 74 },
-  { id: 'catnip-garden', x: 3040, label: 'Check Alvin’s catnip garden', radius: 70 },
-  { id: 'hut-door', x: 2705, label: 'Enter the hut', radius: 84 }
+  { id: 'minecart', x: 2580, label: 'Check Perry’s ore cart', radius: 70 },
+  { id: 'berry-plot', x: 3210, label: 'Tend the berry plot', radius: 74 },
+  { id: 'catnip-garden', x: 3390, label: 'Check Alvin’s catnip garden', radius: 70 },
+  { id: 'hut-door', x: 3020, label: 'Enter the hut', radius: 84 }
 ];
 
 const hutFloor = { id: 'hut-floor', points: [[0,650],[960,650]] };
@@ -121,7 +121,7 @@ export function paintCampFacilities(ctx, state, animation) {
     ctx.fillText(title,x,y-79);
     path(ctx,[[x-46,y-70],[x+46,y-70]],'#5d4934',2);
   };
-  const hutX=2705, hutY=floor(hutX);
+  const hutX=3020, hutY=floor(hutX);
   poly(ctx,[[hutX-83,hutY],[hutX-78,hutY-104],[hutX+79,hutY-104],[hutX+84,hutY]],'#a28a65');
   poly(ctx,[[hutX-101,hutY-99],[hutX-2,hutY-175],[hutX+105,hutY-99]],'#66513f');
   path(ctx,[[hutX-101,hutY-99],[hutX-2,hutY-175],[hutX+105,hutY-99]],'#c6a77a',4);
@@ -132,7 +132,7 @@ export function paintCampFacilities(ctx, state, animation) {
   signBoard(2230,floor(2230),'NOTES','#c4d0b0');
   // Three small raised garden beds. Ripe fruit glows softly.
   for(let i=0;i<3;i++) {
-    const x=2840+i*50, y=floor(x);
+    const x=3160+i*50, y=floor(x);
     ctx.fillStyle='#674a36'; ctx.fillRect(x-30,y-27,60,24);
     ctx.fillStyle='#543e30'; ctx.fillRect(x-30,y-27,60,5);
     ctx.fillStyle='#526b42'; ctx.fillRect(x-25,y-37,50,11);
@@ -144,7 +144,7 @@ export function paintCampFacilities(ctx, state, animation) {
     }
   }
   // Catnip patch: a little flower cluster is visible once Barry has given the seed.
-  const cx=3040, cy=floor(3040);
+  const cx=3390, cy=floor(3390);
   ctx.fillStyle='#665039'; ctx.fillRect(cx-32,cy-18,64,15);
   if(state.catnipUnlocked) {
     for(let i=0;i<5;i++) {
@@ -155,7 +155,7 @@ export function paintCampFacilities(ctx, state, animation) {
     if(state.catnipReadyAt && Date.now()>=state.catnipReadyAt) orb(ctx,cx,cy-59,13,'rgba(218,177,239,.28)');
   }
   // Minecart waits beside the old lift; locked means it remains an empty cart.
-  const mx=2360, my=floor(2360)-8;
+  const mx=2580, my=floor(2580)-8;
   ctx.fillStyle='#5b4734'; ctx.fillRect(mx-30,my-20,58,22);
   ctx.fillStyle=state.minecartUnlocked?'#9a7954':'#5a5347'; ctx.fillRect(mx-26,my-35,50,19);
   for(const dx of [-18,18]) { orb(ctx,mx+dx,my+5,7,'#3d3932'); orb(ctx,mx+dx,my+5,3,'#ad9871'); }

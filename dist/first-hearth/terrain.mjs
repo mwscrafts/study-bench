@@ -26,15 +26,15 @@ export function defineTerrain(width, height, spawn, platforms) {
 export const campTerrain = defineTerrain(WORLD_WIDTH, WORLD_HEIGHT, SPAWN_X, surfaces);
 
 export const landmarks = [
-  { id: 'mara', x: 2080, y: 610, label: 'Talk to Mara', radius: 94 },
-  { id: 'lift', x: 2425, y: 610, label: 'Inspect the lift', radius: 76 },
+  { id: 'mara', x: 1860, y: 610, label: 'Talk to Lyss', radius: 94 },
+  { id: 'lift', x: 2780, y: 610, label: 'Inspect the lift', radius: 76 },
   { id: 'canopy', x: 3745, y: 260, label: 'Enter Crownwood', radius: 92 },
   { id: 'mine', x: 4050, y: 748, label: 'Enter Embervein Mine', radius: 95 },
   { id: 'shore', x: 4660, y: 718, label: 'Enter the beach', radius: 88 }
 ];
 
 export const flowers = [
-  { id: 'clearing', x: 2310, y: 610, label: 'Pick dusklily by the fire' },
+  { id: 'clearing', x: 2380, y: 610, label: 'Pick dusklily by the fire' },
 ];
 
 export function clamp(value, minimum, maximum) {
