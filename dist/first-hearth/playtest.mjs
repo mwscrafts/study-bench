@@ -352,10 +352,23 @@ function addPeer(id, pose) {
   updatePresenceButton();
 }
 
+function presencePlayerId() {
+  const key = 'first-hearth:presence-player:v1';
+  try {
+    let id = sessionStorage.getItem(key);
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      id = crypto.randomUUID();
+      sessionStorage.setItem(key,id);
+    }
+    return id;
+  } catch { return crypto.randomUUID(); }
+}
+
 function connectPresence() {
   if (!onlineEnabled || !playing || document.hidden || presenceSocket) return;
   const url = new URL('/first-hearth/api/presence', location.href);
   url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.searchParams.set('player',presencePlayerId());
   let socket;
   try { socket = new WebSocket(url.href); } catch { updatePresenceButton(); return; }
   presenceSocket = socket;

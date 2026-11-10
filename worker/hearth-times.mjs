@@ -124,18 +124,45 @@ export class HearthPresence extends DurableObject {
   async fetch(request) {
     if (request.method !== 'GET' || request.headers.get('Upgrade')?.toLowerCase() !== 'websocket')
       return response({ error: 'WebSocket required' }, 426);
+    this.expireStalePeers(Date.now());
     if (!this.ctx.getWebSockets().length && this.doors.size) {
       this.doors.clear();
       await this.ctx.storage.delete('opened-doors');
     }
+    const url = new URL(request.url);
+    const suppliedId = url.searchParams.get('player');
+    const playerId = typeof suppliedId === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedId)
+      ? suppliedId : crypto.randomUUID();
     const [client, server] = Object.values(new WebSocketPair());
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ id: crypto.randomUUID(), pose: null, lastAt: 0 });
+    const now = Date.now();
+    server.serializeAttachment({ id: playerId, pose: null, lastAt: now, connectedAt: now });
+    for (const old of this.ctx.getWebSockets()) {
+      if (old === server || old.deserializeAttachment()?.id !== playerId) continue;
+      const peer = old.deserializeAttachment();
+      if (peer?.pose) this.broadcast(this.ctx.getWebSockets().filter(other => other !== old),
+        peer.pose.region, { type: 'left', id: peer.id });
+      try { old.close(4000, 'Session reconnected'); } catch { /* An expired socket may already be closed. */ }
+    }
     server.send(JSON.stringify({ type: 'ready', doors: [...this.doors] }));
     return new Response(null, { status: 101, webSocket: client });
   }
 
+  expireStalePeers(now = Date.now(), except = null) {
+    for (const socket of this.ctx.getWebSockets()) {
+      if (socket === except) continue;
+      const peer = socket.deserializeAttachment();
+      const lastSeen = peer?.lastAt || peer?.connectedAt || 0;
+      if (!lastSeen || now - lastSeen < 45000) continue;
+      if (peer.pose) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
+        peer.pose.region, { type: 'left', id: peer.id });
+      try { socket.close(4000, 'Presence expired'); } catch { /* The peer may already be gone. */ }
+    }
+  }
+
   async webSocketMessage(socket, message) {
+    this.expireStalePeers(Date.now(), socket);
     if (typeof message !== 'string' || message.length > 512) {
       socket.close(1009, 'Invalid position update');
       return;
@@ -161,7 +188,7 @@ export class HearthPresence extends DurableObject {
     if (!pose) return;
     const prior = socket.deserializeAttachment();
     if (!prior || Date.now() - prior.lastAt < 55) return;
-    socket.serializeAttachment({ id: prior.id, pose, lastAt: Date.now() });
+    socket.serializeAttachment({ id: prior.id, pose, lastAt: Date.now(), connectedAt: prior.connectedAt ?? Date.now() });
     const others = this.ctx.getWebSockets().filter(peer => peer !== socket);
     if (prior.pose?.region !== pose.region) {
       if (prior.pose) this.broadcast(others, prior.pose.region, { type: 'left', id: prior.id });
