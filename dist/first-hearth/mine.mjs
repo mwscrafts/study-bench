@@ -17,6 +17,7 @@ function at(surface, id, x, label, radius = 77) {
 
 export const ivo = at(floor, 'ivo', 2165, 'Talk to Perry', 98);
 export const netChest = at(floor, 'net-chest', 2360, 'Open Perry’s chest', 70);
+export const flint = at(floor, 'flint', 420, 'Pick up loose flint', 64);
 
 export const mineLandmarks = [
   at(floor, 'mine-return', 167, 'Return to Alder Camp', 90),

@@ -1,13 +1,13 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs?v=13';
-import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=11';
+import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=10';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=09';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs?v=11';
-import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
+import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
-import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=14';
+import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=15';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
@@ -609,6 +609,7 @@ function paint() {
     for (const node of oreNodes) {
       if (!iron.has(node.id)) paintOre(ctx, node, animationClock);
     }
+    if (!tools.flint && !tools.pickaxe) paintFlint(ctx);
     shadow(ivo.x, ivo.y, 26);
     drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
   } else if (region === 'beach') {
@@ -847,11 +848,13 @@ function updatePrompt() {
   const items = currentLandmarks().filter(item => !item.ground || item.ground === player.ground);
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
-  if (region === 'mine') items.push(...oreNodes.filter(node => !iron.has(node.id)));
+  if (region === 'mine') {
+    items.push(...oreNodes.filter(node => !iron.has(node.id)));
+    if (!tools.flint && !tools.pickaxe) items.push(flint);
+  }
   if (region === 'camp') {
     items.push(...timberTrees.filter(tree => !tools.chopped.includes(tree.id)));
     items.push(...berryBushes.filter(bush => !pickedBushes.has(bush.id)));
-    if (!tools.flint && !tools.pickaxe) items.push(flint);
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const label = current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
@@ -1283,7 +1286,7 @@ function maraDialogue() {
       updateNotes();
       saveCamp();
     }
-    setDialogue('Take my old hatchet. It cuts marked pines. Pick up loose flint by the root trail, then use 3 wood and 1 flint at the workbench east of the fire to make a pickaxe.',
+    setDialogue('Take my old hatchet. It cuts marked pines. Find loose flint inside Embervein Mine, then use 3 wood and 1 flint at the workbench east of the fire to make a pickaxe.',
       [['Back', maraDialogue]]);
   }];
   const paths = ['Where do the trails go?', () => setDialogue(
@@ -1505,7 +1508,7 @@ function ownsGear(id) {
 function inventoryItems() {
   const items = [
     ['▰', 'Wood', spareWood(tools), 'Chopped from marked pines.'],
-    ['⬟', 'Flint', Number(tools.flint), 'Loose stone used at the camp workbench.'],
+    ['⬟', 'Flint', Number(tools.flint), 'Mine stone used at the camp workbench.'],
     ['◆', 'Crystal', crystals.size - (tools.charm ? 2 : 0), 'Gathered with a pickaxe in Crownwood.'],
     ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein.'],
     ['✦', 'Shadow essence', shadowStock, 'Dropped by defeated night shadows.'],

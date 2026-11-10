@@ -4,7 +4,6 @@ function at(id, x, label, radius = 66) {
   return { id, x, y: groundAt(x), label, radius };
 }
 export const workbench = at('workbench',2520,'Use the workbench',83);
-export const flint = at('flint',2670,'Pick up loose flint');
 export const timberTrees = [
   at('pine-west',1505,'Chop marked pine'),
   at('pine-gate',1755,'Chop marked pine'),

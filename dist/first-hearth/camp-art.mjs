@@ -1,5 +1,5 @@
 import { CAMP_X, WORLD_WIDTH, WORLD_HEIGHT, groundAt, surfaces } from './terrain.mjs';
-import { workbench, flint, timberTrees } from "./crafting.mjs";
+import { workbench, timberTrees } from "./crafting.mjs";
 
 const palettes = {
   day: ['#719ca1','#b3c9b1','#f7deb0','#eee2ab'],
@@ -152,7 +152,7 @@ export function buildCampArt() {
   const rand = random(89463);
   ctx.lineJoin = 'round';
   for (let x = 35; x < WORLD_WIDTH; x += 63 + rand()*55) {
-    if (x > 1810 && x < 2550 || x > 3820 && x < 4310) continue;
+    if (x > 1500 && x < 2550 || x > 3820 && x < 4310) continue;
     const height = 130 + rand()*310;
     const y = groundAt(x)+8;
     pine(ctx,x,y,height,'#344f47','#4a6955');
@@ -171,8 +171,8 @@ export function buildCampArt() {
   lantern(ctx, 4504, groundAt(4504));
   sign(ctx, 400, groundAt(400), 'Reedbank Trail');
   sign(ctx, 1220, groundAt(1220), 'Pine Gate');
-  sign(ctx, 2570, groundAt(2570), 'Alder Camp');
-  sign(ctx, 2650, groundAt(2650), 'Crownwood ↗');
+  sign(ctx, 1650, groundAt(1650), 'Alder Camp');
+  sign(ctx, 3540, groundAt(3540), 'Crownwood ↗');
   sign(ctx, 4290, groundAt(4290), 'Shore Trail →');
   sign(ctx, 3775, 260, 'Crownwood →');
   path(ctx,[[1141,612],[1141,513],[1165,503]],'#6d6250',13);
@@ -307,11 +307,6 @@ export function paintCraftingProps(ctx, tools) {
       ctx.fillRect(x-10,y-44,20,44);
       path(ctx,[[x-9,y-31],[x+9,y-31]],'#e5bb74',5);
     }
-  }
-  if (!tools.flint && !tools.pickaxe) {
-    const {x,y}=flint;
-    poly(ctx,[[x-18,y],[x-13,y-15],[x+2,y-23],[x+16,y-12],[x+18,y]],'#647c82');
-    path(ctx,[[x-13,y-15],[x+2,y-23],[x+11,y-16]],'#bcd6ce',3);
   }
   const {x,y}=workbench;
   path(ctx,[[x-37,y],[x-33,y-52],[x+37,y-52],[x+42,y]],'#72553d',9);

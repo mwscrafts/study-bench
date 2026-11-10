@@ -1,5 +1,5 @@
 import { random, poly, path, orb, sign, stone } from './camp-art.mjs';
-import { mineTerrain, mineLights, netChest } from './mine.mjs';
+import { mineTerrain, mineLights, netChest, flint } from './mine.mjs?v=12';
 
 const { width, height, floor, ledges } = mineTerrain;
 const ceiling = [[0,212],[396,211],[640,233],[850,306],[1160,322],[1420,230],[1650,255],[1900,356],[2260,301],[2525,346],[2715,407],[2960,426],[3170,379],[3410,410],[3600,359],[3880,434],[4100,457],[4330,287],[4550,262],[4800,277]];
@@ -146,4 +146,10 @@ export function paintOre(ctx, node, clock) {
   poly(ctx,[[x-25,y-23],[x-7,y-39],[x+20,y-32],[x+12,y-19],[x-10,y-12]],'#7e8b7f');
   path(ctx,[[x-17,y-20],[x-5,y-14],[x+3,y-26],[x+15,y-24],[x+23,y-16],[x+30,y-14]],'#d89b70',4);
   orb(ctx,x+3,y-26,2+Math.max(0,Math.sin(clock*2.2+x))*2,'#f5c797');
+}
+
+export function paintFlint(ctx) {
+  const {x,y}=flint;
+  poly(ctx,[[x-18,y],[x-13,y-15],[x+2,y-23],[x+16,y-12],[x+18,y]],'#647c82');
+  path(ctx,[[x-13,y-15],[x+2,y-23],[x+11,y-16]],'#bcd6ce',3);
 }
