@@ -128,8 +128,8 @@ function paintKing(ctx,boss,clock,victory,endingScene) {
       if(endingScene && progress===0) {
         const approach=Math.max(0,Math.min(1,(endingScene.elapsed-endingScene.actionAt+.45)/.45));
         if(approach>0) {
-          const from=endingScene.target, to=boss.x;
-          flowerCrown(ctx,from+(to-from)*approach,y-66-12*approach,.72);
+          const from=endingScene.target, to=boss.x-32;
+          flowerCrown(ctx,from+(to-from)*approach,y-66+14*approach,.72);
         }
       }
       if(progress>0) {
@@ -140,8 +140,8 @@ function paintKing(ctx,boss,clock,victory,endingScene) {
         path(ctx,[[boss.x+14,y-39],[boss.x+28,y-16]],'#486273',8);
         orb(ctx,boss.x,y-64,16,'#d7ae8d');
         poly(ctx,[[boss.x-16,y-71],[boss.x-11,y-84],[boss.x+9,y-84],[boss.x+16,y-71]],'#533c32');
-        flowerCrown(ctx,boss.x,y-80,.8);
         ctx.restore();
+        flowerCrown(ctx,boss.x-32+32*progress,y-52-28*progress,.72+.08*progress);
       }
     }
     return;

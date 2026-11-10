@@ -1208,7 +1208,7 @@ function endingDialogue() {
       saveCamp();
       closeDialogue();
       const goal = ending === 'free' ? trial?.boss?.x ?? kingLandmarks[3].x : kingLandmarks[3].x;
-      const target = goal + (player.x > goal ? 76 : -76);
+      const target = goal + (player.x > goal ? 1 : -1) * (ending === 'free' ? 68 : 52);
       endingScene = { ending, elapsed: 0, struck: false, target,
         actionAt: Math.max(1.7, Math.abs(player.x - target) / (ending === 'free' ? 260 : 390) + .15) };
       clearControls();
