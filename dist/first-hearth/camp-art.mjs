@@ -152,7 +152,7 @@ export function buildCampArt() {
   const rand = random(89463);
   ctx.lineJoin = 'round';
   for (let x = 35; x < WORLD_WIDTH; x += 63 + rand()*55) {
-    if (x > 1570 && x < 2850 || x > 3820 && x < 4310) continue;
+    if (x > 1400 && x < 2850 || x > 3820 && x < 4310) continue;
     const height = 130 + rand()*310;
     const y = groundAt(x)+8;
     pine(ctx,x,y,height,'#344f47','#4a6955');

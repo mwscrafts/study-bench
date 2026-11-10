@@ -4,7 +4,7 @@ import { poly, path, orb } from './camp-art.mjs';
 export const campFacilities = [
   { id: 'request-board', x: 2140, label: 'Read the request board', radius: 72 },
   { id: 'player-board', x: 2230, label: 'Read the player noticeboard', radius: 72 },
-  { id: 'minecart', x: 2580, label: 'Check Perry’s ore cart', radius: 70 },
+  { id: 'minecart', x: 2380, label: 'Check Perry’s ore cart', radius: 70 },
   { id: 'berry-plot', x: 3210, label: 'Tend the berry plot', radius: 74 },
   { id: 'catnip-garden', x: 3390, label: 'Check Alvin’s catnip garden', radius: 70 },
   { id: 'hut-door', x: 3020, label: 'Enter the hut', radius: 84 }
@@ -155,7 +155,7 @@ export function paintCampFacilities(ctx, state, animation) {
     if(state.catnipReadyAt && Date.now()>=state.catnipReadyAt) orb(ctx,cx,cy-59,13,'rgba(218,177,239,.28)');
   }
   // Minecart waits beside the old lift; locked means it remains an empty cart.
-  const mx=2580, my=floor(2580)-8;
+  const mx=2380, my=floor(2380)-8;
   ctx.fillStyle='#5b4734'; ctx.fillRect(mx-30,my-20,58,22);
   ctx.fillStyle=state.minecartUnlocked?'#9a7954':'#5a5347'; ctx.fillRect(mx-26,my-35,50,19);
   for(const dx of [-18,18]) { orb(ctx,mx+dx,my+5,7,'#3d3932'); orb(ctx,mx+dx,my+5,3,'#ad9871'); }
