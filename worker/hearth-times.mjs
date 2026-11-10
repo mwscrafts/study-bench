@@ -212,7 +212,7 @@ export class HearthPresence extends DurableObject {
     const peer = socket.deserializeAttachment();
     const replacement = peer && this.ctx.getWebSockets().some(other =>
       other !== socket && other.deserializeAttachment()?.id === peer.id);
-    const temporary = code !== 1000 || reason === 'Leaving world';
+    const temporary = code !== 1000 || reason === 'Away';
     if (peer?.pose && !replacement) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
       peer.pose.region, { type: 'left', id: peer.id, temporary });
     if (!this.ctx.getWebSockets().some(other => other !== socket)) {

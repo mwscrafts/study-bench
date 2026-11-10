@@ -353,12 +353,12 @@ function updatePresenceButton() {
   button.title = onlineEnabled ? 'Public world. Switch to solo play.' : 'Solo play. Switch to the public world.';
 }
 
-function disconnectPresence() {
+function disconnectPresence(reason = 'Leaving world') {
   clearTimeout(presenceRetry);
   presenceRetry = null;
   const socket = presenceSocket;
   presenceSocket = null;
-  if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, 'Leaving world');
+  if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, reason);
   peers.clear();
   sharedDoors.clear();
   lastPose = '';
@@ -2130,7 +2130,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     clearControls();
     saveCamp();
-    disconnectPresence();
+    disconnectPresence('Away');
   } else connectPresence();
 });
 new ResizeObserver(resize).observe(world);
