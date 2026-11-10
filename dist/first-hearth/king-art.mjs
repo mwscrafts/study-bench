@@ -66,10 +66,10 @@ function glow(ctx,x,y,r,color) {
   orb(ctx,x,y,r,light);
 }
 
-export function paintKingGrounds(ctx, trial, victory, clock, endingScene = null) {
+export function paintKingGrounds(ctx, trial, victory, clock, endingScene = null, sharedGateOpen = false) {
   const rest=kingLandmarks[1];
   const altar=kingLandmarks[2];
-  if (victory?.ending) {
+  if (victory?.ending || sharedGateOpen) {
     const gate=kingLandmarks.find(item => item.id === 'village-gate');
     glow(ctx,gate.x,gate.y-85,120,'#f4d49a7c');
     path(ctx,[[gate.x-44,gate.y],[gate.x-44,gate.y-135],[gate.x,gate.y-165],

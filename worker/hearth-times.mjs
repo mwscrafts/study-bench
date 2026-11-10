@@ -67,6 +67,10 @@ export class HearthTimes extends DurableObject {
 
 const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house']);
 const TOOLS = new Set(['hatchet','pickaxe','ironSword','shadowBlade','godslayer','net']);
+const DOORS = {
+  'mine-lift': [{ region: 'mine', x: 2165 }, { region: 'mine', x: 4510 }, { region: 'camp', x: 2425 }],
+  'village-gate': [{ region: 'king', x: 3760 }]
+};
 const numberBetween = (value,min,max) => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 
 function readPose(data) {
@@ -78,6 +82,7 @@ function readPose(data) {
     region: data.region, x: data.x, y: data.y,
     direction: data.direction === -1 ? -1 : 1,
     moving: data.moving === true, gait: data.gait, swing: data.swing,
+    wave: numberBetween(data.wave,0,2) ? data.wave : 0,
     avatar: data.avatar === 'girl' ? 'girl' : 'boy',
     tool: TOOLS.has(data.tool) ? data.tool : null,
     helmet: data.helmet === true,
@@ -85,26 +90,53 @@ function readPose(data) {
   };
 }
 
-// One Durable Object coordinates presence across all regions. The per-socket attachment
-// survives hibernation; a later shared-door event can live in this object's storage.
+// One public world. Position lives on WebSocket attachments, while opened gates live
+// in storage so a player arriving after the object hibernates still sees them.
 export class HearthPresence extends DurableObject {
-  fetch(request) {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.doors = new Set();
+    ctx.blockConcurrencyWhile(async () => {
+      if (ctx.getWebSockets().length) this.doors = new Set(await ctx.storage.get('opened-doors') ?? []);
+      else await ctx.storage.delete('opened-doors');
+    });
+  }
+
+  async fetch(request) {
     if (request.method !== 'GET' || request.headers.get('Upgrade')?.toLowerCase() !== 'websocket')
       return response({ error: 'WebSocket required' }, 426);
+    if (!this.ctx.getWebSockets().length && this.doors.size) {
+      this.doors.clear();
+      await this.ctx.storage.delete('opened-doors');
+    }
     const [client, server] = Object.values(new WebSocketPair());
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment({ id: crypto.randomUUID(), pose: null, lastAt: 0 });
-    server.send(JSON.stringify({ type: 'ready' }));
+    server.send(JSON.stringify({ type: 'ready', doors: [...this.doors] }));
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  webSocketMessage(socket, message) {
+  async webSocketMessage(socket, message) {
     if (typeof message !== 'string' || message.length > 512) {
       socket.close(1009, 'Invalid position update');
       return;
     }
     let data;
     try { data = JSON.parse(message); } catch { return; }
+    if (data?.type === 'open-door') {
+      const prior = socket.deserializeAttachment();
+      const door = DOORS[data.door];
+      if (!door || !prior?.pose || Date.now() - prior.lastAt > 10000 ||
+        !door.some(site => site.region === prior.pose.region && Math.abs(site.x - prior.pose.x) <= 160) ||
+        this.doors.has(data.door)) return;
+      this.doors.add(data.door);
+      await this.ctx.storage.put('opened-doors', [...this.doors]);
+      const update = JSON.stringify({ type: 'door-open', door: data.door });
+      for (const peer of this.ctx.getWebSockets()) {
+        try { peer.send(update); } catch { /* An interrupted peer will reconnect. */ }
+      }
+      return;
+    }
     if (data?.type !== 'pose') return;
     const pose = readPose(data.pose);
     if (!pose) return;
@@ -130,13 +162,17 @@ export class HearthPresence extends DurableObject {
     }
   }
 
-  webSocketClose(socket) {
+  async webSocketClose(socket) {
     const peer = socket.deserializeAttachment();
     if (peer?.pose) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
       peer.pose.region, { type: 'left', id: peer.id });
+    if (!this.ctx.getWebSockets().some(other => other !== socket)) {
+      this.doors.clear();
+      await this.ctx.storage.delete('opened-doors');
+    }
   }
 
-  webSocketError(socket) { this.webSocketClose(socket); }
+  async webSocketError(socket) { await this.webSocketClose(socket); }
 }
 
 export default {

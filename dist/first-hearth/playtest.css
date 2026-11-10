@@ -68,6 +68,7 @@ h2 em { color: #f0cb8d; }
 .pad small { font-size: 9px; margin-top: -3px; }
 .pad.pressed, .pad:active { background: #526e4e; transform: translateY(1px); }
 .pad.jump { background: #ddbd80; border-color: #e5c98b; color: #23372e; }
+.pad.wave { background: #456453; }
 .key-guide { color: #d2dccb; font-size: 11px; }
 kbd { border: 1px solid #a0b5a666; padding: 2px 4px; border-radius: 3px; font: inherit; color: #f6e6c4; }
 footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wrap; margin: 12px 0 0; font-size: 12px; color: var(--muted); }
@@ -86,8 +87,10 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .scene { height: clamp(320px, 52dvh, 510px); }
   .status { white-space: normal; width: max-content; text-align: center; }
   .key-guide { display: none; }
-  .control-deck { min-height: 62px; }
-  .pad { width: 52px; }
+  .control-deck { min-height: 62px; gap: 6px; padding-inline: 7px; }
+  .move-controls, .act-controls { gap: 5px; }
+  .pad { width: clamp(42px, 12vw, 52px); }
+  .pad.wave { width: clamp(38px, 10vw, 48px); }
   .dialogue { padding: 14px; gap: 8px; }
   #portrait { width: 56px; height: 72px; }
 }

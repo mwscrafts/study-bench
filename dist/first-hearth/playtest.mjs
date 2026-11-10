@@ -15,7 +15,7 @@ import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './he
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=10';
-import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=11';
+import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
 
@@ -24,6 +24,7 @@ const world = el('world');
 const ctx = world.getContext('2d');
 const SAVE_KEY = 'first-hearth:alder-camp:v1';
 const PRESENCE_KEY = 'first-hearth:solo:v1';
+const WAVE_TIME = 1.25;
 const DAY_LENGTH = 136;
 const skyModes = ['auto', 'day', 'dusk', 'night', 'dawn'];
 const skyLabels = { day: 'Daylight', dusk: 'Dusk', night: 'Night', dawn: 'Dawn' };
@@ -54,6 +55,7 @@ let pickedBushes = new Set();
 let equipped = null;
 let inventoryOpen = false;
 let swing = 0;
+let wave = 0;
 let cooldown = 0;
 let swingTarget = null;
 let swingDirection = 1;
@@ -96,6 +98,7 @@ let presenceRetry = null;
 let lastPoseAt = 0;
 let lastPose = '';
 const peers = new Map();
+const sharedDoors = new Set();
 
 const regions = {
   camp: {
@@ -250,6 +253,48 @@ function drawPortrait(canvas, sprite) {
   drawSprite(context, sprite, canvas.width * .55, canvas.height - 4, canvas.height - 8);
 }
 
+function paintWave(context, x, y, direction, remaining, bob = 0) {
+  if (remaining <= 0) return;
+  const sway = Math.sin((WAVE_TIME - remaining) * 19) * 9;
+  context.save();
+  context.translate(x, y + bob);
+  context.scale(direction, 1);
+  context.lineCap = 'round';
+  context.strokeStyle = '#697a5b';
+  context.lineWidth = 9;
+  context.beginPath(); context.moveTo(18,-48); context.lineTo(28+sway*.35,-70); context.lineTo(37+sway,-84); context.stroke();
+  context.fillStyle = '#d7ae8d';
+  context.beginPath(); context.ellipse(39+sway,-89,7,10,-.3,0,Math.PI*2); context.fill();
+  context.restore();
+}
+
+function paintOpenLift(context, x, y) {
+  const glow = context.createRadialGradient(x,y,2,x,y,65);
+  glow.addColorStop(0,'#f8d78d99');
+  glow.addColorStop(1,'#f8d78d00');
+  context.fillStyle = glow;
+  context.fillRect(x-65,y-65,130,130);
+  context.fillStyle = '#f8d78d';
+  context.beginPath(); context.arc(x,y,7,0,Math.PI*2); context.fill();
+}
+
+function startWave() {
+  if (!controlsActive()) return;
+  wave = WAVE_TIME;
+  sendPose(true);
+}
+
+function openSharedDoor(door) {
+  if (sharedDoors.has(door)) return;
+  sharedDoors.add(door);
+  if (presenceSocket?.readyState === WebSocket.OPEN) {
+    sendPose(true);
+    presenceSocket.send(JSON.stringify({ type: 'open-door', door }));
+  }
+  updatePrompt();
+  updateNotes();
+}
+
 function updatePresenceButton() {
   const button = el('presence-toggle');
   const connected = presenceSocket?.readyState === WebSocket.OPEN;
@@ -265,8 +310,10 @@ function disconnectPresence() {
   presenceSocket = null;
   if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, 'Leaving world');
   peers.clear();
+  sharedDoors.clear();
   lastPose = '';
   updatePresenceButton();
+  if (playing) updateNotes();
 }
 
 function addPeer(id, pose) {
@@ -294,7 +341,18 @@ function connectPresence() {
     if (socket !== presenceSocket) return;
     let message;
     try { message = JSON.parse(event.data); } catch { return; }
-    if (message.type === 'snapshot' && Array.isArray(message.peers)) {
+    if (message.type === 'ready' && Array.isArray(message.doors)) {
+      sharedDoors.clear();
+      for (const door of message.doors) {
+        if (door === 'mine-lift' || door === 'village-gate') sharedDoors.add(door);
+      }
+      updatePrompt();
+      updateNotes();
+    } else if (message.type === 'door-open' && (message.door === 'mine-lift' || message.door === 'village-gate')) {
+      sharedDoors.add(message.door);
+      updatePrompt();
+      updateNotes();
+    } else if (message.type === 'snapshot' && Array.isArray(message.peers)) {
       peers.clear();
       for (const peer of message.peers) addPeer(peer.id, peer.pose);
       updatePresenceButton();
@@ -308,7 +366,9 @@ function connectPresence() {
     if (socket !== presenceSocket) return;
     presenceSocket = null;
     peers.clear();
+    sharedDoors.clear();
     updatePresenceButton();
+    updateNotes();
     if (onlineEnabled && playing && !document.hidden)
       presenceRetry = setTimeout(() => { presenceRetry = null; connectPresence(); }, 2500);
   };
@@ -322,7 +382,7 @@ function sendPose(force = false) {
   const pose = {
     region, x: Math.round(player.x * 10) / 10, y: Math.round(player.y * 10) / 10,
     direction: player.direction, moving: controlsActive() && player.moving,
-    gait: gait % (Math.PI * 2), swing, avatar, tool: equipped,
+    gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100, avatar, tool: equipped,
     helmet: tools.helmet, name: publicName
   };
   const message = JSON.stringify({ type: 'pose', pose });
@@ -349,6 +409,7 @@ function paintPeers() {
       ctx.fillRect(peer.x-21,peer.y-70+bob,42,4);
     }
     paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt);
+    paintWave(ctx,peer.x,peer.y,pose.direction,pose.wave ?? 0,bob);
     ctx.font = 'bold 13px system-ui, sans-serif';
     const label = pose.name || 'Adventurer';
     const width = Math.min(165,ctx.measureText(label).width + 16);
@@ -439,6 +500,7 @@ function paint() {
     shadow(mara.x, mara.y, 24);
     drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
     paintCraftingProps(ctx, tools);
+    if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2415,groundAt(2415)-127);
     for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
   } else if (region === 'crownwood') {
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
@@ -461,6 +523,7 @@ function paint() {
   } else if (region === 'mine') {
     paintMineLights(ctx, camera, animationClock, night);
     paintMineChest(ctx, hasNet);
+    if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,4510,695);
     for (const node of oreNodes) {
       if (!iron.has(node.id)) paintOre(ctx, node, animationClock);
     }
@@ -471,7 +534,7 @@ function paint() {
   } else if (region === 'hearth') {
     paintHearthDetails(ctx, animationClock, night, hearthLearned);
   } else if (region === 'king') {
-    paintKingGrounds(ctx, trial, endingScene && !endingScene.struck ? { ...victory, ending: null } : victory, animationClock, endingScene);
+    paintKingGrounds(ctx, trial, endingScene && !endingScene.struck ? { ...victory, ending: null } : victory, animationClock, endingScene, sharedDoors.has('village-gate'));
     if (trial?.stage === 'shadows') trial.shadows.forEach((shadow, index) =>
       paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock));
     paintFireworks(ctx, camera, fireworksElapsed);
@@ -509,6 +572,7 @@ function paint() {
     ctx.fillRect(player.x - 21, player.y - 70 + bob, 42, 4);
   }
   if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
+  if (playing) paintWave(ctx, player.x, player.y, player.direction, wave, bob);
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
@@ -597,7 +661,7 @@ function currentLandmarks() {
   if (region === 'king' && trial && !victory) return [];
   return regions[region].landmarks.filter(item =>
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
-    (item.id !== 'village-gate' || victory?.ending) &&
+    (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
     (item.id !== 'restored-king' || victory?.ending === 'free'));
 }
 
@@ -612,7 +676,8 @@ function updatePrompt() {
     if (!tools.flint && !tools.pickaxe) items.push(flint);
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
-  const label = fishing.tideglass === 'spent' && liftGates[current?.id] ? 'Ride the lift' : current?.label;
+  const label = (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
+    current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + ' · E / Interact'
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   selectedLandmark = current;
@@ -620,6 +685,7 @@ function updatePrompt() {
   el('status').hidden = !message;
   const canSwing = isStrikeTool(equipped);
   el('interact').disabled = !controlsActive() || (!current && !canSwing);
+  el('wave').disabled = !controlsActive();
   const actionLabel = !current && canSwing ? 'Swing' : 'Interact';
   if (el('action-label').textContent !== actionLabel) el('action-label').textContent = actionLabel;
 }
@@ -662,12 +728,14 @@ function updateNotes() {
   const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
-    : region === 'mine' ? (fishing.tideglass === 'spent' ? 'Lift repaired'
+    : region === 'mine' ? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? 'Lift running'
       : ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
-    : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right' : 'The altar calls the final night')
-    : region === 'village' || region === 'house' ? 'The village is celebrating your safe return'
+    : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right'
+      : sharedDoors.has('village-gate') ? 'A fellow adventurer opened the village gate' : 'The altar calls the final night')
+    : region === 'village' || region === 'house' ? (victory?.ending
+      ? 'The village is celebrating your safe return' : 'A fellow adventurer opened the way here')
     : 'Trail entrances found · ' + destinations + ' / 3';
 }
 
@@ -682,9 +750,13 @@ function getSavedCamp() {
 function saveCamp() {
   if (!playing) return;
   try {
+    // A shared gate grants passage for this public session, not a permanent quest unlock.
+    const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 10, avatar, region, difficulty, fishFed, publicName,
-      footing: trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
+      version: 10, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
+      footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
+        : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
+      phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing
     }));
@@ -731,6 +803,7 @@ function begin(save) {
   equipped = ownsGear(save?.equipped) ? save.equipped
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
+  el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
   const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
@@ -883,11 +956,16 @@ function ivoDialogue() {
       ['Give Ivo the tideglass', () => {
         fishing.tideglass = 'spent';
         ivoQuest = true;
+        openSharedDoor('mine-lift');
         updateNotes();
         saveCamp();
         setDialogue('Lift repaired. Head east to the lift base. You can ride it either way.');
       }]
     ]);
+    return;
+  }
+  if (sharedDoors.has('mine-lift')) {
+    setDialogue('Another adventurer got the lift running. You can ride between here and Mara’s clearing now. Keep exploring if you still want to find your own tideglass.');
     return;
   }
   const net = hasNet ? 'You’ve got my casting net.' : 'Take the casting net from my chest.';
@@ -1242,8 +1320,10 @@ function interact() {
     return;
   }
   visited.add(id);
-  const gate = gates[id] ?? (fishing.tideglass === 'spent' ? liftGates[id] : null);
+  const gate = gates[id] ?? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? liftGates[id] : null);
   if (gate) {
+    if (id === 'village-gate' && victory?.ending) openSharedDoor('village-gate');
+    if (liftGates[id] && fishing.tideglass === 'spent') openSharedDoor('mine-lift');
     enterRegion(gate.region, gate.footing);
     return;
   }
@@ -1429,6 +1509,7 @@ function updateShadows() {
 function frame(time) {
   const dt = Math.min(.08, (time - (lastFrame || time)) / 1000);
   lastFrame = time;
+  if (wave > 0) wave = Math.max(0, wave - dt);
   if (!paused && !talking && !inventoryOpen) animationClock += dt;
   if (casting && animationClock - casting.start >= .92) finishCast();
   if (fireworksElapsed < 8) fireworksElapsed += dt;
@@ -1555,6 +1636,7 @@ el('closeInventory').addEventListener('click', closeInventory);
 el('bagEat').addEventListener('click', eatBerry);
 el('bagFeed').addEventListener('click', feedAlvin);
 el('quickBerry').addEventListener('click', eatBerry);
+el('wave').addEventListener('click', startWave);
 
 const moveKeys = new Set(['a', 'd', 'arrowleft', 'arrowright']);
 const jumpKeys = new Set([' ', 'w', 'arrowup']);
@@ -1590,6 +1672,7 @@ window.addEventListener('keydown', event => {
   }
   if (event.repeat) return;
   if (key === 'e') interact();
+  if (key === 'g') startWave();
   if (key === 'q') eatBerry();
   if (key === '1') equipTool('hatchet');
   if (key === '2') equipTool('pickaxe');
