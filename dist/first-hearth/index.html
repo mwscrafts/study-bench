@@ -6,18 +6,18 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth playtest</title>
-  <link rel="stylesheet" href="./playtest.css?v=06.2">
+  <link rel="stylesheet" href="./playtest.css?v=07">
 </head>
 <body>
   <main class="page">
     <header class="mast">
       <a href="/" class="home">← Back home</a>
       <span class="mast-mark">✦ &nbsp; The First Hearth</span>
-      <span class="edition">Playtest 06.2</span>
+      <span class="edition">Playtest 07</span>
     </header>
     <div class="title">
       <div>
-        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 06.2</p>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 07</p>
         <h1 id="region-title">Alder <em>Camp</em></h1>
       </div>
       <p id="region-intro">Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.</p>
@@ -95,18 +95,20 @@
           </div>
         </div>
       </div>
-      <div class="inventory">
-        <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>▣ Backpack <kbd>I</kbd></button>
-      </div>
-      <div class="control-deck">
-        <div class="move-controls">
-          <button class="pad" id="left" type="button" aria-label="Move left">←</button>
-          <button class="pad" id="right" type="button" aria-label="Move right">→</button>
+      <div class="game-bottom">
+        <div class="inventory">
+          <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>▣ Backpack <kbd>I</kbd></button>
         </div>
-        <span class="key-guide"><kbd>A</kbd> <kbd>D</kbd> Move &nbsp; <kbd>Space</kbd> Double-jump &nbsp; <kbd>E</kbd> Action &nbsp; <kbd>I</kbd> Bag</span>
-        <div class="act-controls">
-          <button class="pad action" id="interact" type="button" disabled aria-label="Interact or swing tool"><span>⚒</span><small id="action-label">Interact</small></button>
-          <button class="pad jump" id="jump" type="button" aria-label="Jump"><span>↑</span><small>Jump</small></button>
+        <div class="control-deck">
+          <div class="move-controls">
+            <button class="pad" id="left" type="button" aria-label="Move left">←</button>
+            <button class="pad" id="right" type="button" aria-label="Move right">→</button>
+          </div>
+          <span class="key-guide"><kbd>A</kbd> <kbd>D</kbd> Move &nbsp; <kbd>Space</kbd> Double-jump &nbsp; <kbd>E</kbd> Action &nbsp; <kbd>I</kbd> Bag</span>
+          <div class="act-controls">
+            <button class="pad action" id="interact" type="button" disabled aria-label="Interact or swing tool"><span>⚒</span><small id="action-label">Interact</small></button>
+            <button class="pad jump" id="jump" type="button" aria-label="Jump"><span>↑</span><small>Jump</small></button>
+          </div>
         </div>
       </div>
     </section>
@@ -115,6 +117,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=06.2"></script>
+  <script type="module" src="./playtest.mjs?v=07"></script>
 </body>
 </html>

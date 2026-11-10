@@ -11,6 +11,8 @@ import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from '
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs';
 import { renderInventory } from './backpack.mjs';
+import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs';
+import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -64,6 +66,7 @@ let selectedLandmark;
 let visited = new Set();
 let collected = new Set();
 let quest = 'unoffered';
+let hearthLearned = false;
 let notice = '';
 let noticeUntil = 0;
 let savedFooting = { x: player.x, ground: player.ground };
@@ -91,6 +94,12 @@ const regions = {
     intro: 'Follow the bluff to Driftwood Cove and cast Ivo’s net off Lantern Dock.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
+  },
+  hearth: {
+    title: ['The First', 'Hearth'],
+    intro: 'Follow the sheltered passage into the ember chamber.',
+    terrain: hearthTerrain, landmarks: hearthLandmarks, flowers: [],
+    buildArt: buildHearthArt, location: hearthLocation
   }
 };
 const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
@@ -101,7 +110,10 @@ const gates = {
   shore: { region: 'beach' },
   'camp-return': { region: 'camp', footing: { x: 3638, ground: 'crown' } },
   'mine-return': { region: 'camp', footing: { x: 4180, ground: 'trail' } },
-  'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } }
+  'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } },
+  'first-hearth': { region: 'hearth' },
+  'hearth-return': { region: 'crownwood', footing: { x: 3445, ground: 'mist-shelf' } },
+  'hearth-notch': { region: 'crownwood', footing: { x: 3975, ground: 'mist-shelf' } }
 };
 const liftGates = {
   lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
@@ -124,11 +136,7 @@ const conversations = {
     role: 'EMBERVEIN MINE',
     greeting: 'The old lift reaches Mara’s clearing. One of the bearings is cracked. Ivo needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
   },
-  'first-hearth': {
-    name: 'A passage behind the falls',
-    role: 'MIST SHELF',
-    greeting: 'Behind the curtain of water, you can make out a stone passage and a faint orange light. The passage opens in a later playtest.'
-  },
+  'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
   'king-trail': {
     name: 'The King’s Grounds',
     role: 'CROWN OVERLOOK',
@@ -245,7 +253,8 @@ function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
-  if (region !== 'mine') {
+  const outdoors = region !== 'mine' && region !== 'hearth';
+  if (outdoors) {
     const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
     paintSky(ctx, camera, sky.from, 1, animationClock);
     if (sky.from !== sky.to) paintSky(ctx, camera, sky.to, sky.mix, animationClock);
@@ -255,7 +264,7 @@ function paint() {
   const clockText = phase === 'night' && skyMode === 'auto' ? 'Night ' + (nightIndex + 1) : skyLabels[phase];
   if (el('time-label').textContent !== clockText) el('time-label').textContent = clockText;
   const night = (sky.from === 'night' ? 1 - sky.mix : 0) + (sky.to === 'night' ? sky.mix : 0);
-  if (region !== 'mine') paintCampTint(ctx, camera, night);
+  if (outdoors) paintCampTint(ctx, camera, night);
   if (region === 'camp') {
     drawFirelight(2258, 595, 132, .18 + night * .42);
     drawFirelight(2150, 582, 90, .08 + night * .25);
@@ -284,8 +293,10 @@ function paint() {
     }
     shadow(ivo.x, ivo.y, 26);
     drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
-  } else {
+  } else if (region === 'beach') {
     paintBeachDetails(ctx, camera, animationClock, night, casting);
+  } else {
+    paintHearthDetails(ctx, animationClock, night, hearthLearned);
   }
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
@@ -364,7 +375,8 @@ function resize() {
   world.height = Math.round(rect.height * camera.density);
   camera.pixelWidth = rect.width;
   camera.pixelHeight = rect.height;
-  camera.baseZoom = Math.max(rect.width / VIEW_WIDTH, rect.height / 600);
+  // Keep the horizontal field of view flexible on wide, short screens.
+  camera.baseZoom = Math.min(Math.max(rect.width / VIEW_WIDTH, rect.height / 600), rect.height / 425);
   updateCamera(true);
   if (sprites) paint();
 }
@@ -426,7 +438,8 @@ function updateNotes() {
   const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : 'Ask Mara for a hatchet';
-  el('quest-tracker').textContent = region === 'mine' ? mineLoot : clue;
+  el('quest-tracker').textContent = region === 'mine' ? mineLoot
+    : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue;
   el('tool-notes').textContent = region === 'beach'
     ? [hasNet ? 'Casting net' : 'Find Ivo’s casting net', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
@@ -435,7 +448,7 @@ function updateNotes() {
   el('hpBar').style.width = health + '%';
   el('healthMeter').setAttribute('aria-valuenow', String(health));
   el('health-notes').hidden = false;
-  el('tool-notes').hidden = false;
+  el('tool-notes').hidden = region === 'hearth';
   el('quest-tracker').hidden = false;
   const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
   el('trail-notes').textContent = region === 'crownwood'
@@ -443,6 +456,7 @@ function updateNotes() {
     : region === 'mine' ? (fishing.tideglass === 'spent' ? 'Lift repaired'
       : ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
+    : region === 'hearth' ? 'Both passages return to Mist Shelf'
     : 'Trail entrances found · ' + destinations + ' / 3';
 }
 
@@ -458,8 +472,8 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 6, avatar, region, footing: savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
-      visited: [...visited], flowers: [...collected], quest, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
+      version: 7, avatar, region, footing: savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
+      visited: [...visited], flowers: [...collected], quest, hearthLearned, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -473,6 +487,7 @@ function begin(save) {
     ? save.flowers.map(id => id === 'timber' ? beachFlower.id : id) : [];
   collected = new Set(knownFlowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
   quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
+  hearthLearned = quest === 'complete' && save?.hearthLearned === true;
   const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
   crystals = new Set(crystalNodes.filter(node => savedCrystals.includes(node.id)).map(node => node.id));
   const savedIron = Array.isArray(save?.iron) ? save.iron : [];
@@ -491,7 +506,7 @@ function begin(save) {
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -526,7 +541,7 @@ function enterRegion(next, footing) {
   tracker.length = 0;
   const [firstWord, secondWord] = area.title;
   const title = firstWord + ' ' + secondWord;
-  document.title = title + ' · The First Hearth';
+  document.title = region === 'hearth' ? title : title + ' · The First Hearth';
   el('region-title').firstChild.textContent = firstWord + ' ';
   el('region-title').lastElementChild.textContent = secondWord;
   el('region-intro').textContent = area.intro;
@@ -701,6 +716,25 @@ function finishCast() {
   dockDialogue(message);
 }
 
+function emberBoxDialogue() {
+  if (hearthLearned) {
+    setDialogue(hearthNote);
+    return;
+  }
+  if (quest !== 'complete') {
+    setDialogue('The box is locked. A little flower is engraved beside the brass keyhole.');
+    return;
+  }
+  setDialogue('The brass key Mara gave you fits the box.', [
+    ['Open and read the note', () => {
+      hearthLearned = true;
+      updateNotes();
+      saveCamp();
+      setDialogue(hearthNote);
+    }]
+  ]);
+}
+
 function openDialogue(id) {
   const info = conversations[id];
   talking = true;
@@ -732,6 +766,7 @@ function inventoryItems() {
   ];
   if (quest === 'complete') items.push(['⚿', 'Brass key', 1, 'Mara’s key. Look for an old box behind falling water.']);
   if (fishing.book) items.push(['▤', 'Soaked book', 1, bookClue]);
+  if (hearthLearned) items.push(['▤', 'Ember note', 1, hearthNote]);
   if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Ivo to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
@@ -898,6 +933,7 @@ function interact() {
   else if (id === 'ivo') ivoDialogue();
   else if (id === 'workbench') workbenchDialogue();
   else if (id === 'dock') dockDialogue();
+  else if (id === 'ember-box') emberBoxDialogue();
   else setDialogue(conversations[id].greeting);
 }
 
