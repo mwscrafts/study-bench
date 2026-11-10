@@ -15,8 +15,8 @@ function at(surface, id, x, label, radius = 77) {
   return { id, x, y: surfaceAt(surface, x), label, radius };
 }
 
-export const ivo = at(floor, 'ivo', 2165, 'Talk to Ivo', 98);
-export const netChest = at(floor, 'net-chest', 2360, 'Open Ivo’s chest', 70);
+export const ivo = at(floor, 'ivo', 2165, 'Talk to Perry', 98);
+export const netChest = at(floor, 'net-chest', 2360, 'Open Perry’s chest', 70);
 
 export const mineLandmarks = [
   at(floor, 'mine-return', 167, 'Return to Alder Camp', 90),
@@ -52,7 +52,7 @@ export function mineLocation(player) {
   if (player.x < 635) return 'Timber Shaft';
   if (player.ground === upperShelf.id) return 'Upper Ore Shelf';
   if (player.x < 1910) return 'Lantern Switchbacks';
-  if (player.x < 2675) return 'Ivo’s Alcove';
+  if (player.x < 2675) return 'Perry’s Alcove';
   if (player.x < 4180) return 'Deep Seam';
   return 'Lift Base';
 }

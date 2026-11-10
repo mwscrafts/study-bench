@@ -3,7 +3,7 @@ import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=10';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=09';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs?v=10?v=10';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs?v=11';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
@@ -11,10 +11,10 @@ import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from '
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
-import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs?v=09';
+import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs?v=10';
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
-  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=10';
+  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=11';
 import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
@@ -127,7 +127,7 @@ const sharedDoors = new Set();
 const regions = {
   camp: {
     title: ['Alder', 'Camp'],
-    intro: 'Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.',
+    intro: 'Follow Reedbank Trail to camp, meet Lyss, and take Alvin up into the branches.',
     terrain: campTerrain, landmarks: [...landmarks, workbench], flowers, buildArt: buildCampArt
   },
   crownwood: {
@@ -138,13 +138,13 @@ const regions = {
   },
   mine: {
     title: ['Embervein', 'Mine'],
-    intro: 'Follow the lanterns down to Ivo, look for iron seams, and find the old lift.',
+    intro: 'Follow the lanterns down to Perry, look for iron seams, and find the old lift.',
     terrain: mineTerrain, landmarks: mineLandmarks, flowers: [],
     buildArt: buildMineArt, location: mineLocation, shadows: mineShadows, retreat: 'Timber Shaft'
   },
   beach: {
     title: ['The', 'Beach'],
-    intro: 'Follow the bluff to Driftwood Cove and cast Ivo’s net off Lantern Dock.',
+    intro: 'Follow the bluff to Driftwood Cove and cast Perry’s net off Lantern Dock.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
   },
@@ -193,32 +193,32 @@ const liftGates = {
 };
 
 const conversations = {
-  mara: { name: 'Mara', role: 'FORGE KEEPER' },
+  mara: { name: 'Lyss', role: 'FORGE KEEPER' },
   barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
-  ivo: { name: 'Ivo', role: 'KEEPER OF EMBERVEIN' },
+  ivo: { name: 'Perry', role: 'KEEPER OF EMBERVEIN' },
   workbench: { name: 'Camp workbench', role: 'CRAFTING' },
   dock: { name: 'Lantern Dock', role: 'CASTING NET' },
   'tool-needed': { name: 'Tool needed', role: 'GATHERING' },
   lift: {
     name: 'The old lift',
-    role: 'MARA’S CLEARING',
-    greeting: 'The lift goes down to Ivo’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
+    role: 'LYSS’S CLEARING',
+    greeting: 'The lift goes down to Perry’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
   },
   'mine-lift': {
     name: 'The lift base',
     role: 'EMBERVEIN MINE',
-    greeting: 'The old lift reaches Mara’s clearing. One of the bearings is cracked. Ivo needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
+    greeting: 'The old lift reaches Lyss’s clearing. One of the bearings is cracked. Perry needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
   },
   'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
   'home-welcome': { name: 'The neighbors', role: 'HOMECOMING',
     greeting: 'You made it home! We lit every window hoping you and Alvin would come back. Come in and celebrate with us.' },
   'restored-king': { name: 'The King', role: 'LANTERN VILLAGE',
-    greeting: 'I remember Mara’s flowers. Thank you for bringing me back to my people. Tell her I’m coming home.' },
+    greeting: 'I remember Lyss’s flowers. Thank you for bringing me back to my people. Tell her I’m coming home.' },
   'request-board': { name: 'Camp requests', role: 'HELP THE CAMP' },
   'player-board': { name: 'A note for the next visitor', role: 'THE PLAYER NOTICEBOARD' },
   'berry-plot': { name: 'Berry garden', role: 'ALDER CAMP' },
   'catnip-garden': { name: 'Alvin’s catnip patch', role: 'ALDER CAMP' },
-  minecart: { name: 'Ivo’s minecart', role: 'EMBER VEIN EXPRESS' },
+  minecart: { name: 'Perry’s minecart', role: 'EMBER VEIN EXPRESS' },
   'hut-bed': { name: 'The little bed', role: 'A SAFE PLACE' },
   'hut-decor': { name: 'Hut decorations', role: 'A SAFE PLACE' },
   'alvin-bed': { name: 'Alvin', role: 'HIS COZY BED' },
@@ -856,7 +856,8 @@ function updatePrompt() {
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const label = current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
-    current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
+    current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' :
+    current?.id === 'mara' ? 'Talk to Lyss' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + ' · E / Interact'
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   selectedLandmark = current;
@@ -872,7 +873,7 @@ function updatePrompt() {
 function updateLocation() {
   const campLocation = player.x < 1140 ? 'Reedbank Trail'
     : player.x < 1830 ? 'Pine Gate'
-    : player.x < 2680 ? 'Mara’s Clearing'
+    : player.x < 2680 ? 'Lyss’s Clearing'
     : player.x < 3150 ? 'Alder Camp'
     : player.x < 3800 ? 'Root Fork'
     : player.x < 4300 ? 'Timber Gate' : 'Shore Trail';
@@ -882,19 +883,19 @@ function updateLocation() {
 
 function updateNotes() {
   const clue = tools.flowerCrown ? 'Flower crown ready · Return to the King'
-    : hearthLearned ? 'Return to Mara for the flower crown'
+    : hearthLearned ? 'Return to Lyss for the flower crown'
     : quest === 'complete' ? 'Brass key earned · Find the hidden box'
-    : quest === 'accepted' ? 'Mara’s dusklilies · ' + collected.size + ' / 3'
+    : quest === 'accepted' ? 'Lyss’s dusklilies · ' + collected.size + ' / 3'
     : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
-    : 'Explore the trail and find Mara by the fire.';
+    : 'Explore the trail and find Lyss by the fire.';
   const mineLoot = 'Iron ore · ' + ironStock + (hasNet ? ' · Casting net' : '');
   const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
-    : 'Ask Mara for a hatchet';
+    : 'Ask Lyss for a hatchet';
   el('quest-tracker').textContent = region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue;
   el('tool-notes').textContent = region === 'beach'
-    ? [hasNet ? 'Casting net' : 'Find Ivo’s casting net', fishing.book && 'Soaked book',
+    ? [hasNet ? 'Casting net' : 'Find Perry’s casting net', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
     : equipment;
   el('hpText').textContent = health;
@@ -912,7 +913,7 @@ function updateNotes() {
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
     : region === 'mine' ? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? 'Lift running'
-      : ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
+      : ivoQuest ? 'Perry needs 1 tideglass gemstone' : 'Follow the lanterns to Perry')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
     : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right'
@@ -1096,9 +1097,9 @@ function setQuest(state) {
 }
 
 const campRequests = {
-  mara: { who:'Mara', amount:5, item:'berries', reward:2 },
+  mara: { who:'Lyss', amount:5, item:'berries', reward:2 },
   barry: { who:'Barry', amount:3, item:'wood', reward:3 },
-  ivo: { who:'Ivo', amount:4, item:'iron ore', reward:3 }
+  ivo: { who:'Perry', amount:4, item:'iron ore', reward:3 }
 };
 
 function requestBoardDialogue() {
@@ -1110,10 +1111,10 @@ function requestBoardDialogue() {
     return;
   }
   const choices = [
-    ['Mara · 5 berries · 2 tokens', () => startCampRequest('mara')],
+    ['Lyss · 5 berries · 2 tokens', () => startCampRequest('mara')],
     ['Barry · 3 wood · 3 tokens' + (catnipUnlocked ? '' : ' + catnip seed'), () => startCampRequest('barry')]
   ];
-  if (ivoQuest && fishing.tideglass === 'spent') choices.push(['Ivo · 4 iron ore · 3 tokens' + (minecartCapacity === 8 ? ' + cart upgrade' : ''), () => startCampRequest('ivo')]);
+  if (ivoQuest && fishing.tideglass === 'spent') choices.push(['Perry · 4 iron ore · 3 tokens' + (minecartCapacity === 8 ? ' + cart upgrade' : ''), () => startCampRequest('ivo')]);
   setDialogue(tokens + 'Choose one request. Bring the listed supplies back to that person. The requests can be repeated, but only one can be active at a time.', choices);
 }
 
@@ -1195,7 +1196,7 @@ function syncMinecart() {
 
 function minecartDialogue() {
   if (!(ivoQuest && fishing.tideglass === 'spent')) {
-    setDialogue('The cart is empty. Once Ivo repairs the lift, it can carry ore between the mine and camp.');
+    setDialogue('The cart is empty. Once Perry repairs the lift, it can carry ore between the mine and camp.');
     return;
   }
   syncMinecart();
@@ -1304,7 +1305,7 @@ function maraDialogue() {
     }
   } else if (quest === 'accepted' && collected.size === knownFlowers.length) {
     setDialogue('Three dusklilies! I used to pick these on the way home. Here’s the brass key I promised.', [
-      ['Give Mara the 3 dusklilies', () => {
+      ['Give Lyss the 3 dusklilies', () => {
         setQuest('complete');
         setDialogue('Brass key received. Keep it for the old box behind falling water. Alvin, see if you can keep them out of trouble.');
       }], tool, paths]);
@@ -1327,7 +1328,7 @@ function maraDialogue() {
 function barryDialogue() {
   if (finishCampRequest('barry')) return;
   setDialogue('I used to see the King walk these branches. He was a good man before the shadows got into his mind. Most of us fled when we couldn’t reach him.', [
-    ['Can we save him?', () => setDialogue('I want to believe so. Mara still remembers the old ways. If only there were another way…', [['Back', barryDialogue]])],
+    ['Can we save him?', () => setDialogue('I want to believe so. Lyss still remembers the old ways. If only there were another way…', [['Back', barryDialogue]])],
     ['What happened here?', () => setDialogue('The shadows followed him from the ruins. Now every night they reach farther into the woods. We have to make it safe again, even if it means facing him.', [['Back', barryDialogue]])]
   ]);
 }
@@ -1335,12 +1336,12 @@ function barryDialogue() {
 function ivoDialogue() {
   if (finishCampRequest('ivo')) return;
   if (fishing.tideglass === 'spent') {
-    setDialogue('The lift is running. It goes straight back to Mara’s clearing. Step aboard at the far end of the mine.');
+    setDialogue('The lift is running. It goes straight back to Lyss’s clearing. Step aboard at the far end of the mine.');
     return;
   }
   if (fishing.tideglass === 'caught') {
     setDialogue('That’s tideglass! It’ll fit the lift bearing. I can have it running right now.', [
-      ['Give Ivo the tideglass', () => {
+      ['Give Perry the tideglass', () => {
         fishing.tideglass = 'spent';
         ivoQuest = true;
         minecartUpdatedAt = Date.now();
@@ -1353,13 +1354,13 @@ function ivoDialogue() {
     return;
   }
   if (sharedDoors.has('mine-lift')) {
-    setDialogue('Another adventurer got the lift running. You can ride between here and Mara’s clearing now. Keep exploring if you still want to find your own tideglass.');
+    setDialogue('Another adventurer got the lift running. You can ride between here and Lyss’s clearing now. Keep exploring if you still want to find your own tideglass.');
     return;
   }
   const net = hasNet ? 'You’ve got my casting net.' : 'Take the casting net from my chest.';
   setDialogue('Mind the dark past these lamps. Take a breather here if you need one.', [
     ['What happened to the lift?', () => {
-      const request = 'A bearing cracked. Bring me 1 tideglass gemstone from the beach and I can get the lift back to Mara’s clearing. ' + net;
+      const request = 'A bearing cracked. Bring me 1 tideglass gemstone from the beach and I can get the lift back to Lyss’s clearing. ' + net;
       if (ivoQuest) {
         setDialogue(request, [['Back', ivoDialogue]]);
         return;
@@ -1375,7 +1376,7 @@ function ivoDialogue() {
       ]);
     }],
     ['What do you know about the King?', () => setDialogue(
-      'His trail climbs above Crownwood. Mara knows the old stories better than I do. I just know the shadows keep clear of a good lamp.',
+      'His trail climbs above Crownwood. Lyss knows the old stories better than I do. I just know the shadows keep clear of a good lamp.',
       [['Back', ivoDialogue]])]
   ]);
 }
@@ -1417,14 +1418,14 @@ function workbenchDialogue() {
   const inventory = 'Wood ' + spareWood(tools) + ' · Iron ' + ironStock + ' · Crystals ' +
     (crystals.size - (tools.charm ? 2 : 0)) + ' · Shadows ' + shadowStock + '. ';
   setDialogue(inventory + 'Recipes: pickaxe 3 wood + 1 flint; iron sword 1 wood + 2 iron; shadow blade 1 iron + 3 shadows; shockwave charm 2 crystals + 2 shadows; helmet 4 iron.' +
-    (!tools.pickaxe ? ' Mara has a hatchet. Gather wood and flint first.' : ''), choices);
+    (!tools.pickaxe ? ' Lyss has a hatchet. Gather wood and flint first.' : ''), choices);
 }
 
 const bookClue = 'The water blurred most of the writing. One sketch shows a rope bridge with a gap in its railing, a ledge beneath it, and a light behind the waterfall.';
 
 function dockDialogue(result) {
   if (!hasNet) {
-    setDialogue('You need a casting net. Ivo keeps one in the chest next to his lantern in Embervein Mine.');
+    setDialogue('You need a casting net. Perry keeps one in the chest next to his lantern in Embervein Mine.');
     return;
   }
   const choices = [['Cast the net', () => {
@@ -1449,7 +1450,7 @@ function finishCast() {
   openDialogue('dock');
   let message = 'You caught ' + result.catchName.toLowerCase() + '.';
   if (result.catchName === 'Soaked book') message = 'The net comes up heavy with a soaked book. There’s still a legible sketch inside.';
-  if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Ivo to repair the lift.';
+  if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Perry to repair the lift.';
   if (result.rare) message += ' Tangled in the net alongside it is the Godslayer.';
   dockDialogue(message);
 }
@@ -1463,7 +1464,7 @@ function emberBoxDialogue() {
     setDialogue('The box is locked. A little flower is engraved beside the brass keyhole.');
     return;
   }
-  setDialogue('The brass key Mara gave you fits the box.', [
+  setDialogue('The brass key Lyss gave you fits the box.', [
     ['Open and read the note', () => {
       hearthLearned = true;
       updateNotes();
@@ -1509,16 +1510,16 @@ function inventoryItems() {
     ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein.'],
     ['✦', 'Shadow essence', shadowStock, 'Dropped by defeated night shadows.'],
     ['●', 'Berries', berries, 'Saved until you eat them. Restores up to 25 health.'],
-    ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Mara for a brass key.']
+    ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Lyss for a brass key.']
   ];
-  if (quest === 'complete') items.push(['⚿', 'Brass key', 1, 'Mara’s key. Look for an old box behind falling water.']);
+  if (quest === 'complete') items.push(['⚿', 'Brass key', 1, 'Lyss’s key. Look for an old box behind falling water.']);
   if (fishing.book) items.push(['▤', 'Soaked book', 1, bookClue]);
   if (hearthLearned) items.push(['▤', 'Ember note', 1, hearthNote]);
-  if (tools.flowerCrown) items.push(['✿', 'Flower crown', 1, 'Mara’s crown can free the King from the shadows.']);
+  if (tools.flowerCrown) items.push(['✿', 'Flower crown', 1, 'Lyss’s crown can free the King from the shadows.']);
   if (victory?.ending) items.push(['⚿', 'Village gate key', 1, 'Opens the gate to the right of the Crown Arena.']);
   if (tools.charm) items.push(['◇', 'Shockwave charm', 1, 'Softens the King’s shockwaves.']);
   if (tools.helmet) items.push(['♧', 'Iron helmet', 1, 'Reduces incoming damage by 25%.']);
-  if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Ivo to repair the lift.']);
+  if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Perry to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
   return items;
@@ -1700,7 +1701,7 @@ function interact() {
     } else {
       const hint = ownsGear(required) ? 'Open your backpack and equip the ' + gear[required][1].toLowerCase() + '.'
         : mineral ? 'Craft a pickaxe at the Alder Camp workbench to mine this.'
-        : 'Ask Mara for her hatchet to chop marked pines.';
+        : 'Ask Lyss for her hatchet to chop marked pines.';
       openDialogue('tool-needed');
       setDialogue(hint);
       return;
@@ -1820,7 +1821,7 @@ function altarDialogue() {
   }
   const tool = ['shadowBlade','ironSword','pickaxe','hatchet','godslayer'].find(ownsGear);
   if (!tool) {
-    setDialogue('Bring a tool you can strike with. Mara can lend you a hatchet at Alder Camp.');
+    setDialogue('Bring a tool you can strike with. Lyss can lend you a hatchet at Alder Camp.');
     return;
   }
   setDialogue('Light the altar to start the final night and its timer. Clear the shadows to open the arena gate.', [

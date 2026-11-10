@@ -17,7 +17,7 @@ export const hearthLandmarks = [
   at('hearth-notch', 2705, 'Exit to Mist Shelf')
 ];
 
-export const hearthNote = 'When the King falls, a crown woven from three dusklilies can draw the shadows from his mind. Return to Mara. She knows how to weave it.';
+export const hearthNote = 'When the King falls, a crown woven from three dusklilies can draw the shadows from his mind. Return to Lyss. She knows how to weave it.';
 
 export function hearthLocation(player) {
   if (player.x < 980) return 'Behind the Veil';

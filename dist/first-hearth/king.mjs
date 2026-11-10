@@ -31,7 +31,7 @@ const POUNCE_TIME = .84;
 
 export const endings = {
   break: { name: 'Break the Crown', text: 'The crown breaks. The final night gives way to a clear dawn.' },
-  free: { name: 'Free the King', text: 'Mara’s flower crown touches the King. The shadows leave his mind, and he walks into the dawn.' }
+  free: { name: 'Free the King', text: 'Lyss’s flower crown touches the King. The shadows leave his mind, and he walks into the dawn.' }
 };
 
 export function kingLocation(player) {
