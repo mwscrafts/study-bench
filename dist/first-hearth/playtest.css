@@ -112,26 +112,14 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 .meter i { display: block; height: 100%; width: 100%; background: #cf9b81; transition: width .15s; }
 .scene-notes { display: grid; justify-items: end; gap: 4px; margin-left: auto; min-width: 0; text-align: right; }
 .inventory {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, 1fr) minmax(0, 1fr);
+  display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 64px;
   padding: 10px 22px;
-  gap: 12px;
   background: #19322e;
   border-top: 1px solid #ffffff0c;
 }
-.supplies { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap; gap: 7px 14px; }
-.supplies > span { display: flex; align-items: center; gap: 6px; }
-.supplies i { font-style: normal; font-size: 20px; }
-.supplies b { font-size: 15px; color: #e9e9cf; min-width: 12px; }
-.supplies small { font-size: 7px; letter-spacing: 1px; color: #a5b7a2; text-transform: uppercase; }
-.wood-icon { color: #b89162; }
-.stone-icon { color: #9eaaa2; }
-.crystal-icon { color: #9edcc9; }
-.iron-icon { color: #d9a37d; }
-.berry-icon { color: #d49692; }
-.quickbar { grid-column: 2; grid-row: 1; display: flex; justify-content: center; }
 .inventory-button {
   font-size: 10px;
   min-height: 37px;
@@ -143,34 +131,22 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 }
 .inventory-button:hover:enabled { background: #355243; }
 .inventory-button kbd { margin-left: 6px; }
-@media (max-width: 1100px) {
-  .inventory { display: block; }
-  .supplies { justify-content: space-between; }
-  .quickbar { margin-top: 10px; }
-}
 @media (pointer: coarse), (max-width: 760px) {
   .hud { inset: 16px 16px auto; }
   .vitals > div { width: 83px; }
-  .supplies small { display: none; }
 }
 @media (max-width: 640px) {
   .hud { inset: 14px 12px auto; }
   .vitals > div { width: 65px; }
   .vitals span { font-size: 10px; }
-  .inventory { display: block; padding: 9px 12px; }
-  .supplies { justify-content: space-between; gap: 7px; }
-  .supplies i { font-size: 17px; }
-  .supplies b { font-size: 13px; }
-  .quickbar { margin-top: 8px; }
+  .inventory { min-height: 0; padding: 9px 12px; }
   .inventory-button { width: calc((100% - 14px) / 3); min-height: 33px; padding: 7px; font-size: 9px; white-space: nowrap; }
   .inventory-button kbd { display: none; }
 }
 @media (orientation: landscape) and (max-height: 580px) and (pointer: coarse) {
   .hud { inset: 8px 15px auto; }
   .meter { margin-top: 3px; }
-  .inventory { display: grid; min-height: 45px; padding: 4px 13px; }
-  .supplies { justify-content: start; gap: 7px 12px; }
-  .quickbar { margin-top: 0; }
+  .inventory { min-height: 45px; padding: 4px 13px; }
   .inventory-button { width: auto; min-height: 33px; }
   .inventory-button kbd { display: none; }
 }

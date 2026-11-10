@@ -434,11 +434,6 @@ function updateNotes() {
   el('hpText').textContent = health;
   el('hpBar').style.width = health + '%';
   el('healthMeter').setAttribute('aria-valuenow', String(health));
-  el('supply-wood').textContent = spareWood(tools);
-  el('supply-flint').textContent = Number(tools.flint);
-  el('supply-crystal').textContent = crystals.size;
-  el('supply-iron').textContent = iron.size;
-  el('supply-berries').textContent = berries;
   el('health-notes').hidden = false;
   el('tool-notes').hidden = false;
   el('quest-tracker').hidden = false;
