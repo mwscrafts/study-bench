@@ -1,10 +1,13 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs';
-import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower } from './camp-art.mjs';
+import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
+import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
+import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
+import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -26,6 +29,9 @@ let crystals = new Set();
 let iron = new Set();
 let hasNet = false;
 let ivoQuest = false;
+let tools = readTools();
+let fishing = readFishing();
+let casting = null;
 let nightIndex = 0;
 let shadowHits = 0;
 let hitUntil = 0;
@@ -53,7 +59,7 @@ const regions = {
   camp: {
     title: ['Alder', 'Camp'],
     intro: 'Follow Reedbank Trail to camp, meet Mara, and take Alvin up into the branches.',
-    terrain: campTerrain, landmarks, flowers, buildArt: buildCampArt
+    terrain: campTerrain, landmarks: [...landmarks, workbench], flowers, buildArt: buildCampArt
   },
   crownwood: {
     title: ['Crownwood', 'Canopy'],
@@ -66,14 +72,35 @@ const regions = {
     intro: 'Follow the lanterns down to Ivo, look for iron seams, and find the old lift.',
     terrain: mineTerrain, landmarks: mineLandmarks, flowers: [],
     buildArt: buildMineArt, location: mineLocation, shadows: mineShadows, retreat: 'Timber Shaft'
+  },
+  beach: {
+    title: ['The', 'Beach'],
+    intro: 'Follow the bluff to Driftwood Cove and cast Ivo’s net off Lantern Dock.',
+    terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
+    buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
   }
 };
 const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
 const knownFlowers = Object.values(regions).flatMap(area => area.flowers);
+const gates = {
+  canopy: { region: 'crownwood' },
+  mine: { region: 'mine' },
+  shore: { region: 'beach' },
+  'camp-return': { region: 'camp', footing: { x: 3638, ground: 'crown' } },
+  'mine-return': { region: 'camp', footing: { x: 4180, ground: 'trail' } },
+  'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } }
+};
+const liftGates = {
+  lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
+  'mine-lift': { region: 'camp', footing: { x: 2300, ground: 'trail' } }
+};
 
 const conversations = {
   mara: { name: 'Mara', role: 'FORGE KEEPER' },
   ivo: { name: 'Ivo', role: 'KEEPER OF EMBERVEIN' },
+  workbench: { name: 'Camp workbench', role: 'CRAFTING' },
+  dock: { name: 'Lantern Dock', role: 'CASTING NET' },
+  'tool-needed': { name: 'Tool needed', role: 'GATHERING' },
   lift: {
     name: 'The old lift',
     role: 'MARA’S CLEARING',
@@ -94,10 +121,9 @@ const conversations = {
     role: 'CROWN OVERLOOK',
     greeting: 'The trail ends at an arch overlooking the ruins. The King’s Grounds open in a later playtest.'
   },
-  shore: {
-    name: 'Shore trail',
-    role: 'PAST TIMBER GATE',
-    greeting: 'The air smells of salt. This path runs out to the beach.'
+  'tide-arch': {
+    name: 'Tide Arch', role: 'COASTAL OVERLOOK',
+    greeting: 'Through the arch you can see the lights of the dock. The trail back to Alder Camp follows the shore and climbs through the pines.'
   }
 };
 
@@ -207,8 +233,9 @@ function paint() {
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
   if (region !== 'mine') {
-    paintHorizon(ctx, camera, sky.from, 1, animationClock);
-    if (sky.from !== sky.to) paintHorizon(ctx, camera, sky.to, sky.mix, animationClock);
+    const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
+    paintSky(ctx, camera, sky.from, 1, animationClock);
+    if (sky.from !== sky.to) paintSky(ctx, camera, sky.to, sky.mix, animationClock);
   }
   ctx.drawImage(backgrounds[region], 0, 0);
   const phase = sky.mix > .35 ? sky.to : sky.from;
@@ -229,12 +256,13 @@ function paint() {
     const mara = landmarks[0];
     shadow(mara.x, mara.y, 24);
     drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
+    paintCraftingProps(ctx, tools);
   } else if (region === 'crownwood') {
     if (camera.x < 4100 && camera.x + camera.width > 3200) paintCrownwoodWater(ctx, animationClock);
     crystalNodes.forEach(node => {
       if (!crystals.has(node.id)) paintCrystal(ctx, node, animationClock);
     });
-  } else {
+  } else if (region === 'mine') {
     paintMineLights(ctx, camera, animationClock, night);
     paintMineChest(ctx, hasNet);
     for (const node of oreNodes) {
@@ -242,6 +270,8 @@ function paint() {
     }
     shadow(ivo.x, ivo.y, 26);
     drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
+  } else {
+    paintBeachDetails(ctx, camera, animationClock, night, casting);
   }
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
@@ -288,7 +318,7 @@ function updateCat(dt) {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking;
+  return playing && !paused && !talking && !casting;
 }
 
 function atFallsRail() {
@@ -342,8 +372,13 @@ function updatePrompt() {
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
   if (region === 'mine') items.push(...oreNodes.filter(node => !iron.has(node.id)));
+  if (region === 'camp') {
+    items.push(...timberTrees.filter(tree => !tools.chopped.includes(tree.id)));
+    if (!tools.flint && !tools.pickaxe) items.push(flint);
+  }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
-  const message = current ? current.label + ' · E / Interact'
+  const label = fishing.tideglass === 'spent' && liftGates[current?.id] ? 'Ride the lift' : current?.label;
+  const message = casting ? 'Casting the net…' : label ? label + ' · E / Interact'
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   selectedLandmark = current;
   if (el('status').textContent !== message) el('status').textContent = message;
@@ -367,12 +402,22 @@ function updateNotes() {
     : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
     : 'Explore the trail and find Mara by the fire.';
   const mineLoot = 'Iron ore · ' + iron.size + ' / ' + oreNodes.length + (hasNet ? ' · Casting net' : '');
+  const gear = tools.pickaxe ? 'Hatchet · Pickaxe'
+    : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
+    : 'Ask Mara for a hatchet';
   el('quest-tracker').textContent = region === 'mine' ? mineLoot : clue;
+  el('tool-notes').textContent = region === 'beach'
+    ? [hasNet ? 'Casting net' : 'Find Ivo’s casting net', fishing.book && 'Soaked book',
+      fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
+    : gear;
+  el('tool-notes').hidden = false;
   el('quest-tracker').hidden = false;
   const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
-    : region === 'mine' ? (ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
+    : region === 'mine' ? (fishing.tideglass === 'spent' ? 'Lift repaired'
+      : ivoQuest ? 'Ivo needs 1 tideglass gemstone' : 'Follow the lanterns to Ivo')
+    : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : 'Trail entrances found · ' + destinations + ' / 3';
 }
 
@@ -388,8 +433,8 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 4, avatar, region, footing: savedFooting, phaseClock, nightIndex, shadowHits,
-      visited: [...visited], flowers: [...collected], quest, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest
+      version: 5, avatar, region, footing: savedFooting, phaseClock, nightIndex, shadowHits,
+      visited: [...visited], flowers: [...collected], quest, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -399,7 +444,8 @@ function begin(save) {
   avatar = save?.avatar ?? avatar;
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
   visited = new Set(knownLandmarks.filter(landmark => Array.isArray(save?.visited) && save.visited.includes(landmark.id)).map(landmark => landmark.id));
-  const savedFlowers = Array.isArray(save?.flowers) ? save.flowers : [];
+  const savedFlowers = Array.isArray(save?.flowers)
+    ? save.flowers.map(id => id === 'timber' ? beachFlower.id : id) : [];
   collected = new Set(knownFlowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
   quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
   const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
@@ -408,10 +454,12 @@ function begin(save) {
   iron = new Set(oreNodes.filter(node => savedIron.includes(node.id)).map(node => node.id));
   hasNet = save?.hasNet === true;
   ivoQuest = save?.ivoQuest === true;
+  tools = readTools(save?.tools);
+  fishing = readFishing(save?.fishing);
   nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
   const savedHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -422,12 +470,19 @@ function enterRegion(next, footing, previousHits = 0) {
   region = next;
   const area = regions[next];
   terrain = area.terrain;
+  // Keep camp and the current area cached to bound memory on mobile.
+  if (next !== 'camp') {
+    for (const key of Object.keys(backgrounds)) {
+      if (key !== 'camp' && key !== next) delete backgrounds[key];
+    }
+  }
   backgrounds[next] ??= area.buildArt();
   player = createPlayer(footing, terrain);
   shadowHits = previousHits;
   noticeUntil = 0;
   hitUntil = 0;
   creatures = [];
+  casting = null;
   savedFooting = { x: player.x, ground: player.ground };
   cat.x = clamp(player.x - 62, 19, terrain.width - 19);
   cat.y = player.y;
@@ -464,7 +519,7 @@ function setDialogue(line, options = []) {
   (choices.firstElementChild ?? el('close-dialogue')).focus({ preventScroll: true });
 }
 
-const flowerHint = 'One grows here by the fire, one on Three Boughs inside Crownwood, and one beside the mine door.';
+const flowerHint = 'One grows here by the fire, one on Three Boughs inside Crownwood, and one on the raised ledge at Driftwood Cove, on the beach.';
 
 function setQuest(state) {
   quest = state;
@@ -473,19 +528,28 @@ function setQuest(state) {
 }
 
 function maraDialogue() {
+  const tool = [tools.hatchet ? 'How do I make a pickaxe?' : 'Can I get a gathering tool?', () => {
+    if (!tools.hatchet) {
+      tools.hatchet = true;
+      updateNotes();
+      saveCamp();
+    }
+    setDialogue('Take my old hatchet. It cuts marked pines. Pick up loose flint by the root trail, then use 3 wood and 1 flint at the workbench east of the fire to make a pickaxe.',
+      [['Back', maraDialogue]]);
+  }];
   const paths = ['Where do the trails go?', () => setDialogue(
     'At the root fork, jump up into Crownwood. Stay on the ground for the mine. The shore trail keeps going past the mine door.',
     [['Back', maraDialogue]])];
   if (quest === 'complete') {
-    setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there.', [paths]);
-  } else if (quest === 'accepted' && collected.size === flowers.length + 1) {
+    setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there.', [tool, paths]);
+  } else if (quest === 'accepted' && collected.size === knownFlowers.length) {
     setDialogue('Three dusklilies! I used to pick these on the way home. Here’s the brass key I promised.', [
       ['Give Mara the 3 dusklilies', () => {
         setQuest('complete');
         setDialogue('Brass key received. Keep it for the old box behind falling water. Alvin, see if you can keep them out of trouble.');
-      }], paths]);
+      }], tool, paths]);
   } else if (quest === 'accepted') {
-    setDialogue('You’ve found ' + collected.size + ' of the 3 dusklilies. ' + flowerHint, [paths]);
+    setDialogue('You’ve found ' + collected.size + ' of the 3 dusklilies. ' + flowerHint, [tool, paths]);
   } else {
     const greeting = quest === 'declined' ? 'Changed your mind? ' : 'Come warm up. Alvin already has. ';
     setDialogue(greeting + 'Bring me 3 dusklilies and I’ll give you a brass key. ' + flowerHint + ' Will you help?', [
@@ -495,12 +559,28 @@ function maraDialogue() {
       }],
       ['No, maybe later', () => {
         setQuest('declined');
-        setDialogue('Fair enough. The fire’s here whenever you need it.', [paths]);
-      }], paths]);
+        setDialogue('Fair enough. The fire’s here whenever you need it.', [tool, paths]);
+      }], tool, paths]);
   }
 }
 
 function ivoDialogue() {
+  if (fishing.tideglass === 'spent') {
+    setDialogue('The lift is running. It goes straight back to Mara’s clearing. Step aboard at the far end of the mine.');
+    return;
+  }
+  if (fishing.tideglass === 'caught') {
+    setDialogue('That’s tideglass! It’ll fit the lift bearing. I can have it running right now.', [
+      ['Give Ivo the tideglass', () => {
+        fishing.tideglass = 'spent';
+        ivoQuest = true;
+        updateNotes();
+        saveCamp();
+        setDialogue('Lift repaired. Head east to the lift base. You can ride it either way.');
+      }]
+    ]);
+    return;
+  }
   const net = hasNet ? 'You’ve got my casting net.' : 'Take the casting net from my chest.';
   setDialogue('Mind the dark past these lamps. Take a breather here if you need one.', [
     ['What happened to the lift?', () => {
@@ -514,7 +594,7 @@ function ivoDialogue() {
           ivoQuest = true;
           updateNotes();
           saveCamp();
-          setDialogue('Thanks. The shore path keeps going past the timber door. When the beach opens, cast the net off Lantern Dock.');
+          setDialogue('Thanks. Follow the shore path past the timber door. Cast the net off Lantern Dock.');
         }],
         ['Maybe later', () => setDialogue('Fair enough. There’s always the timber shaft.', [['Back', ivoDialogue]])]
       ]);
@@ -525,56 +605,62 @@ function ivoDialogue() {
   ]);
 }
 
-function interact() {
-  if (!controlsActive() || !selectedLandmark) return;
-  const item = selectedLandmark;
-  const id = item.id;
-  if (currentFlowers().includes(item) || crystalNodes.includes(item) || oreNodes.includes(item) || item === netChest) {
-    if (crystalNodes.includes(item)) {
-      crystals.add(id);
-      notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
-    } else if (oreNodes.includes(item)) {
-      iron.add(id);
-      notice = 'Iron ore mined · ' + iron.size + ' / ' + oreNodes.length;
-    } else if (item === netChest) {
-      hasNet = true;
-      notice = 'Casting net taken';
-    } else {
-      collected.add(id);
-      notice = 'Dusklily picked · ' + collected.size + ' / 3';
-    }
-    noticeUntil = animationClock + 1.6;
-    updateNotes();
+function workbenchDialogue() {
+  if (tools.pickaxe) {
+    setDialogue('Your pickaxe is ready. Use it on the iron seams in Embervein and the crystals in Crownwood.');
+    return;
+  }
+  const materials = 'Pickaxe recipe · ' + spareWood(tools) + ' / ' + WOOD_COST + ' wood · ' + Number(tools.flint) + ' / 1 flint. ';
+  const ready = spareWood(tools) >= WOOD_COST && tools.flint;
+  if (!ready) {
+    setDialogue(materials + (tools.hatchet
+      ? 'Chop marked pines and pick up the loose flint by the root trail.'
+      : 'Ask Mara for a hatchet to start gathering wood.'));
+    return;
+  }
+  setDialogue(materials + 'It’ll mine iron and crystals.', [
+    ['Craft pickaxe', () => {
+      tools.pickaxe = true;
+      tools.flint = false;
+      updateNotes();
+      saveCamp();
+      workbenchDialogue();
+    }]
+  ]);
+}
+
+const bookClue = 'The water blurred most of the writing. One sketch shows a rope bridge with a gap in its railing, a ledge beneath it, and a light behind the waterfall.';
+
+function dockDialogue(result) {
+  if (!hasNet) {
+    setDialogue('You need a casting net. Ivo keeps one in the chest next to his lantern in Embervein Mine.');
+    return;
+  }
+  const choices = [['Cast the net', () => {
+    casting = { start: animationClock, x: player.x, y: player.y };
+    closeDialogue();
+    clearControls();
     updatePrompt();
-    saveCamp();
-    world.focus({ preventScroll: true });
-    return;
+  }]];
+  if (fishing.book) {
+    choices.push(['Read the soaked book', () => setDialogue(bookClue, [['Back', () => dockDialogue()]])]);
   }
-  visited.add(id);
-  if (id === 'canopy') {
-    enterRegion('crownwood');
-    return;
-  }
-  if (id === 'mine') {
-    enterRegion('mine');
-    return;
-  }
-  if (id === 'mine-return') {
-    enterRegion('camp', { x: 4180, ground: 'trail' });
-    return;
-  }
-  if (id === 'camp-return') {
-    enterRegion('camp', { x: 3638, ground: 'crown' });
-    return;
-  }
-  if (id === 'mist-drop') {
-    player.y += 6;
-    player.ground = null;
-    player.velocityY = 150;
-    player.jumps = 1;
-    updatePrompt();
-    return;
-  }
+  setDialogue(result ?? 'The water is calm here. Cast the net from the end of the pier.', choices);
+}
+
+function finishCast() {
+  const result = castNet(fishing);
+  fishing = result.fishing;
+  casting = null;
+  openDialogue('dock');
+  let message = 'You caught ' + result.catchName.toLowerCase() + '.';
+  if (result.catchName === 'Soaked book') message = 'The net comes up heavy with a soaked book. There’s still a legible sketch inside.';
+  if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Ivo to repair the lift.';
+  if (result.rare) message += ' Tangled in the net alongside it is the Godslayer.';
+  dockDialogue(message);
+}
+
+function openDialogue(id) {
   const info = conversations[id];
   talking = true;
   clearControls();
@@ -587,9 +673,67 @@ function interact() {
   el('portrait').hidden = !portrait;
   if (portrait) drawPortrait(el('portrait'), portrait);
   el('dialogue').hidden = false;
+}
+
+function interact() {
+  if (!controlsActive() || !selectedLandmark) return;
+  const item = selectedLandmark;
+  const id = item.id;
+  const mineral = crystalNodes.includes(item) || oreNodes.includes(item);
+  const tree = timberTrees.includes(item);
+  if ((mineral && !tools.pickaxe) || (tree && !tools.hatchet)) {
+    openDialogue('tool-needed');
+    setDialogue(mineral ? 'Craft a pickaxe at the Alder Camp workbench to mine this.'
+      : 'Ask Mara for her hatchet to chop marked pines.');
+    return;
+  }
+  if (currentFlowers().includes(item) || mineral || item === netChest || item === flint || tree) {
+    if (crystalNodes.includes(item)) {
+      crystals.add(id);
+      notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
+    } else if (oreNodes.includes(item)) {
+      iron.add(id);
+      notice = 'Iron ore mined · ' + iron.size + ' / ' + oreNodes.length;
+    } else if (item === netChest) {
+      hasNet = true;
+      notice = 'Casting net taken';
+    } else if (item === flint) {
+      tools.flint = true;
+      notice = 'Flint picked up';
+    } else if (tree) {
+      tools.chopped.push(id);
+      notice = 'Wood gathered';
+    } else {
+      collected.add(id);
+      notice = 'Dusklily picked · ' + collected.size + ' / 3';
+    }
+    noticeUntil = animationClock + 1.6;
+    updateNotes();
+    updatePrompt();
+    saveCamp();
+    world.focus({ preventScroll: true });
+    return;
+  }
+  visited.add(id);
+  const gate = gates[id] ?? (fishing.tideglass === 'spent' ? liftGates[id] : null);
+  if (gate) {
+    enterRegion(gate.region, gate.footing);
+    return;
+  }
+  if (id === 'mist-drop') {
+    player.y += 6;
+    player.ground = null;
+    player.velocityY = 150;
+    player.jumps = 1;
+    updatePrompt();
+    return;
+  }
+  openDialogue(id);
   if (id === 'mara') maraDialogue();
   else if (id === 'ivo') ivoDialogue();
-  else setDialogue(info.greeting + (id === 'shore' ? ' The beach opens in a later playtest.' : ''));
+  else if (id === 'workbench') workbenchDialogue();
+  else if (id === 'dock') dockDialogue();
+  else setDialogue(conversations[id].greeting);
 }
 
 function closeDialogue() {
@@ -643,6 +787,7 @@ function frame(time) {
   const dt = Math.min(.08, (time - (lastFrame || time)) / 1000);
   lastFrame = time;
   if (!paused && !talking) animationClock += dt;
+  if (casting && animationClock - casting.start >= .92) finishCast();
   if (controlsActive()) {
     const right = heldKeys.has('d') || heldKeys.has('arrowright') || [...heldPointers.values()].includes(1);
     const left = heldKeys.has('a') || heldKeys.has('arrowleft') || [...heldPointers.values()].includes(-1);

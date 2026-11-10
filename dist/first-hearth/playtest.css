@@ -103,12 +103,18 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .primary, .secondary, .choices button { min-height: 32px; padding: 4px 10px; }
   #continue { margin-top: 0; }
 }
-.quest-tracker {
+.scene-notes {
   position: absolute;
   top: 12px;
   left: 13px;
-  padding: 6px 9px;
   max-width: calc(100% - 26px);
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  pointer-events: none;
+}
+.quest-tracker {
+  padding: 6px 9px;
   color: #fff1cd;
   background: #20372fea;
   border: 1px solid #f4d6a449;

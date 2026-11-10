@@ -1,4 +1,5 @@
 import { CAMP_X, WORLD_WIDTH, WORLD_HEIGHT, groundAt, surfaces } from './terrain.mjs';
+import { workbench, flint, timberTrees } from "./crafting.mjs";
 
 const palettes = {
   day: ['#719ca1','#b3c9b1','#f7deb0','#eee2ab'],
@@ -292,4 +293,30 @@ export function paintFlower(ctx, flower, nearby, clock) {
     orb(ctx,x+tip+Math.cos(angle)*5,y-22+Math.sin(angle)*5,4.5,'#efb2c6');
   }
   orb(ctx,x+tip,y-22,3,'#ffe8a7');
+}
+
+export function paintCraftingProps(ctx, tools) {
+  for (const tree of timberTrees) {
+    const {x,y}=tree;
+    if (tools.chopped.includes(tree.id)) {
+      poly(ctx,[[x-19,y],[x-13,y-17],[x+11,y-18],[x+20,y]],'#776044');
+      path(ctx,[[x-13,y-17],[x+11,y-18]],'#c6a873',4);
+    } else {
+      pine(ctx,x,y,167,'#324f41','#617a59');
+      ctx.fillStyle='#84694a';
+      ctx.fillRect(x-10,y-44,20,44);
+      path(ctx,[[x-9,y-31],[x+9,y-31]],'#e5bb74',5);
+    }
+  }
+  if (!tools.flint && !tools.pickaxe) {
+    const {x,y}=flint;
+    poly(ctx,[[x-18,y],[x-13,y-15],[x+2,y-23],[x+16,y-12],[x+18,y]],'#647c82');
+    path(ctx,[[x-13,y-15],[x+2,y-23],[x+11,y-16]],'#bcd6ce',3);
+  }
+  const {x,y}=workbench;
+  path(ctx,[[x-37,y],[x-33,y-52],[x+37,y-52],[x+42,y]],'#72553d',9);
+  path(ctx,[[x-49,y-54],[x+49,y-54]],'#c29b64',12);
+  path(ctx,[[x-30,y-29],[x+36,y-29]],'#967453',5);
+  path(ctx,[[x+4,y-62],[x+30,y-71]],'#80583f',5);
+  path(ctx,[[x+22,y-74],[x+29,y-66]],'#9fa99c',6);
 }

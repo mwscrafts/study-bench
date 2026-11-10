@@ -30,12 +30,11 @@ export const landmarks = [
   { id: 'lift', x: 2425, y: 610, label: 'Inspect the lift', radius: 76 },
   { id: 'canopy', x: 3745, y: 260, label: 'Enter Crownwood', radius: 92 },
   { id: 'mine', x: 4050, y: 748, label: 'Enter Embervein Mine', radius: 95 },
-  { id: 'shore', x: 4660, y: 718, label: 'Shore trail', radius: 88 }
+  { id: 'shore', x: 4660, y: 718, label: 'Enter the beach', radius: 88 }
 ];
 
 export const flowers = [
   { id: 'clearing', x: 2310, y: 610, label: 'Pick dusklily by the fire' },
-  { id: 'timber', x: 3940, y: 748, label: 'Pick dusklily by the mine' }
 ];
 
 export function clamp(value, minimum, maximum) {
