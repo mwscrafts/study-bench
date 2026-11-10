@@ -189,7 +189,8 @@ export class HearthPresence extends DurableObject {
     const prior = socket.deserializeAttachment();
     if (!prior || Date.now() - prior.lastAt < 55) return;
     socket.serializeAttachment({ id: prior.id, pose, lastAt: Date.now(), connectedAt: prior.connectedAt ?? Date.now() });
-    const others = this.ctx.getWebSockets().filter(peer => peer !== socket);
+    const others = this.ctx.getWebSockets().filter(peer =>
+      peer !== socket && peer.deserializeAttachment()?.id !== prior.id);
     if (prior.pose?.region !== pose.region) {
       if (prior.pose) this.broadcast(others, prior.pose.region, { type: 'left', id: prior.id });
       socket.send(JSON.stringify({ type: 'snapshot', peers: others.map(peer => peer.deserializeAttachment())

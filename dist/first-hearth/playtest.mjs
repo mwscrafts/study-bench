@@ -367,13 +367,15 @@ function disconnectPresence(reason = 'Leaving world') {
 }
 
 function addPeer(id, pose) {
-  if (typeof id !== 'string' || !pose || pose.region !== region) return;
+  if (typeof id !== 'string' || id === presencePlayerId() || !pose || pose.region !== region) return;
   const existing = peers.get(id);
   peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y, leftAt: null });
   updatePresenceButton();
 }
 
+let cachedPresenceId = null;
 function presencePlayerId() {
+  if (cachedPresenceId) return cachedPresenceId;
   const key = 'first-hearth:presence-player:v1';
   try {
     let id = sessionStorage.getItem(key);
@@ -381,8 +383,9 @@ function presencePlayerId() {
       id = crypto.randomUUID();
       sessionStorage.setItem(key,id);
     }
-    return id;
-  } catch { return crypto.randomUUID(); }
+    cachedPresenceId = id;
+  } catch { cachedPresenceId = crypto.randomUUID(); }
+  return cachedPresenceId;
 }
 
 function connectPresence() {
