@@ -1,20 +1,20 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=08.1';
-import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=08.1';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=09';
+import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=09';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes } from './mine.mjs';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
-import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs';
+import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=09';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
-  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs';
-import { renderInventory } from './backpack.mjs';
-import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs';
+  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
+import { renderInventory } from './backpack.mjs?v=09';
+import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs?v=09';
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
-  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs';
+  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=09';
 import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs';
 import { readVictory, openTimeBoard } from './time-board.mjs';
 
@@ -36,6 +36,10 @@ let region = 'camp';
 let terrain = campTerrain;
 let crystals = new Set();
 let iron = new Set();
+let ironStock = 0;
+let shadowStock = 0;
+let defeatedShadows = new Set();
+let shadowHealth = new Map();
 let hasNet = false;
 let ivoQuest = false;
 let tools = readTools();
@@ -137,6 +141,7 @@ const liftGates = {
 
 const conversations = {
   mara: { name: 'Mara', role: 'FORGE KEEPER' },
+  barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
   ivo: { name: 'Ivo', role: 'KEEPER OF EMBERVEIN' },
   workbench: { name: 'Camp workbench', role: 'CRAFTING' },
   dock: { name: 'Lantern Dock', role: 'CASTING NET' },
@@ -302,6 +307,19 @@ function paint() {
     paintCraftingProps(ctx, tools);
     for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
   } else if (region === 'crownwood') {
+    const barry = crownwoodLandmarks.find(item => item.id === 'barry');
+    shadow(barry.x, barry.y, 29);
+    ctx.save();
+    ctx.translate(barry.x, barry.y);
+    ctx.fillStyle = '#514c3c'; ctx.fillRect(-19,-49,38,41);
+    ctx.fillStyle = '#bd9680'; ctx.fillRect(-13,-77,26,29);
+    ctx.fillStyle = '#262322';
+    for (const [x,y] of [[-14,-77],[-6,-86],[5,-86],[15,-77]]) {
+      ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = '#302925'; ctx.fillRect(-6,-61,3,3); ctx.fillRect(5,-61,3,3);
+    ctx.fillStyle = '#48332a'; ctx.fillRect(-18,-8,14,8); ctx.fillRect(6,-8,14,8);
+    ctx.restore();
     if (camera.x < 4100 && camera.x + camera.width > 3200) paintCrownwoodWater(ctx, animationClock);
     crystalNodes.forEach(node => {
       if (!crystals.has(node.id)) paintCrystal(ctx, node, animationClock);
@@ -348,6 +366,11 @@ function paint() {
   const tilt = (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
   const facing = swing > 0 ? swingDirection : player.direction;
   drawSprite(ctx, sprites[avatar], player.x, player.y, 97, facing, bob, tilt);
+  if (tools.helmet && playing) {
+    ctx.fillStyle = '#a3b9b5';
+    ctx.beginPath(); ctx.ellipse(player.x, player.y - 69 + bob, 19, 10, 0, Math.PI, 0); ctx.fill();
+    ctx.fillRect(player.x - 21, player.y - 70 + bob, 42, 4);
+  }
   if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
@@ -467,11 +490,13 @@ function updateLocation() {
 }
 
 function updateNotes() {
-  const clue = quest === 'complete' ? 'Brass key earned'
+  const clue = tools.flowerCrown ? 'Flower crown ready · Return to the King'
+    : hearthLearned ? 'Return to Mara for the flower crown'
+    : quest === 'complete' ? 'Brass key earned · Find the hidden box'
     : quest === 'accepted' ? 'Mara’s dusklilies · ' + collected.size + ' / 3'
     : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
     : 'Explore the trail and find Mara by the fire.';
-  const mineLoot = 'Iron ore · ' + iron.size + ' / ' + oreNodes.length + (hasNet ? ' · Casting net' : '');
+  const mineLoot = 'Iron ore · ' + ironStock + (hasNet ? ' · Casting net' : '');
   const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : 'Ask Mara for a hatchet';
@@ -510,9 +535,10 @@ function saveCamp() {
   if (!playing) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 8, avatar, region,
+      version: 9, avatar, region,
       footing: trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting, phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
-      visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron], hasNet, ivoQuest, tools, fishing
+      visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
+      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -527,14 +553,18 @@ function begin(save) {
   collected = new Set(knownFlowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
   quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
   hearthLearned = quest === 'complete' && save?.hearthLearned === true;
-  victory = readVictory(save?.victory, hearthLearned);
+  tools = readTools(save?.tools);
+  victory = readVictory(save?.victory, hearthLearned || tools.flowerCrown);
   const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
   crystals = new Set(crystalNodes.filter(node => savedCrystals.includes(node.id)).map(node => node.id));
   const savedIron = Array.isArray(save?.iron) ? save.iron : [];
   iron = new Set(oreNodes.filter(node => savedIron.includes(node.id)).map(node => node.id));
+  ironStock = Number.isSafeInteger(save?.ironStock) ? Math.max(0,save.ironStock) : iron.size;
+  shadowStock = Number.isSafeInteger(save?.shadowStock) ? Math.max(0,save.shadowStock) : 0;
+  defeatedShadows = new Set(Array.isArray(save?.defeatedShadows) ? save.defeatedShadows : []);
+  shadowHealth = new Map();
   hasNet = save?.hasNet === true;
   ivoQuest = save?.ivoQuest === true;
-  tools = readTools(save?.tools);
   fishing = readFishing(save?.fishing);
   nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
   const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
@@ -546,7 +576,7 @@ function begin(save) {
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -641,7 +671,19 @@ function maraDialogue() {
     'At the root fork, jump up into Crownwood. Stay on the ground for the mine. The shore trail keeps going past the mine door.',
     [['Back', maraDialogue]])];
   if (quest === 'complete') {
-    setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there.', [tool, paths]);
+    if (tools.flowerCrown) {
+      setDialogue('The crown is yours now. Please be careful. Please save our king.', [tool, paths]);
+    } else if (hearthLearned) {
+      setDialogue('You found the ember box. I asked for those three flowers to weave a crown, just in case the old story was true. It can draw the shadows out of his mind.', [
+        ['Accept the flower crown', () => {
+          tools.flowerCrown = true;
+          updateNotes();
+          saveCamp();
+          setDialogue('Please be careful. Please… save our king. Alvin, stay close to them.');
+        }], tool, paths]);
+    } else {
+      setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there. Come back and tell me what you find.', [tool, paths]);
+    }
   } else if (quest === 'accepted' && collected.size === knownFlowers.length) {
     setDialogue('Three dusklilies! I used to pick these on the way home. Here’s the brass key I promised.', [
       ['Give Mara the 3 dusklilies', () => {
@@ -662,6 +704,13 @@ function maraDialogue() {
         setDialogue('Fair enough. The fire’s here whenever you need it.', [tool, paths]);
       }], tool, paths]);
   }
+}
+
+function barryDialogue() {
+  setDialogue('I used to see the King walk these branches. He was a good man before the shadows got into his mind. Most of us fled when we couldn’t reach him.', [
+    ['Can we save him?', () => setDialogue('I want to believe so. Mara still remembers the old ways. If only there were another way…', [['Back', barryDialogue]])],
+    ['What happened here?', () => setDialogue('The shadows followed him from the ruins. Now every night they reach farther into the woods. We have to make it safe again, even if it means facing him.', [['Back', barryDialogue]])]
+  ]);
 }
 
 function ivoDialogue() {
@@ -706,28 +755,43 @@ function ivoDialogue() {
 }
 
 function workbenchDialogue() {
-  if (tools.pickaxe) {
-    setDialogue('Your pickaxe is ready. Use it on the iron seams in Embervein and the crystals in Crownwood.');
-    return;
-  }
-  const materials = 'Pickaxe recipe · ' + spareWood(tools) + ' / ' + WOOD_COST + ' wood · ' + Number(tools.flint) + ' / 1 flint. ';
-  const ready = spareWood(tools) >= WOOD_COST && tools.flint;
-  if (!ready) {
-    setDialogue(materials + (tools.hatchet
-      ? 'Chop marked pines and pick up the loose flint by the root trail.'
-      : 'Ask Mara for a hatchet to start gathering wood.'));
-    return;
-  }
-  setDialogue(materials + 'It’ll mine iron and crystals.', [
-    ['Craft pickaxe', () => {
+  const choices = [];
+  if (!tools.pickaxe && spareWood(tools) >= WOOD_COST && tools.flint) choices.push(['Craft pickaxe · 3 wood + 1 flint', () => {
       tools.pickaxe = true;
       equipped = 'pickaxe';
       tools.flint = false;
       updateNotes();
       saveCamp();
       workbenchDialogue();
-    }]
-  ]);
+  }]);
+  if (!tools.ironSword && spareWood(tools) >= 1 && ironStock >= 2) choices.push(['Craft iron sword · 1 wood + 2 iron', () => {
+    tools.ironSword = true;
+    tools.woodSpent = 1;
+    ironStock -= 2;
+    equipped = 'ironSword';
+    updateNotes(); saveCamp(); workbenchDialogue();
+  }]);
+  if (tools.ironSword && !tools.shadowBlade && ironStock >= 1 && shadowStock >= 3) choices.push(['Upgrade to shadow blade · 1 iron + 3 shadows', () => {
+    tools.shadowBlade = true;
+    ironStock--;
+    shadowStock -= 3;
+    equipped = 'shadowBlade';
+    updateNotes(); saveCamp(); workbenchDialogue();
+  }]);
+  if (!tools.charm && crystals.size === crystalNodes.length && shadowStock >= 2) choices.push(['Craft shockwave charm · 2 crystals + 2 shadows', () => {
+    tools.charm = true;
+    shadowStock -= 2;
+    updateNotes(); saveCamp(); workbenchDialogue();
+  }]);
+  if (!tools.helmet && ironStock >= 4) choices.push(['Craft helmet · 4 iron', () => {
+    tools.helmet = true;
+    ironStock -= 4;
+    updateNotes(); saveCamp(); workbenchDialogue();
+  }]);
+  const inventory = 'Wood ' + spareWood(tools) + ' · Iron ' + ironStock + ' · Crystals ' +
+    (crystals.size - (tools.charm ? 2 : 0)) + ' · Shadows ' + shadowStock + '. ';
+  setDialogue(inventory + 'Recipes: pickaxe 3 wood + 1 flint; iron sword 1 wood + 2 iron; shadow blade 1 iron + 3 shadows; shockwave charm 2 crystals + 2 shadows; helmet 4 iron.' +
+    (!tools.pickaxe ? ' Mara has a hatchet. Gather wood and flint first.' : ''), choices);
 }
 
 const bookClue = 'The water blurred most of the writing. One sketch shows a rope bridge with a gap in its railing, a ledge beneath it, and a light behind the waterfall.';
@@ -800,12 +864,13 @@ function openDialogue(id) {
 }
 
 function isStrikeTool(id) {
-  return id === 'hatchet' || id === 'pickaxe' || id === 'godslayer';
+  return id === 'hatchet' || id === 'pickaxe' || id === 'ironSword' || id === 'shadowBlade' || id === 'godslayer';
 }
 
 function ownsGear(id) {
   if (id === 'net') return hasNet;
   if (id === 'godslayer') return fishing.godslayer;
+  if (id === 'ironSword' || id === 'shadowBlade') return tools[id];
   return (id === 'hatchet' || id === 'pickaxe') && tools[id];
 }
 
@@ -813,14 +878,18 @@ function inventoryItems() {
   const items = [
     ['▰', 'Wood', spareWood(tools), 'Chopped from marked pines.'],
     ['⬟', 'Flint', Number(tools.flint), 'Loose stone used at the camp workbench.'],
-    ['◆', 'Crystal', crystals.size, 'Gathered with a pickaxe in Crownwood.'],
-    ['▧', 'Iron ore', iron.size, 'Mined with a pickaxe in Embervein.'],
+    ['◆', 'Crystal', crystals.size - (tools.charm ? 2 : 0), 'Gathered with a pickaxe in Crownwood.'],
+    ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein.'],
+    ['✦', 'Shadow essence', shadowStock, 'Dropped by defeated night shadows.'],
     ['●', 'Berries', berries, 'Saved until you eat them. Restores up to 25 health.'],
     ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Mara for a brass key.']
   ];
   if (quest === 'complete') items.push(['⚿', 'Brass key', 1, 'Mara’s key. Look for an old box behind falling water.']);
   if (fishing.book) items.push(['▤', 'Soaked book', 1, bookClue]);
   if (hearthLearned) items.push(['▤', 'Ember note', 1, hearthNote]);
+  if (tools.flowerCrown) items.push(['✿', 'Flower crown', 1, 'Mara’s crown can free the King from the shadows.']);
+  if (tools.charm) items.push(['◇', 'Shockwave charm', 1, 'Softens the King’s shockwaves.']);
+  if (tools.helmet) items.push(['♧', 'Iron helmet', 1, 'Reduces incoming damage by 25%.']);
   if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Ivo to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
@@ -889,7 +958,8 @@ function gather(item) {
     floater(floaters, x, y - 65, '+1 crystal');
   } else if (oreNodes.includes(item)) {
     iron.add(id);
-    notice = 'Iron ore mined · ' + iron.size + ' / ' + oreNodes.length;
+    ironStock++;
+    notice = 'Iron ore mined · ' + ironStock + ' in backpack';
     puff(particles, x, y - 24, '#dfb595');
     floater(floaters, x, y - 65, '+1 iron ore');
   } else if (item === netChest) {
@@ -925,7 +995,7 @@ function startSwing(item) {
   cooldown = TOOL_COOLDOWN;
   swing = SWING_TIME;
   swingTarget = item;
-  swingCombat = !item && !!trial && ['shadows','duel'].includes(trial.stage);
+  swingCombat = !item && (creatures.length > 0 || !!trial && ['shadows','duel'].includes(trial.stage));
   swingDirection = item ? Math.sign(item.x - player.x) || player.direction : player.direction;
   player.direction = swingDirection;
 }
@@ -936,7 +1006,28 @@ function updateSwing(dt) {
   if (swing > SWING_IMPACT) return;
   if (swingCombat) {
     swingCombat = false;
-    const result = attackTrial(trial, { ...player, direction: swingDirection }, equipped);
+    let result;
+    if (trial) result = attackTrial(trial, { ...player, direction: swingDirection }, equipped);
+    else {
+      const target = creatures.filter(creature => Math.abs(creature.x - player.x) < 115 &&
+        Math.abs(creature.y - player.y) < 78 && (creature.x - player.x) * swingDirection >= -22)
+        .sort((a,b) => Math.abs(a.x-player.x)-Math.abs(b.x-player.x))[0];
+      if (target) {
+        const id = region + ':' + nightIndex + ':' + target.index;
+        const power = equipped === 'godslayer' ? 999 : equipped === 'shadowBlade' ? 100
+          : equipped === 'ironSword' ? 70 : equipped === 'pickaxe' ? 45 : 32;
+        const remaining = (shadowHealth.get(id) ?? 60 + Math.min(nightIndex, 8) * 18) - power;
+        result = { x: target.x, y: target.y, damage: power };
+        shadowHealth.set(id, remaining);
+        if (remaining <= 0) {
+          defeatedShadows.add(id);
+          creatures = creatures.filter(creature => creature !== target);
+          shadowStock++;
+          floater(floaters, target.x, target.y - 78, '+1 shadow');
+          updateNotes(); saveCamp();
+        }
+      }
+    }
     if (result) {
       puff(particles, result.x, result.y - 44, '#cbb0e8', 9);
       floater(floaters, result.x, result.y - 95, result.damage ? '−' + result.damage : 'Guarded');
@@ -995,6 +1086,7 @@ function interact() {
   openDialogue(id);
   if (id === 'mara') maraDialogue();
   else if (id === 'ivo') ivoDialogue();
+  else if (id === 'barry') barryDialogue();
   else if (id === 'workbench') workbenchDialogue();
   else if (id === 'dock') dockDialogue();
   else if (id === 'ember-box') emberBoxDialogue();
@@ -1032,7 +1124,7 @@ function altarDialogue() {
     setDialogue('The final night is over. You can return to the crown to see your result.');
     return;
   }
-  const tool = ['hatchet','pickaxe','godslayer'].find(ownsGear);
+  const tool = ['shadowBlade','ironSword','pickaxe','hatchet','godslayer'].find(ownsGear);
   if (!tool) {
     setDialogue('Bring a tool you can strike with. Mara can lend you a hatchet at Alder Camp.');
     return;
@@ -1062,7 +1154,7 @@ function endingDialogue() {
     setDialogue(endings[victory.ending].text + ' I’m proud of you.' + time, [['View time board', showScores]]);
     return;
   }
-  const choices = Object.keys(endings).filter(ending => ending === 'break' || hearthLearned).map(ending =>
+  const choices = Object.keys(endings).filter(ending => ending === 'break' || tools.flowerCrown).map(ending =>
     [endings[ending].name, () => {
       victory.ending = ending;
       fireworksElapsed = 0;
@@ -1103,7 +1195,8 @@ function updateKingTrial(dt) {
   const before = trial.stage;
   const damage = advanceTrial(trial, player, dt);
   if (damage && animationClock >= hitUntil) {
-    health = Math.max(0, health - damage);
+    const reduced = before === 'duel' && damage === 24 && tools.charm ? Math.ceil(damage * .5) : damage;
+    health = Math.max(0, health - (tools.helmet ? Math.ceil(reduced * .75) : reduced));
     if (!health) {
       retreatFromTrial(true);
       return;
@@ -1137,12 +1230,13 @@ function updateKingTrial(dt) {
 function updateShadows() {
   const area = regions[region];
   if (!area.shadows) return;
-  creatures = area.shadows(phaseClock, nightIndex);
+  creatures = area.shadows(phaseClock, nightIndex)
+    .filter(creature => !defeatedShadows.has(region + ':' + nightIndex + ':' + creature.index));
   if (creatures.length === 0 || animationClock < hitUntil) return;
   const hit = creatures.some(creature =>
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
   if (!hit) return;
-  health = Math.max(0, health - 34);
+  health = Math.max(0, health - (tools.helmet ? Math.ceil((34 + Math.min(nightIndex, 8) * 3) * .75) : 34 + Math.min(nightIndex, 8) * 3));
   hitUntil = animationClock + 1.8;
   if (health === 0) {
     health = 100;
@@ -1184,6 +1278,9 @@ function frame(time) {
     if (phaseClock >= DAY_LENGTH) {
       phaseClock -= DAY_LENGTH;
       nightIndex++;
+      iron.clear();
+      defeatedShadows.clear();
+      shadowHealth.clear();
     }
     updateShadows();
     updateKingTrial(dt);

@@ -1,4 +1,4 @@
-import { BERRY_HEAL, gear } from './equipment.mjs';
+import { BERRY_HEAL, gear } from './equipment.mjs?v=09';
 
 // Emberwild's backpack renderer, with the inventory and equipment entries supplied by this game.
 export function renderInventory(el, items, owned, equipped, equip, berries, health) {

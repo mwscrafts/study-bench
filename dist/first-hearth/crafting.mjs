@@ -18,11 +18,17 @@ export function readTools(save) {
   return {
     hatchet: save?.hatchet === true,
     pickaxe: save?.pickaxe === true,
+    ironSword: save?.ironSword === true,
+    shadowBlade: save?.shadowBlade === true,
+    charm: save?.charm === true,
+    helmet: save?.helmet === true,
+    flowerCrown: save?.flowerCrown === true,
+    woodSpent: save?.woodSpent === 1 ? 1 : 0,
     flint: save?.flint === true,
     chopped: timberTrees.filter(tree => chopped.includes(tree.id)).map(tree => tree.id)
   };
 }
 
 export function spareWood(tools) {
-  return Math.max(0, tools.chopped.length - (tools.pickaxe ? WOOD_COST : 0));
+  return Math.max(0, tools.chopped.length - (tools.pickaxe ? WOOD_COST : 0) - tools.woodSpent);
 }

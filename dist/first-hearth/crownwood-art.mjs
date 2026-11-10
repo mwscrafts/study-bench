@@ -1,6 +1,6 @@
 import { surfaceAt } from './terrain.mjs';
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
-import { crownwoodTerrain, crownwoodLandmarks, crystalNodes } from './crownwood.mjs?v=08.1';
+import { crownwoodTerrain, crownwoodLandmarks, crystalNodes } from './crownwood.mjs?v=09';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;
 const bridge = crownwoodTerrain.byId.get('rope-bridge');

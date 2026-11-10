@@ -30,7 +30,7 @@ const POUNCE_TIME = .84;
 
 export const endings = {
   break: { name: 'Break the Crown', text: 'The crown breaks. The final night gives way to a clear dawn.' },
-  free: { name: 'Free the King', text: 'The living ember lights the fallen crown. The shadow lifts, and the King walks into the dawn.' }
+  free: { name: 'Free the King', text: 'Mara’s flower crown touches the King. The shadows leave his mind, and he walks into the dawn.' }
 };
 
 export function kingLocation(player) {
@@ -55,7 +55,8 @@ export function trialBounds(trial) {
 }
 
 export function attackTrial(trial, player, gear) {
-  const power = gear === 'godslayer' ? Infinity : gear === 'pickaxe' ? 54 : 37;
+  const power = gear === 'godslayer' ? Infinity : gear === 'shadowBlade' ? 100
+    : gear === 'ironSword' ? 68 : gear === 'pickaxe' ? 54 : 37;
   const inReach = (x, y, range) =>
     Math.abs(x - player.x) <= range && Math.abs(y - player.y) <= 76 &&
     (x - player.x) * player.direction >= -22;

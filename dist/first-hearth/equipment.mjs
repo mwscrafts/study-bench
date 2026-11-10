@@ -10,6 +10,8 @@ export const BERRY_HEAL = 25;
 export const gear = {
   hatchet: ['⚒', 'Woodcutter’s hatchet', 'Chop marked pines.'],
   pickaxe: ['⛏', 'Pickaxe', 'Mine iron and gather crystals.'],
+  ironSword: ['⚔', 'Iron sword', 'Strike down night shadows.'],
+  shadowBlade: ['✦', 'Shadow blade', 'A sword forged from shadow essence.'],
   net: ['◇', 'Casting net', 'Cast from Lantern Dock.'],
   godslayer: ['†', 'Godslayer', 'A rare blade from the tide.']
 };
@@ -87,8 +89,9 @@ export function paintHeldTool(ctx, x, y, direction, equipped, swing, bob, tilt) 
   } else if (equipped === 'pickaxe') {
     poly(ctx,[[-13,-11],[-9,-17],[-2,-21],[7,-20],[15,-12],[6,-15],[-1,-16],[-7,-14]],'#a5bbbc');
     poly(ctx,[[-9,-17],[-2,-21],[7,-20],[13,-14],[5,-18],[-1,-18]],'#d7ddd2');
-  } else if (equipped === 'godslayer') {
-    poly(ctx,[[0,-39],[-5,-29],[-3,0],[3,0],[5,-29]],'#d6c3ed');
+  } else if (equipped === 'godslayer' || equipped === 'ironSword' || equipped === 'shadowBlade') {
+    const blade = equipped === 'shadowBlade' ? '#9e8ac9' : equipped === 'ironSword' ? '#cbdadd' : '#d6c3ed';
+    poly(ctx,[[0,-39],[-5,-29],[-3,0],[3,0],[5,-29]],blade);
     ctx.fillStyle = '#ddb67f';
     ctx.fillRect(-8,-3,16,3);
   } else {
