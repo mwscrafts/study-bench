@@ -24,11 +24,12 @@ export function readTools(save) {
     helmet: save?.helmet === true,
     flowerCrown: save?.flowerCrown === true,
     woodSpent: save?.woodSpent === 1 ? 1 : 0,
+    woodDonated: Number.isSafeInteger(save?.woodDonated) ? Math.max(0, Math.min(99, save.woodDonated)) : 0,
     flint: save?.flint === true,
     chopped: timberTrees.filter(tree => chopped.includes(tree.id)).map(tree => tree.id)
   };
 }
 
 export function spareWood(tools) {
-  return Math.max(0, tools.chopped.length - (tools.pickaxe ? WOOD_COST : 0) - tools.woodSpent);
+  return Math.max(0, tools.chopped.length - (tools.pickaxe ? WOOD_COST : 0) - tools.woodSpent - (tools.woodDonated ?? 0));
 }

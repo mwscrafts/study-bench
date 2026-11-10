@@ -7,7 +7,7 @@ import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, o
 import { buildMineArt, paintMineLights, paintMineChest, paintOre } from './mine-art.mjs';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
-import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=09';
+import { workbench, flint, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=14';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
@@ -18,6 +18,7 @@ import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, M
 import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
+import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=14';
 
 const el = id => document.getElementById(id);
 const world = el('world');
@@ -26,6 +27,9 @@ const SAVE_KEY = 'first-hearth:alder-camp:v1';
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const WAVE_TIME = 1.25;
 const DAY_LENGTH = 136;
+const BERRY_GROW_MS = 3 * 60 * 1000;
+const CATNIP_GROW_MS = 10 * 60 * 1000;
+const MINECART_TICK_MS = 4 * 60 * 1000;
 const skyModes = ['auto', 'day', 'dusk', 'night', 'dawn'];
 const skyLabels = { day: 'Daylight', dusk: 'Dusk', night: 'Night', dawn: 'Dawn' };
 const heldKeys = new Set();
@@ -52,6 +56,20 @@ let nightIndex = 0;
 let health = 100;
 let berries = 3;
 let pickedBushes = new Set();
+let berrySeeds = 3;
+let berryPlots = [null, null, null];
+let catnipUnlocked = false;
+let catnipReadyAt = 0;
+let catnipShowUntil = 0;
+let catnipLeap = null;
+let petHeartsUntil = 0;
+let minecartOre = 0;
+let minecartUpdatedAt = Date.now();
+let minecartCapacity = 8;
+let activeRequest = null;
+let completedRequests = new Set();
+let campTokens = 0;
+let hutDecorations = new Set();
 let equipped = null;
 let inventoryOpen = false;
 let swing = 0;
@@ -138,7 +156,9 @@ const regions = {
   village: { title: ['Lantern', 'Village'], intro: 'The gate opens onto a village celebrating your safe return.',
     terrain: villageTerrain, landmarks: villageLandmarks, flowers: [], buildArt: buildVillageArt, location: villageLocation },
   house: { title: ['Homecoming', 'House'], intro: 'The village has been waiting for you and Alvin.',
-    terrain: houseTerrain, landmarks: houseLandmarks, flowers: [], buildArt: buildHouseArt, location: houseLocation }
+    terrain: houseTerrain, landmarks: houseLandmarks, flowers: [], buildArt: buildHouseArt, location: houseLocation },
+  hut: { title: ['Alder Camp', 'Hut'], intro: 'A warm little room, a place to rest, and a bed for Alvin.',
+    terrain: hutTerrain, landmarks: hutLandmarks, flowers: [], buildArt: buildHutArt, location: hutLocation }
 };
 const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
 const knownFlowers = Object.values(regions).flatMap(area => area.flowers);
@@ -159,6 +179,8 @@ gates['village-gate'] = { region: 'village' };
 gates['village-return'] = { region: 'king', footing: { x: 3670, ground: 'king-floor' } };
 gates['celebration-house'] = { region: 'house' };
 gates['house-return'] = { region: 'village', footing: { x: 1920, ground: 'village-road' } };
+gates['hut-door'] = { region: 'hut' };
+gates['hut-exit'] = { region: 'camp', footing: { x: 2705, ground: 'trail' } };
 const liftGates = {
   lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
   'mine-lift': { region: 'camp', footing: { x: 2300, ground: 'trail' } }
@@ -186,6 +208,13 @@ const conversations = {
     greeting: 'You made it home! We lit every window hoping you and Alvin would come back. Come in and celebrate with us.' },
   'restored-king': { name: 'The King', role: 'LANTERN VILLAGE',
     greeting: 'I remember Mara’s flowers. Thank you for bringing me back to my people. Tell her I’m coming home.' },
+  'request-board': { name: 'Camp requests', role: 'HELP THE CAMP' },
+  'player-board': { name: 'A note for the next visitor', role: 'THE PLAYER NOTICEBOARD' },
+  'berry-plot': { name: 'Berry garden', role: 'ALDER CAMP' },
+  'catnip-garden': { name: 'Alvin’s catnip patch', role: 'ALDER CAMP' },
+  minecart: { name: 'Ivo’s minecart', role: 'EMBER VEIN EXPRESS' },
+  'hut-bed': { name: 'The little bed', role: 'A SAFE PLACE' },
+  'alvin-bed': { name: 'Alvin', role: 'HIS COZY BED' },
   'lantern-rest': {
     name: 'Lantern Rest', role: 'KING’S GROUNDS',
     greeting: 'Rest here or return through Crownwood. Lighting the altar starts the final night. Use the Action button to strike, and jump over the King’s charges and shockwaves.'
@@ -473,7 +502,7 @@ function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
-  const outdoors = region !== 'mine' && region !== 'hearth' && region !== 'house';
+  const outdoors = region !== 'mine' && region !== 'hearth' && region !== 'house' && region !== 'hut';
   if (outdoors) {
     const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
     paintSky(ctx, camera, sky.from, 1, animationClock);
@@ -502,6 +531,8 @@ function paint() {
     paintCraftingProps(ctx, tools);
     if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2415,groundAt(2415)-127);
     for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
+    paintCampFacilities(ctx, { berryPlots, growMs:BERRY_GROW_MS, catnipUnlocked,
+      catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && ivoQuest }, animationClock);
   } else if (region === 'crownwood') {
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
     shadow(barry.x, barry.y, 29);
@@ -540,6 +571,9 @@ function paint() {
     paintFireworks(ctx, camera, fireworksElapsed);
   } else if (region === 'village' && victory?.ending === 'free') {
     paintRestoredKing(ctx);
+  } else if (region === 'hut') {
+    paintHutWindow(ctx, phase, animationClock);
+    paintHutDecor(ctx, hutDecorations);
   }
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
@@ -547,9 +581,17 @@ function paint() {
   });
   paintPeers();
   if (playing) {
-    shadow(cat.x, cat.y, 17);
-    drawSprite(ctx, sprites.alvin, cat.x, cat.y, 44 * (1 + fishFed / 4), cat.direction,
-      -Math.abs(Math.sin(cat.gait)) * 2.2, Math.sin(cat.gait) * .035);
+    const indoor = region === 'hut';
+    const catX = indoor ? 665 : cat.x;
+    const catY = indoor ? 596 : cat.y;
+    shadow(catX, catY, 17);
+    drawSprite(ctx, sprites.alvin, catX, catY, indoor ? 37 : 44 * (1 + fishFed / 4), indoor ? 1 : cat.direction,
+      indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2, indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
+    if (indoor && petHeartsUntil > animationClock) {
+      const left = petHeartsUntil-animationClock;
+      ctx.fillStyle = 'rgba(244,170,198,'+Math.min(.95,left)+')'; ctx.font='15px system-ui';
+      ctx.fillText('♥',642,565-(2.2-left)*12); ctx.fillText('♥',680,557-(2.2-left)*15);
+    }
     if (region === 'king' && victory && fireworksElapsed < 1.8) {
       ctx.strokeStyle = '#462d26';
       ctx.lineWidth = 2.2;
@@ -602,6 +644,18 @@ function updateCat(dt) {
   const movement = cat.x - oldX;
   if (Math.abs(movement) > .35) cat.direction = Math.sign(movement);
   cat.gait += Math.abs(movement) * .11;
+}
+
+function updateCatnipLeap() {
+  if (!catnipLeap || region !== 'camp') return false;
+  const t = clamp((animationClock-catnipLeap.start)/catnipLeap.duration,0,1);
+  const targetX = 3040, targetY = groundAt(targetX);
+  cat.x = catnipLeap.fromX+(targetX-catnipLeap.fromX)*t;
+  cat.y = catnipLeap.fromY+(targetY-catnipLeap.fromY)*t-Math.sin(Math.PI*t)*92;
+  cat.direction = Math.sign(targetX-catnipLeap.fromX)||1;
+  cat.gait = animationClock*15;
+  if (t >= 1) catnipLeap = null;
+  return true;
 }
 
 function controlsActive() {
@@ -659,7 +713,10 @@ function currentFlowers() {
 
 function currentLandmarks() {
   if (region === 'king' && trial && !victory) return [];
-  return regions[region].landmarks.filter(item =>
+  const candidates = [...regions[region].landmarks,
+    ...(region === 'camp' ? campFacilities : []),
+    ...(region === 'hut' ? hutLandmarks : [])];
+  return candidates.filter(item =>
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
     (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
     (item.id !== 'restored-king' || victory?.ending === 'free'));
@@ -676,7 +733,8 @@ function updatePrompt() {
     if (!tools.flint && !tools.pickaxe) items.push(flint);
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
-  const label = (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
+  const label = current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
+    (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + ' · E / Interact'
     : controlsActive() && animationClock < noticeUntil ? notice : '';
@@ -694,6 +752,7 @@ function updateLocation() {
   const campLocation = player.x < 1140 ? 'Reedbank Trail'
     : player.x < 1830 ? 'Pine Gate'
     : player.x < 2680 ? 'Mara’s Clearing'
+    : player.x < 3150 ? 'Alder Camp'
     : player.x < 3800 ? 'Root Fork'
     : player.x < 4300 ? 'Timber Gate' : 'Shore Trail';
   const location = regions[region].location?.(player) ?? campLocation;
@@ -753,12 +812,15 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 10, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
+      version: 14, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
-      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing
+      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing,
+      berrySeeds, berryPlots, catnipUnlocked, catnipReadyAt, minecartOre, minecartUpdatedAt,
+      minecartCapacity,
+      activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations]
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -800,12 +862,25 @@ function begin(save) {
   berries = Number.isSafeInteger(save?.berries) ? Math.max(0, save.berries) : 3;
   const savedBushes = Array.isArray(save?.pickedBushes) ? save.pickedBushes : [];
   pickedBushes = new Set(berryBushes.filter(bush => savedBushes.includes(bush.id)).map(bush => bush.id));
+  berrySeeds = Number.isSafeInteger(save?.berrySeeds) ? clamp(save.berrySeeds, 0, 99) : 3;
+  berryPlots = Array.isArray(save?.berryPlots) ? Array.from({length:3}, (_,i) =>
+    Number.isSafeInteger(save.berryPlots[i]) && save.berryPlots[i] > 0 ? save.berryPlots[i] : null) : [null,null,null];
+  catnipUnlocked = save?.catnipUnlocked === true;
+  catnipReadyAt = Number.isSafeInteger(save?.catnipReadyAt) ? save.catnipReadyAt : 0;
+  minecartUpdatedAt = Number.isSafeInteger(save?.minecartUpdatedAt) ? save.minecartUpdatedAt : Date.now();
+  minecartCapacity = save?.minecartCapacity === 12 ? 12 : 8;
+  minecartOre = Number.isSafeInteger(save?.minecartOre) ? clamp(save.minecartOre,0,minecartCapacity) : 0;
+  activeRequest = ['mara','barry','ivo'].includes(save?.activeRequest) ? save.activeRequest : null;
+  completedRequests = new Set(Array.isArray(save?.completedRequests) ? save.completedRequests.filter(id => ['mara','barry','ivo'].includes(id)) : []);
+  campTokens = Number.isSafeInteger(save?.campTokens) ? clamp(save.campTokens,0,999) : 0;
+  hutDecorations = new Set(Array.isArray(save?.hutDecorations) ? save.hutDecorations.filter(id =>
+    ['canopy-banner','lake-painting','patchwork-quilt'].includes(id)) : []);
   equipped = ownsGear(save?.equipped) ? save.equipped
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -845,7 +920,9 @@ function enterRegion(next, footing) {
   savedFooting = { x: player.x, ground: player.ground };
   cat.x = clamp(player.x - 62, 19, terrain.width - 19);
   cat.y = player.y;
+  if (region === 'hut') { cat.x = 665; cat.y = 596; }
   cat.gait = 0;
+  catnipLeap = null;
   tracker.length = 0;
   peers.clear();
   updatePresenceButton();
@@ -889,7 +966,176 @@ function setQuest(state) {
   saveCamp();
 }
 
+const campRequests = {
+  mara: { who:'Mara', amount:5, item:'berries', reward:2 },
+  barry: { who:'Barry', amount:3, item:'wood', reward:3 },
+  ivo: { who:'Ivo', amount:4, item:'iron ore', reward:3 }
+};
+
+function requestBoardDialogue() {
+  const tokens = 'You have ' + campTokens + ' Hearth tokens. ';
+  if (activeRequest) {
+    const request = campRequests[activeRequest];
+    setDialogue(tokens + 'You accepted ' + request.who + '’s request: bring ' + request.amount + ' ' + request.item + '. Return to ' + request.who + ' to hand it over.',
+      [['All right', () => closeDialogue()]]);
+    return;
+  }
+  const choices = [
+    ['Mara · 5 berries · 2 tokens', () => startCampRequest('mara')],
+    ['Barry · 3 wood · 3 tokens' + (catnipUnlocked ? '' : ' + catnip seed'), () => startCampRequest('barry')]
+  ];
+  if (ivoQuest && fishing.tideglass === 'spent') choices.push(['Ivo · 4 iron ore · 3 tokens' + (minecartCapacity === 8 ? ' + cart upgrade' : ''), () => startCampRequest('ivo')]);
+  setDialogue(tokens + 'Choose one request. Bring the listed supplies back to that person. The requests can be repeated, but only one can be active at a time.', choices);
+}
+
+function startCampRequest(id) {
+  activeRequest = id;
+  saveCamp();
+  const request = campRequests[id];
+  setDialogue(request.who + ' is waiting for ' + request.amount + ' ' + request.item + '. Come back when you have them.',
+    [['Got it', () => closeDialogue()]]);
+}
+
+function canPayRequest(id) {
+  const r = campRequests[id];
+  if (id === 'mara') return berries >= r.amount;
+  if (id === 'barry') return spareWood(tools) >= r.amount;
+  return ironStock >= r.amount;
+}
+
+function finishCampRequest(id) {
+  if (activeRequest !== id) return false;
+  const r = campRequests[id];
+  if (!canPayRequest(id)) {
+    setDialogue(r.who + ' asked for ' + r.amount + ' ' + r.item + '. You have ' +
+      (id === 'mara' ? berries + ' berries' : id === 'barry' ? spareWood(tools) + ' wood' : ironStock + ' iron ore') + '. Come back when you have enough.',
+      [['I’ll gather more', () => closeDialogue()]]);
+    return true;
+  }
+  if (id === 'mara') berries -= r.amount;
+  else if (id === 'barry') tools.woodDonated = (tools.woodDonated ?? 0) + r.amount;
+  else ironStock -= r.amount;
+  activeRequest = null;
+  campTokens += r.reward;
+  const firstTime = !completedRequests.has(id);
+  completedRequests.add(id);
+  if (id === 'mara' && firstTime) berrySeeds += 3;
+  if (id === 'barry' && firstTime) {
+    catnipUnlocked = true;
+    catnipReadyAt = Date.now() + 5000;
+  }
+  if (id === 'ivo' && firstTime) minecartCapacity = 12;
+  updateNotes(); saveCamp();
+  const bonus = id === 'mara' && firstTime ? ' She also gives you three berry seeds.'
+    : id === 'barry' && firstTime ? ' He gives you a catnip seed for Alvin’s garden.'
+    : id === 'ivo' && firstTime ? ' He upgrades the cart so it can carry more ore.' : '';
+  setDialogue(r.who + ' accepts the supplies and thanks you. +' + r.reward + ' Hearth tokens.' + bonus,
+    [['You’re welcome', () => closeDialogue()]]);
+  return true;
+}
+
+function berryPlotDialogue() {
+  const choices = [];
+  for (let i=0;i<berryPlots.length;i++) {
+    const plantedAt = berryPlots[i];
+    if (!plantedAt) {
+      if (berrySeeds > 0) choices.push(['Plant plot ' + (i+1) + ' · ' + berrySeeds + ' seeds left', () => {
+        berrySeeds--; berryPlots[i] = Date.now(); saveCamp(); berryPlotDialogue();
+      }]);
+    } else if (Date.now()-plantedAt >= BERRY_GROW_MS) {
+      choices.push(['Harvest plot ' + (i+1) + ' · 4 berries', () => {
+        berries += 4; berrySeeds++; berryPlots[i] = null;
+        floater(floaters, player.x, player.y-70, '+4 berries'); updateNotes(); saveCamp(); berryPlotDialogue();
+      }]);
+    }
+  }
+  const planted = berryPlots.filter(Boolean).length;
+  const waiting = berryPlots.filter(at => at && Date.now()-at < BERRY_GROW_MS).length;
+  setDialogue('Berry seeds: ' + berrySeeds + '. Plots growing: ' + waiting + ' / 3. Each plot takes 3 minutes to ripen and gives 4 berries plus a seed for the next planting.', choices);
+}
+
+function syncMinecart() {
+  if (!(ivoQuest && fishing.tideglass === 'spent')) return;
+  const now = Date.now();
+  const gained = Math.floor(Math.max(0,now-minecartUpdatedAt)/MINECART_TICK_MS);
+  if (gained > 0) {
+    minecartOre = Math.min(minecartCapacity,minecartOre+gained);
+    minecartUpdatedAt += gained*MINECART_TICK_MS;
+  }
+}
+
+function minecartDialogue() {
+  if (!(ivoQuest && fishing.tideglass === 'spent')) {
+    setDialogue('The cart is empty. Once Ivo repairs the lift, it can carry ore between the mine and camp.');
+    return;
+  }
+  syncMinecart();
+  if (!minecartOre) {
+    setDialogue('The cart is on its way. It brings one common iron ore every four minutes, up to ' + minecartCapacity + '.');
+    return;
+  }
+  setDialogue('The cart brought ' + minecartOre + ' iron ore. Capacity: ' + minecartCapacity + '.', [
+    ['Unload into backpack', () => {
+      ironStock += minecartOre; minecartOre = 0; minecartUpdatedAt = Date.now();
+      updateNotes(); saveCamp(); setDialogue('Iron ore added to your backpack. The cart is rolling again.');
+    }]
+  ]);
+}
+
+function catnipDialogue() {
+  if (!catnipUnlocked) {
+    setDialogue('The little garden is waiting for a catnip seed. Barry might know where to find one.');
+    return;
+  }
+  const wait = catnipReadyAt-Date.now();
+  if (wait > 0) {
+    setDialogue('Alvin already had his turn in the catnip. It will grow back in about ' + Math.ceil(wait/60000) + ' minute(s).');
+    return;
+  }
+  catnipReadyAt = Date.now()+CATNIP_GROW_MS;
+  catnipShowUntil = animationClock+2.8;
+  catnipLeap = { start:animationClock, fromX:cat.x, fromY:cat.y, duration:1.4 };
+  saveCamp();
+  notice = 'Alvin dives into the catnip. Hearts everywhere.';
+  noticeUntil = animationClock+2.8;
+  closeDialogue();
+}
+
+function decorateHutDialogue() {
+  const options = [
+    ['Crownwood banner · 3 tokens', 'canopy-banner', 3],
+    ['Painted lake picture · 3 tokens', 'lake-painting', 3],
+    ['Patchwork bed quilt · 4 tokens', 'patchwork-quilt', 4]
+  ].filter(([,id]) => !hutDecorations.has(id)).map(([label,id,cost]) => [label, () => {
+    if (campTokens < cost) { setDialogue('That keepsake costs ' + cost + ' Hearth tokens. You have ' + campTokens + '.'); return; }
+    campTokens -= cost; hutDecorations.add(id); saveCamp();
+    setDialogue('The ' + label.split(' · ')[0].toLowerCase() + ' is now part of your hut.');
+  }]);
+  setDialogue('Hearth tokens: ' + campTokens + '. Choose a keepsake to add to the hut.', options);
+}
+
+function bedDialogue() {
+  const phase = phaseClock%DAY_LENGTH;
+  if (phase < 72 || phase >= 121) {
+    setDialogue('The room is quiet. The bed will let you sleep through the night and restore your health when night falls.');
+    return;
+  }
+  setDialogue('Sleep until morning? You will wake with full health.', [['Sleep', () => {
+    phaseClock = 0; nightIndex++; health = 100; iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
+    updateShadows(); updateNotes(); saveCamp();
+    setDialogue('Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
+  }], ['Not yet', () => closeDialogue()]]);
+}
+
+function petAlvin() {
+  petHeartsUntil = animationClock+2.2;
+  notice = 'Alvin leans into your hand and purrs.';
+  noticeUntil = animationClock+2.2;
+  closeDialogue();
+}
+
 function maraDialogue() {
+  if (finishCampRequest('mara')) return;
   const tool = [tools.hatchet ? 'How do I make a pickaxe?' : 'Can I get a gathering tool?', () => {
     if (!tools.hatchet) {
       tools.hatchet = true;
@@ -940,6 +1186,7 @@ function maraDialogue() {
 }
 
 function barryDialogue() {
+  if (finishCampRequest('barry')) return;
   setDialogue('I used to see the King walk these branches. He was a good man before the shadows got into his mind. Most of us fled when we couldn’t reach him.', [
     ['Can we save him?', () => setDialogue('I want to believe so. Mara still remembers the old ways. If only there were another way…', [['Back', barryDialogue]])],
     ['What happened here?', () => setDialogue('The shadows followed him from the ruins. Now every night they reach farther into the woods. We have to make it safe again, even if it means facing him.', [['Back', barryDialogue]])]
@@ -947,6 +1194,7 @@ function barryDialogue() {
 }
 
 function ivoDialogue() {
+  if (finishCampRequest('ivo')) return;
   if (fishing.tideglass === 'spent') {
     setDialogue('The lift is running. It goes straight back to Mara’s clearing. Step aboard at the far end of the mine.');
     return;
@@ -956,6 +1204,7 @@ function ivoDialogue() {
       ['Give Ivo the tideglass', () => {
         fishing.tideglass = 'spent';
         ivoQuest = true;
+        minecartUpdatedAt = Date.now();
         openSharedDoor('mine-lift');
         updateNotes();
         saveCamp();
@@ -1087,6 +1336,7 @@ function emberBoxDialogue() {
 
 function openDialogue(id) {
   el('time-board').hidden = true;
+  el('noticeboard-panel').hidden = true;
   const info = conversations[id];
   talking = true;
   clearControls();
@@ -1342,6 +1592,14 @@ function interact() {
   else if (id === 'workbench') workbenchDialogue();
   else if (id === 'dock') dockDialogue();
   else if (id === 'ember-box') emberBoxDialogue();
+  else if (id === 'request-board') requestBoardDialogue();
+  else if (id === 'player-board') openPlayerNoticeboard();
+  else if (id === 'berry-plot') berryPlotDialogue();
+  else if (id === 'catnip-garden') catnipDialogue();
+  else if (id === 'minecart') minecartDialogue();
+  else if (id === 'hut-bed') bedDialogue();
+  else if (id === 'alvin-bed') petAlvin();
+  else if (id === 'hut-decor') decorateHutDialogue();
   else if (id === 'night-altar') altarDialogue();
   else if (id === 'fallen-crown') endingDialogue();
   else setDialogue(conversations[id].greeting);
@@ -1351,8 +1609,48 @@ function closeDialogue() {
   talking = false;
   el('dialogue').hidden = true;
   el('time-board').hidden = true;
+  el('noticeboard-panel').hidden = true;
   updatePrompt();
   world.focus({ preventScroll: true });
+}
+
+function noticeClientId() {
+  const key = 'first-hearth:notice-client:v1';
+  try {
+    let id = localStorage.getItem(key);
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem(key,id); }
+    return id;
+  } catch { return crypto.randomUUID(); }
+}
+
+function renderNoticeList(notices) {
+  const list = el('notice-list');
+  list.replaceChildren();
+  for (const note of notices ?? []) {
+    const item = document.createElement('li');
+    const author = document.createElement('strong');
+    const time = Number.isFinite(note.at) ? new Date(note.at).toLocaleDateString() : '';
+    author.textContent = (note.name || 'Adventurer') + (time ? ' · ' + time : '');
+    const message = document.createElement('div');
+    message.textContent = note.text || '';
+    item.append(author,message); list.append(item);
+  }
+}
+
+async function openPlayerNoticeboard() {
+  el('line').textContent = 'Messages stay on the website for the next visitor. Keep notes kind and short.';
+  el('choices').replaceChildren();
+  el('noticeboard-panel').hidden = false;
+  el('notice-status').textContent = 'Loading notes…';
+  try {
+    const result = await fetch('/first-hearth/api/noticeboard',{cache:'no-store'});
+    const data = await result.json();
+    if (!result.ok) throw new Error(data.error || 'The board could not load.');
+    renderNoticeList(data.notices);
+    el('notice-status').textContent = data.notices?.length ? 'Latest notes from visitors:' : 'No notes yet. Leave the first one.';
+  } catch {
+    el('notice-status').textContent = 'The shared board could not load right now.';
+  }
 }
 
 function setPause(value) {
@@ -1577,7 +1875,7 @@ function frame(time) {
     }
     updateShadows();
     updateKingTrial(dt);
-    if (trial?.stage !== 'alvin') updateCat(dt);
+    if (trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) updateCat(dt);
     updateCamera(false, dt);
     updateLocation();
     updatePrompt();
@@ -1617,6 +1915,26 @@ el('presence-toggle').addEventListener('click', () => {
   updatePresenceButton();
 });
 el('close-dialogue').addEventListener('click', closeDialogue);
+el('notice-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const text = el('notice-text').value.trim();
+  if (!text) return;
+  el('notice-submit').disabled = true;
+  el('notice-status').textContent = 'Pinning your note…';
+  try {
+    const response = await fetch('/first-hearth/api/noticeboard', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clientId:noticeClientId(),name:publicName || 'Adventurer',text})
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'The note could not be pinned.');
+    renderNoticeList(data.notices);
+    el('notice-text').value = '';
+    el('notice-status').textContent = 'Your note is on the board for the next visitor.';
+  } catch (error) {
+    el('notice-status').textContent = error.message || 'The shared board could not be reached.';
+  } finally { el('notice-submit').disabled = false; }
+});
 el('pause').addEventListener('click', () => setPause(!paused));
 el('resume').addEventListener('click', () => setPause(false));
 el('leave-trial').addEventListener('click', () => retreatFromTrial());

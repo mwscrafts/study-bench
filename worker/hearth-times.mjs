@@ -2,6 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 
 const PATH = '/first-hearth/api/times';
 const PRESENCE_PATH = '/first-hearth/api/presence';
+const BOARD_PATH = '/first-hearth/api/noticeboard';
 const response = (data, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
 });
@@ -31,6 +32,24 @@ async function readEntry(request) {
   } catch {
     return null;
   }
+}
+
+async function readSmallBody(request, maxBytes) {
+  if (!request.body) return null;
+  const reader = request.body.getReader();
+  const parts = [];
+  let total = 0;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxBytes) { await reader.cancel(); return null; }
+    parts.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) { bytes.set(part,offset); offset += part.length; }
+  return new TextDecoder().decode(bytes);
 }
 
 export class HearthTimes extends DurableObject {
@@ -65,7 +84,7 @@ export class HearthTimes extends DurableObject {
   }
 }
 
-const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house']);
+const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut']);
 const TOOLS = new Set(['hatchet','pickaxe','ironSword','shadowBlade','godslayer','net']);
 const DOORS = {
   'mine-lift': [{ region: 'mine', x: 2165 }, { region: 'mine', x: 4510 }, { region: 'camp', x: 2425 }],
@@ -175,12 +194,52 @@ export class HearthPresence extends DurableObject {
   async webSocketError(socket) { await this.webSocketClose(socket); }
 }
 
+// A single, site-wide board lets visitors leave notes for someone who arrives later.
+// Entries are plain text, short, capped, and rate-limited per browser-generated ID.
+export class HearthBoard extends DurableObject {
+  async fetch(request) {
+    const saved = await this.ctx.storage.get('notices') ?? [];
+    if (request.method === 'GET') return response({ notices: saved });
+    if (request.method !== 'POST') return response({ error: 'Method not allowed' }, 405);
+    if (request.headers.get('Content-Type')?.split(';')[0] !== 'application/json')
+      return response({ error: 'JSON required' }, 415);
+    let body;
+    try {
+      const raw = await readSmallBody(request,1024);
+      if (raw === null) return response({ error: 'Note too long' }, 413);
+      body = JSON.parse(raw);
+    } catch { return response({ error: 'Invalid note' }, 400); }
+    const text = typeof body?.text === 'string' ? body.text.trim().normalize('NFC') : '';
+    const name = typeof body?.name === 'string' ? body.name.trim().normalize('NFC') : '';
+    const clientId = typeof body?.clientId === 'string' ? body.clientId : '';
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientId) || text.length < 1 || [...text].length > 140
+      || /[\u0000-\u001f\u007f]/u.test(text) || name.length > 16
+      || !/^[\p{L}\p{M}\p{N} ._'’-]+$/u.test(name) || !/[\p{L}\p{N}]/u.test(name))
+      return response({ error: 'Use a short note and a valid player name.' }, 400);
+    const now = Date.now();
+    const lastPosts = await this.ctx.storage.get('last-posts') ?? {};
+    for (const [id,at] of Object.entries(lastPosts)) if (now-at > 60000) delete lastPosts[id];
+    const lastPost = lastPosts[clientId] ?? 0;
+    if (now - lastPost < 30000) return response({ error: 'Wait a little before pinning another note.' }, 429);
+    const notices = [{ id: crypto.randomUUID(), name, text, at: now }, ...saved].slice(0, 24);
+    lastPosts[clientId] = now;
+    await this.ctx.storage.put({ notices, 'last-posts':lastPosts });
+    return response({ notices });
+  }
+}
+
 export default {
   fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === PRESENCE_PATH) {
       if (request.headers.get('Origin') !== url.origin) return response({ error: 'Origin not allowed' }, 403);
       return env.HEARTH_PRESENCE.getByName('public-world-v1').fetch(request);
+    }
+    if (url.pathname === BOARD_PATH) {
+      const origin = request.headers.get('Origin');
+      if (request.method === 'POST' && origin !== url.origin || origin && origin !== url.origin)
+        return response({ error: 'Origin not allowed' }, 403);
+      return env.HEARTH_BOARD.getByName('site-wide-v1').fetch(request);
     }
     if (url.pathname === PATH) return env.HEARTH_TIMES.getByName('shared').fetch(request);
     return env.ASSETS.fetch(request);

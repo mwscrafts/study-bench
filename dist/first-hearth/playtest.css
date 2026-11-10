@@ -184,6 +184,14 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 }
 .dialogue:has(#portrait[hidden]) { grid-template-columns: 1fr; }
 .choices button { font-size: 13px; }
+.noticeboard-panel { grid-column: 1 / -1; width: 100%; margin-top: 10px; max-height: 38vh; overflow: auto; }
+.noticeboard-panel form { display: grid; gap: 7px; }
+.noticeboard-panel label { color: #e2e0cc; font-size: 12px; }
+.noticeboard-panel textarea { width: 100%; resize: vertical; min-height: 58px; padding: 8px; border: 1px solid #c9bea477; border-radius: 6px; background: #f5efdd; color: #23382f; font: inherit; }
+.noticeboard-panel #notice-status { min-height: 1em; margin: 7px 0; color: #d6debd; font-size: 11px; }
+.noticeboard-panel ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.noticeboard-panel li { padding: 7px 9px; border: 1px solid #a0ac7944; border-radius: 6px; background: #27483888; font-size: 12px; overflow-wrap: anywhere; }
+.noticeboard-panel li strong { color: #eed69d; font-size: 11px; }
 @media (orientation: landscape) and (max-height: 420px) and (pointer: coarse) {
   .dialogue { padding: 8px 14px; }
   .dialogue #line { font-size: 13px; margin: 6px 0; }
