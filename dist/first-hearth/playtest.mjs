@@ -5,8 +5,9 @@ import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownw
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=13';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=15';
 import { paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=04';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes } from './rootdeep.mjs?v=3';
-import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes } from './rootdeep.mjs?v=4';
+import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
+  paintRootdeepSettler, paintGlowcap, buildRootdeepArt } from './rootdeep-art.mjs?v=8';
 import { beachFlower, readFishing, castNet } from './beach.mjs?v=1';
 import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
@@ -22,11 +23,12 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { paintRestoredKing } from './village.mjs?v=11';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=4';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=5';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
+const allIronNodes = [...oreNodes, ...rootdeepOreNodes];
 const el = id => document.getElementById(id);
 const world = el('world');
 const ctx = world.getContext('2d');
@@ -53,6 +55,10 @@ let terrain = campTerrain;
 let crystals = new Set();
 let rootglass = new Set();
 let rootdeepQuest = 'unoffered';
+let gatheredGlowcaps = new Set();
+let glowcaps = 0;
+let glowcapQuest = 'unoffered';
+let glowcapLanternLit = false;
 let rootKeyQuest = 'unoffered';
 let rootKeyGuidance = false;
 let hasRootKey = false;
@@ -312,7 +318,8 @@ function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
-  const outdoors = region !== 'mine' && region !== 'rootdeep' && region !== 'hearth' && region !== 'house' && region !== 'hut';
+  const outdoors = region !== 'mine' && region !== 'rootdeep' && region !== 'hearth' && region !== 'house' && region !== 'hut'
+    && !region.startsWith('rootdeep-home-');
   if (outdoors) {
     const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
     paintSky(ctx, camera, sky.from, 1, animationClock);
@@ -374,15 +381,28 @@ function paint() {
     paintRegionalLodestones();
     paintRootdeepLock();
   } else if (region === 'rootdeep') {
-    paintRootdeepLights(ctx, camera, animationClock, night);
+    paintRootdeepLights(ctx, camera, animationClock, night, glowcapLanternLit);
     for (const node of rootglassNodes) if (!rootglass.has(node.id)) paintRootglass(ctx,node,animationClock);
+    for (const node of rootdeepOreNodes) if (!iron.has(node.id)) paintOre(ctx,node,animationClock);
+    for (const node of glowcapNodes) if (!gatheredGlowcaps.has(node.id)) paintGlowcap(ctx,node,animationClock);
     const dorrin = rootdeepLandmarks.find(item => item.id === 'dorrin');
     shadow(dorrin.x,dorrin.y,15);
     paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
+    for (const [x,variant] of [[430,1],[810,2]]) {
+      const y = surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-4'),x);
+      shadow(x,y,13);
+      paintRootdeepSettler(ctx,x,y,animationClock,variant,.46);
+    }
     const high = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-high');
     const low = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-low');
-    paintRootdeepLift(ctx,high.x,high.y,rootdeepQuest === 'complete');
+    // The upper winch is drawn into the settlement artwork so its snapped/repaired
+    // cable can change as one coherent illustration; only the lower cage is overlaid.
     paintRootdeepLift(ctx,low.x,low.y,rootdeepQuest === 'complete');
+  } else if (region.startsWith('rootdeep-home-')) {
+    const resident = regions[region].landmarks[1];
+    shadow(resident.x,resident.y,13);
+    paintRootdeepSettler(ctx,resident.x,resident.y,animationClock,
+      region.endsWith('lantern') ? 1 : region.endsWith('stone') ? 2 : 3,.52);
   } else if (region === 'mine') {
     paintMineLights(ctx, camera, animationClock, night);
     paintMineChest(ctx, hasNet);
@@ -415,7 +435,7 @@ function paint() {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
   });
   paintPeers();
-  if (playing && composure < 10 && region !== 'hut') {
+  if (playing && composure < 10 && region !== 'hut' && !region.startsWith('rootdeep-home-')) {
     paintComposureWraith(ctx, clamp(player.x - player.direction * 92, 45, terrain.width - 45), player.y, animationClock);
   }
   if (playing) {
@@ -645,7 +665,9 @@ function updatePrompt() {
     !(item.id.startsWith('lodestone-') && activatedLodestones.has(item.id)));
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
-  if (region === 'rootdeep') items.push(...rootglassNodes.filter(node => !rootglass.has(node.id)));
+  if (region === 'rootdeep') items.push(...rootglassNodes.filter(node => !rootglass.has(node.id)),
+    ...rootdeepOreNodes.filter(node => !iron.has(node.id)),
+    ...glowcapNodes.filter(node => !gatheredGlowcaps.has(node.id)));
   if (region === 'mine') {
     items.push(...oreNodes.filter(node => !iron.has(node.id)));
     if (!tools.flint) items.push(flint);
@@ -661,6 +683,7 @@ function updatePrompt() {
   const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
     current?.id === 'hut-bed' && !canSleepAtBed() ? 'Rest by the window' :
     current?.id === 'rootdeep-entrance' && !hasRootKey && !sharedDoors.has('rootdeep-entrance') ? 'Sealed Rootdeep entrance' :
+    (current?.id === 'rootdeep-lift-high' || current?.id === 'rootdeep-lift-low') && rootdeepQuest === 'complete' ? 'Ride the restored winch' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
@@ -704,8 +727,9 @@ function updateNotes() {
   const rootKeyNote = rootKeyQuest === 'ready' ? 'Return to Hugh for the Root Key'
     : rootKeyQuest === 'accepted' ? (rootKeyGuidance ? 'Old lodestones · ' + activatedLodestones.size + ' / 3'
       : 'Ask Lyss about Hugh’s old symbols') : '';
-  el('quest-tracker').textContent = rootKeyNote || (region === 'rootdeep'
-    ? (rootdeepQuest === 'complete' ? 'Rootglass lift repaired' : 'Rootglass · ' + rootglass.size + ' / 3')
+  const glowcapNote = glowcapQuest === 'accepted' ? 'Glowcaps for the lanterns · ' + Math.min(glowcaps, 3) + ' / 3' : '';
+  el('quest-tracker').textContent = rootKeyNote || glowcapNote || (region.startsWith('rootdeep')
+    ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : 'Rootglass · ' + rootglass.size + ' / 3')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
   el('tool-notes').textContent = region === 'beach'
@@ -764,12 +788,14 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 17, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 18, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
-      rootglass: [...rootglass], rootdeepQuest, rootKeyQuest, rootKeyGuidance, hasRootKey,
+      rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
+      glowcapQuest, glowcapLanternLit,
+      rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
@@ -809,6 +835,10 @@ function begin(save) {
   victory = readVictory(save?.victory, hearthLearned || tools.flowerCrown);
   crystals = savedKnownIds(save?.crystals, crystalNodes);
   rootglass = savedKnownIds(save?.rootglass, rootglassNodes);
+  gatheredGlowcaps = savedKnownIds(save?.gatheredGlowcaps, glowcapNodes);
+  glowcaps = savedInteger(save?.glowcaps, 0, glowcapNodes.length, gatheredGlowcaps.size);
+  glowcapQuest = ['accepted','complete'].includes(save?.glowcapQuest) ? save.glowcapQuest : 'unoffered';
+  glowcapLanternLit = save?.glowcapLanternLit === true;
   rootdeepQuest = savedQuest(save?.rootdeepQuest);
   rootKeyQuest = ['accepted','ready','complete','declined'].includes(save?.rootKeyQuest) ? save.rootKeyQuest : 'unoffered';
   rootKeyGuidance = save?.rootKeyGuidance === true;
@@ -817,7 +847,7 @@ function begin(save) {
   hasRootKey = save?.hasRootKey === true || rootKeyQuest === 'complete' ||
     save?.region === 'rootdeep' || (Array.isArray(save?.visited) && save.visited.includes('rootdeep-entrance'));
   if (hasRootKey) rootKeyQuest = 'complete';
-  iron = savedKnownIds(save?.iron, oreNodes);
+  iron = savedKnownIds(save?.iron, allIronNodes);
   ironStock = Number.isSafeInteger(save?.ironStock) ? Math.max(0,save.ironStock) : iron.size;
   shadowStock = Number.isSafeInteger(save?.shadowStock) ? Math.max(0,save.shadowStock) : 0;
   defeatedShadows = new Set(Array.isArray(save?.defeatedShadows) ? save.defeatedShadows : []);
@@ -853,7 +883,7 @@ function begin(save) {
   el('inventoryButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -884,7 +914,7 @@ function enterRegion(next, footing) {
       if (key !== 'camp' && key !== next) delete backgrounds[key];
     }
   }
-  backgrounds[next] ??= area.buildArt();
+  backgrounds[next] ??= next === 'rootdeep' ? buildRootdeepArt(rootdeepQuest === 'complete') : area.buildArt();
   player = createPlayer(footing, terrain);
   swing = 0;
   cooldown = 0;
@@ -1198,6 +1228,38 @@ function barryDialogue() {
   ]);
 }
 
+function glowcapKeeperDialogue() {
+  if (glowcapQuest === 'complete') {
+    setDialogue('The Glowcaps keep the settlement lanterns bright. You can hear the old lamps humming again. Thank you.');
+    return;
+  }
+  if (glowcapQuest === 'accepted' && glowcaps >= 3) {
+    setDialogue('You found three Glowcaps. May I use them to brighten the lanterns around the common fire?', [
+      ['Give 3 Glowcaps', () => {
+        glowcaps -= 3;
+        glowcapQuest = 'complete';
+        glowcapLanternLit = true;
+        berries += 4;
+        updateNotes(); updatePrompt(); saveCamp();
+        setDialogue('The lanterns brighten the whole landing. Here, take four berries for the road below.');
+      }],
+      ['Keep them for now', () => setDialogue('Of course. The common fire will be here when you return.')]
+    ]);
+    return;
+  }
+  if (glowcapQuest === 'accepted') {
+    setDialogue('The common fire could use three Glowcaps for the old lanterns. You have ' + glowcaps + ' / 3 so far.');
+    return;
+  }
+  setDialogue('The lanterns are fading. Three Glowcaps from the damp grotto would brighten this landing, and I can spare four berries for your trouble. Will you gather them?', [
+    ['Yes, I’ll gather them', () => {
+      glowcapQuest = 'accepted'; updateNotes(); saveCamp();
+      setDialogue('Thank you. The damp grotto is a little way up the ladder, between the winch and the settlement.');
+    }],
+    ['Maybe later', () => setDialogue('No rush. The lamps can wait a little longer.')]
+  ]);
+}
+
 function dorrinDialogue() {
   if (rootdeepQuest === 'complete') {
     setDialogue('The lift is steady again. You can ride between the Lanternstead landing and the deep shaft. That seal below us is older than the mine.', [
@@ -1209,6 +1271,8 @@ function dorrinDialogue() {
     setDialogue('You found all three rootglass pieces. They should hold the lift cable together. Will you give them to me?', [
       ['Give Dorrin the 3 rootglass', () => {
         rootdeepQuest = 'complete';
+        // Rebuild once so the level-two winch visibly changes from snapped to repaired.
+        backgrounds.rootdeep = buildRootdeepArt(true);
         updateNotes();
         updatePrompt();
         saveCamp();
@@ -1527,7 +1591,9 @@ function inventoryItems() {
     ['▰', 'Wood', spareWood(tools), 'Chopped from marked pines.'],
     ['⬟', 'Flint', Number(tools.flint), 'Mine stone used at the camp workbench.'],
     ['◆', 'Crystal', crystals.size - (tools.charm ? 2 : 0), 'Gathered with a pickaxe in Crownwood.'],
-    ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein.'],
+    ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein and the Rootdeep branch galleries.'],
+    ['◇', 'Rootglass', rootglass.size, 'Rare green stone gathered in Rootdeep for Dorrin’s winch repair.'],
+    ['✧', 'Glowcaps', glowcaps, 'Hand-gathered in the damp grotto. The settlement uses them in its lanterns.'],
     ['✦', 'Shadow essence', shadowStock, 'Dropped by defeated night shadows.'],
     ['●', 'Berries', berries, 'Saved until you eat them. Restores up to 25 health.'],
     ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Lyss for a brass key.']
@@ -1631,12 +1697,18 @@ function gather(item) {
     notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
     puff(particles, x, y - 24, '#a3e4cf');
     floater(floaters, x, y - 65, '+1 crystal');
-  } else if (oreNodes.includes(item)) {
+  } else if (allIronNodes.includes(item)) {
     iron.add(id);
     ironStock++;
     notice = 'Iron ore mined · ' + ironStock + ' in backpack';
     puff(particles, x, y - 24, '#dfb595');
     floater(floaters, x, y - 65, '+1 iron ore');
+  } else if (glowcapNodes.includes(item)) {
+    gatheredGlowcaps.add(id);
+    glowcaps++;
+    notice = 'Glowcap gathered · ' + glowcaps + ' found';
+    puff(particles, x, y - 24, '#8ee5ce', 10);
+    floater(floaters, x, y - 65, '+1 Glowcap', '#baf1da');
   } else if (item === netChest) {
     hasNet = true;
     if (!equipped) equipped = 'net';
@@ -1730,6 +1802,7 @@ const interactionHandlers = {
   'hut-bed': bedDialogue,
   'alvin-bed': petAlvin,
   'hut-decor': decorateHutDialogue,
+  'rootdeep-commonkeeper': glowcapKeeperDialogue,
   'night-altar': altarDialogue,
   'fallen-crown': endingDialogue
 };
@@ -1782,7 +1855,7 @@ function interact() {
     updateNotes(); updatePrompt(); saveCamp(); sendPose(true);
     return;
   }
-  const mineral = crystalNodes.includes(item) || oreNodes.includes(item) || rootglassNodes.includes(item);
+  const mineral = crystalNodes.includes(item) || allIronNodes.includes(item) || rootglassNodes.includes(item);
   const tree = allTimberTrees.includes(item);
   if (mineral || tree) {
     const required = mineral ? 'pickaxe' : 'hatchet';
@@ -1799,7 +1872,7 @@ function interact() {
     world.focus({ preventScroll: true });
     return;
   }
-  if (currentFlowers().includes(item) || item === netChest || item === flint || berryBushes.includes(item)) {
+  if (currentFlowers().includes(item) || item === netChest || item === flint || berryBushes.includes(item) || glowcapNodes.includes(item)) {
     gather(item);
     world.focus({ preventScroll: true });
     return;
@@ -1833,7 +1906,7 @@ function interact() {
     }
     enterRegion('rootdeep', id === 'rootdeep-lift-high'
       ? { x: 1690, ground: 'rootdeep-level-8' }
-      : { x: 310, ground: 'rootdeep-level-4' });
+      : { x: 310, ground: 'rootdeep-level-2' });
     return;
   }
   if (id === 'deep-seal') {
@@ -2348,6 +2421,11 @@ function grantTestItem(kind, amount = 1) {
     case 'wood': tools.debugWood = (tools.debugWood || 0) + count; break;
     case 'flint': tools.flint = true; break;
     case 'iron': ironStock += count; break;
+    case 'rootglass': rootglassNodes.slice(0,count).forEach(node => rootglass.add(node.id)); break;
+    case 'glowcaps':
+      glowcapNodes.slice(0,count).forEach(node => gatheredGlowcaps.add(node.id));
+      glowcaps = Math.min(glowcapNodes.length, glowcaps + count);
+      break;
     case 'shadows': shadowStock += count; break;
     case 'crystals': crystalNodes.slice(0, count).forEach(node => crystals.add(node.id)); break;
     case 'dusklilies':

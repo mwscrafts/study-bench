@@ -4,8 +4,9 @@ import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocatio
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=13';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=15';
 import { buildMineArt } from './mine-art.mjs?v=04';
-import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=3';
-import { buildRootdeepArt } from './rootdeep-art.mjs?v=7';
+import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=4';
+import { buildRootdeepArt } from './rootdeep-art.mjs?v=8';
+import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=1';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=1';
 import { buildBeachArt } from './beach-art.mjs';
 import { workbench } from './crafting.mjs?v=16';
@@ -30,10 +31,11 @@ export const regions = {
   },
   rootdeep: {
     title: ['Rootdeep', 'Mine'],
-    intro: 'Eight old landings descend beneath Crownwood. Use the lit ladder on the far-right wall to climb the continuous shaft. Find Dorrin, gather rootglass, and help him restore the lift.',
+    intro: 'Eight old landings descend beneath Crownwood. Explore the lantern-lit homes, follow the side galleries, and help Dorrin restore the broken winch.',
     terrain: rootdeepTerrain, landmarks: rootdeepLandmarks, flowers: [], buildArt: buildRootdeepArt,
     location: rootdeepLocation, shadows: rootdeepShadows, retreat: 'Rootbound Threshold'
   },
+  ...rootdeepHouseRegions,
   mine: {
     title: ['Embervein', 'Mine'],
     intro: 'Follow the lanterns down to Hugh Mungus, look for iron seams, and find the old lift.',
@@ -74,6 +76,10 @@ export const gates = {
   'mine-return': { region: 'camp', footing: { x: 4180, ground: 'trail' } },
   'rootdeep-entrance': { region: 'rootdeep', footing: { x: 110, ground: 'rootdeep-level-1' } },
   'rootdeep-return': { region: 'crownwood', footing: { x: 5510, ground: 'understory' } },
+  'rootdeep-house-lantern-door': { region: 'rootdeep-home-lantern', footing: { x: 230, ground: 'rootdeep-home-floor' } },
+  'rootdeep-house-stone-door': { region: 'rootdeep-home-stone', footing: { x: 230, ground: 'rootdeep-home-floor' } },
+  'rootdeep-house-common-door': { region: 'rootdeep-home-common', footing: { x: 230, ground: 'rootdeep-home-floor' } },
+  ...rootdeepHouseGates,
   'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } },
   'first-hearth': { region: 'hearth' },
   'hearth-return': { region: 'crownwood', footing: { x: 3445, ground: 'mist-shelf' } },
@@ -99,6 +105,9 @@ export const conversations = {
   dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
   'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
   'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
+  'rootdeep-lanternkeeper': { name: 'Lantern Keeper', role: 'ROOTDEEP SETTLER', greeting: 'Welcome in. The lanterns stay lit through every shift. This landing is safe, even when the roots below begin to stir.' },
+  'rootdeep-stonecarver': { name: 'Stonecarver', role: 'ROOTDEEP SETTLER', greeting: 'The galleries split around the old iron veins. Look for the timber braces; the ore lies on the side branches.' },
+  'rootdeep-commonkeeper': { name: 'Common Keeper', role: 'ROOTDEEP SETTLER', greeting: 'There’s always room by the fire. The miners used to bring Glowcaps here to keep the lamps burning. At night, the roots pulse with the same violet light the shadows carry. Some say the blight started where the old roots touch stone.' },
   'deep-seal': { name: 'The Deep Seal', role: 'ROOTDEEP' },
   lodestone: { name: 'Old lodestone', role: 'ANCIENT MARKINGS' },
   'rootdeep-entrance': { name: 'Sealed Rootdeep entrance', role: 'CROWNWOOD' },

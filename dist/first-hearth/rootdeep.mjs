@@ -8,7 +8,15 @@ const tiers = heights.map((y,index) => [{
   points: [[0,y],[650,y-10],[1280,y+10],[1920,y]]
 }]);
 const surfaces = tiers.map(tier => tier[0]);
-export const rootdeepTerrain = defineTerrain(1920, 4920, 165, [floor, ...surfaces]);
+// Side galleries are real one-way platforms so the ore branches are playable, not painted scenery.
+const galleries = [
+  { id:'iron-west-gallery', points:[[190,2398],[250,2378],[520,2378],[585,2396]] },
+  { id:'iron-east-gallery', points:[[1190,2355],[1260,2338],[1515,2338],[1575,2360]] },
+  { id:'flooded-walkway', points:[[520,2974],[600,2954],[1245,2954],[1320,2977]] },
+  { id:'root-ledge-west', points:[[175,3506],[255,3488],[535,3488],[600,3510]] },
+  { id:'root-ledge-east', points:[[1220,3468],[1285,3448],[1550,3448],[1615,3472]] }
+];
+export const rootdeepTerrain = defineTerrain(1920, 4920, 165, [floor, ...surfaces, ...galleries]);
 
 function spot(surface, id, x, label, radius = 72) {
   return { id, x, y: surfaceAt(surface, x), label, radius, ground: surface.id };
@@ -19,16 +27,35 @@ export const rootdeepLandmarks = [
   ...tiers.map((tier,index) => spot(tier[0], `rootdeep-ladder-${index+1}`, 1780,
     'Climb the root ladder · hold ↑ / ↓', 84)),
   spot(floor, 'rootdeep-ladder-bottom', 1780, 'Climb the root ladder · hold ↑ / ↓', 84),
-  spot(tiers[3][0], 'dorrin', 1450, 'Talk to Dorrin', 96),
-  spot(tiers[3][0], 'rootdeep-lift-high', 310, 'Inspect the old lift', 80),
+  spot(tiers[1][0], 'rootdeep-lift-high', 310, 'Inspect the broken winch', 82),
+  spot(tiers[3][0], 'rootdeep-house-lantern-door', 245, 'Enter the lantern keeper’s home', 72),
+  spot(tiers[3][0], 'rootdeep-house-stone-door', 620, 'Enter the stonecarver’s home', 72),
+  spot(tiers[3][0], 'rootdeep-house-common-door', 1200, 'Enter the common house', 72),
+  spot(tiers[3][0], 'dorrin', 1540, 'Talk to Dorrin', 92),
   spot(tiers[7][0], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
-  spot(tiers[7][0], 'deep-seal', 650, 'Examine the sealed door', 84)
+  spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84)
+];
+
+// Glowcaps are hand-gathered; the iron and rootglass veins still require a pickaxe.
+export const glowcapNodes = [
+  spot(tiers[2][0], 'glowcap-west', 220, 'Gather glowcaps', 58),
+  spot(tiers[2][0], 'glowcap-middle', 730, 'Gather glowcaps', 58),
+  spot(tiers[2][0], 'glowcap-east', 1450, 'Gather glowcaps', 58)
+];
+
+export const rootdeepOreNodes = [
+  spot(galleries[0], 'root-iron-west', 390, 'Mine branching iron', 58),
+  spot(galleries[1], 'root-iron-east', 1395, 'Mine branching iron', 58),
+  spot(tiers[4][0], 'root-iron-gallery', 900, 'Mine iron ore', 62),
+  spot(galleries[2], 'root-iron-flooded', 940, 'Mine flooded iron', 58),
+  spot(galleries[3], 'root-iron-rootwest', 390, 'Mine root-bound iron', 58),
+  spot(galleries[4], 'root-iron-rooteast', 1415, 'Mine root-bound iron', 58)
 ];
 
 export const rootglassNodes = [
   spot(tiers[4][0], 'rootglass-upper', 1550, 'Mine rootglass', 64),
   spot(tiers[5][0], 'rootglass-water', 410, 'Mine rootglass', 64),
-  spot(tiers[7][0], 'rootglass-deep', 560, 'Mine rootglass', 64)
+  spot(tiers[7][0], 'rootglass-deep', 260, 'Mine rootglass', 64)
 ];
 
 export const rootdeepLights = [
@@ -39,7 +66,7 @@ export const rootdeepLights = [
 
 const names = [
   'Rootbound Threshold','Winding Galleries','Glowcap Hollows','Lanternstead',
-  'Iron Choir','Flooded Reach','Rootglass Vein','The Deep Seal'
+  'Iron Choir','Flooded Reach','Shadow-Tangled Roots','The Deep Seal'
 ];
 
 export function rootdeepLocation(player) {
@@ -48,7 +75,7 @@ export function rootdeepLocation(player) {
 }
 
 const patrols = [
-  { surface: tiers[1][0], left: 1270, right: 1780, offset: 1.2 },
+  { surface: tiers[1][0], left: 1270, right: 1740, offset: 1.2 },
   { surface: tiers[4][0], left: 90, right: 700, offset: 4.3 },
   { surface: tiers[6][0], left: 1230, right: 1800, offset: 2.7 }
 ];
