@@ -2664,7 +2664,16 @@ el('jump').addEventListener('click', event => {
     } else jump(player);
   }
 });
-el('interact').addEventListener('click', interact);
+// Fire on press so touch players can keep a movement button held while tapping action.
+el('interact').addEventListener('pointerdown', event => {
+  if (!controlsActive()) return;
+  event.preventDefault();
+  interact();
+});
+// Keyboard and assistive-technology activation can dispatch click without pointerdown.
+el('interact').addEventListener('click', event => {
+  if (event.detail === 0) interact();
+});
 window.addEventListener('blur', clearControls);
 window.addEventListener('pagehide', () => { saveCamp(); disconnectPresence(); });
 window.addEventListener('pageshow', connectPresence);
