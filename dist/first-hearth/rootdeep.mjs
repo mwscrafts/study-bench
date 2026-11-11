@@ -1,41 +1,13 @@
 import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs';
 
 const floor = { id: 'rootdeep-floor', points: [[0,4860],[1920,4860]] };
-const tiers = [
-  [
-    { id: 'rootdeep-level-1-west', points: [[0,250],[370,250],[820,264]] },
-    { id: 'rootdeep-level-1-east', points: [[1080,264],[1500,250],[1920,250]] }
-  ],
-  [
-    { id: 'rootdeep-level-2-west', points: [[0,810],[430,800],[850,800]] },
-    { id: 'rootdeep-level-2-east', points: [[1080,812],[1530,800],[1920,806]] }
-  ],
-  [
-    { id: 'rootdeep-level-3-west', points: [[0,1370],[520,1360],[850,1360]] },
-    { id: 'rootdeep-level-3-east', points: [[1080,1372],[1500,1360],[1920,1360]] }
-  ],
-  [
-    { id: 'rootdeep-level-4-west', points: [[0,1930],[440,1920],[850,1920]] },
-    { id: 'rootdeep-level-4-east', points: [[1080,1930],[1500,1920],[1920,1926]] }
-  ],
-  [
-    { id: 'rootdeep-level-5-west', points: [[0,2490],[430,2480],[850,2480]] },
-    { id: 'rootdeep-level-5-east', points: [[1080,2490],[1510,2480],[1920,2484]] }
-  ],
-  [
-    { id: 'rootdeep-level-6-west', points: [[0,3050],[520,3040],[850,3040]] },
-    { id: 'rootdeep-level-6-east', points: [[1080,3050],[1510,3040],[1920,3040]] }
-  ],
-  [
-    { id: 'rootdeep-level-7-west', points: [[0,3610],[430,3600],[850,3600]] },
-    { id: 'rootdeep-level-7-east', points: [[1080,3610],[1510,3600],[1920,3606]] }
-  ],
-  [
-    { id: 'rootdeep-level-8-west', points: [[0,4170],[500,4160],[850,4160]] },
-    { id: 'rootdeep-level-8-east', points: [[1080,4170],[1500,4160],[1920,4160]] }
-  ]
-];
-const surfaces = tiers.flat();
+const heights = [250,810,1370,1930,2490,3050,3610,4170];
+const tiers = heights.map((y,index) => [{
+  id: `rootdeep-level-${index+1}`,
+  // One solid landing spans the mine so a normal fall always stops at the next level.
+  points: [[0,y],[650,y-10],[1280,y+10],[1920,y]]
+}]);
+const surfaces = tiers.map(tier => tier[0]);
 export const rootdeepTerrain = defineTerrain(1920, 4920, 165, [floor, ...surfaces]);
 
 function spot(surface, id, x, label, radius = 72) {
@@ -44,14 +16,17 @@ function spot(surface, id, x, label, radius = 72) {
 
 export const rootdeepLandmarks = [
   spot(tiers[0][0], 'rootdeep-return', 105, 'Return to Crownwood', 94),
-  spot(tiers[3][1], 'dorrin', 1450, 'Talk to Dorrin', 96),
+  ...tiers.map((tier,index) => spot(tier[0], `rootdeep-climb-${index+1}`, 1780,
+    index === 0 ? 'Climb the root ladder to Crownwood' : `Climb the root ladder to level ${index}`, 84)),
+  spot(floor, 'rootdeep-climb-bottom', 1780, 'Climb the root ladder to level 8', 84),
+  spot(tiers[3][0], 'dorrin', 1450, 'Talk to Dorrin', 96),
   spot(tiers[3][0], 'rootdeep-lift-high', 310, 'Inspect the old lift', 80),
-  spot(tiers[7][1], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
+  spot(tiers[7][0], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
   spot(tiers[7][0], 'deep-seal', 650, 'Examine the sealed door', 84)
 ];
 
 export const rootglassNodes = [
-  spot(tiers[4][1], 'rootglass-upper', 1550, 'Mine rootglass', 64),
+  spot(tiers[4][0], 'rootglass-upper', 1550, 'Mine rootglass', 64),
   spot(tiers[5][0], 'rootglass-water', 410, 'Mine rootglass', 64),
   spot(tiers[7][0], 'rootglass-deep', 560, 'Mine rootglass', 64)
 ];
@@ -73,9 +48,9 @@ export function rootdeepLocation(player) {
 }
 
 const patrols = [
-  { surface: tiers[1][1], left: 1270, right: 1780, offset: 1.2 },
+  { surface: tiers[1][0], left: 1270, right: 1780, offset: 1.2 },
   { surface: tiers[4][0], left: 90, right: 700, offset: 4.3 },
-  { surface: tiers[6][1], left: 1230, right: 1800, offset: 2.7 }
+  { surface: tiers[6][0], left: 1230, right: 1800, offset: 2.7 }
 ];
 
 export function rootdeepShadows(phase, nightIndex) {
