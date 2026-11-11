@@ -97,6 +97,7 @@ export function buildRootdeepArt() {
     path(ctx,[[x+8,y-37],[x+22,y-49],[x+22,y-8]],'#c2f2de',2);
   }
   // The bottom seal is old stonework with a quiet, warm rune.
+  const y=4860;
   poly(ctx,[[170,y+90],[170,y-118],[250,y-190],[595,y-190],[674,y-118],[674,y+90]],'#3b4847');
   poly(ctx,[[207,y+80],[207,y-112],[276,y-160],[559,y-160],[637,y-112],[637,y+80]],'#202f34');
   path(ctx,[[231,y-133],[312,y-147],[531,y-147],[612,y-131]],'#82917b',5);
