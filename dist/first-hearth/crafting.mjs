@@ -27,7 +27,8 @@ export function readTools(save) {
     woodDonated: Number.isSafeInteger(save?.woodDonated) ? Math.max(0, Math.min(99, save.woodDonated)) : 0,
     flint: save?.flint === true,
     debugWood: Number.isSafeInteger(save?.debugWood) ? Math.max(0, Math.min(999, save.debugWood)) : 0,
-    chopped: timberTrees.filter(tree => chopped.includes(tree.id)).map(tree => tree.id)
+    chopped: [...timberTrees.filter(tree => chopped.includes(tree.id)).map(tree => tree.id),
+      ...chopped.filter(id => typeof id === 'string' && /^crown-pine-(west|east|ridge)$/.test(id))]
   };
 }
 
