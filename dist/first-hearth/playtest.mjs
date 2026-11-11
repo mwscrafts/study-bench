@@ -14,7 +14,7 @@ import { renderInventory } from './backpack.mjs?v=09';
 import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs?v=10';
 import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
-  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=11';
+  endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
 import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
