@@ -3,7 +3,7 @@ import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberTrees, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=12';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=13';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=3';
 import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
@@ -20,7 +20,7 @@ import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, M
 import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
-import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=17';
+import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const el = id => document.getElementById(id);
@@ -157,13 +157,13 @@ const regions = {
   },
   mine: {
     title: ['Embervein', 'Mine'],
-    intro: 'Follow the lanterns down to Perry, look for iron seams, and find the old lift.',
+    intro: 'Follow the lanterns down to Hugh Mungus, look for iron seams, and find the old lift.',
     terrain: mineTerrain, landmarks: mineLandmarks, flowers: [],
     buildArt: buildMineArt, location: mineLocation, shadows: mineShadows, retreat: 'Timber Shaft'
   },
   beach: {
     title: ['The', 'Beach'],
-    intro: 'Follow the bluff to Driftwood Cove and cast Perry’s net off Lantern Dock.',
+    intro: 'Follow the bluff to Driftwood Cove and cast Hugh Mungus’s net off Lantern Dock.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
   },
@@ -216,7 +216,7 @@ const liftGates = {
 const conversations = {
   mara: { name: 'Lyss', role: 'FORGE KEEPER' },
   barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
-  ivo: { name: 'Perry', role: 'KEEPER OF EMBERVEIN' },
+  ivo: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
   dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
   'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
   'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
@@ -229,12 +229,12 @@ const conversations = {
   lift: {
     name: 'The old lift',
     role: 'LYSS’S CLEARING',
-    greeting: 'The lift goes down to Perry’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
+    greeting: 'The lift goes down to Hugh Mungus’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
   },
   'mine-lift': {
     name: 'The lift base',
     role: 'EMBERVEIN MINE',
-    greeting: 'The old lift reaches Lyss’s clearing. One of the bearings is cracked. Perry needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
+    greeting: 'The old lift reaches Lyss’s clearing. One of the bearings is cracked. Hugh Mungus needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
   },
   'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
   'home-welcome': { name: 'The neighbors', role: 'HOMECOMING',
@@ -245,7 +245,7 @@ const conversations = {
   'player-board': { name: 'A note for the next visitor', role: 'THE PLAYER NOTICEBOARD' },
   'berry-plot': { name: 'Berry garden', role: 'ALDER CAMP' },
   'catnip-garden': { name: 'Alvin’s catnip patch', role: 'ALDER CAMP' },
-  minecart: { name: 'Perry’s minecart', role: 'EMBER VEIN EXPRESS' },
+  minecart: { name: 'Hugh Mungus’s minecart', role: 'EMBER VEIN EXPRESS' },
   'hut-bed': { name: 'The little bed', role: 'A SAFE PLACE' },
   'hut-decor': { name: 'Hut decorations', role: 'A SAFE PLACE' },
   'alvin-bed': { name: 'Alvin', role: 'HIS COZY BED' },
@@ -960,7 +960,7 @@ function updateNotes() {
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue;
   el('tool-notes').textContent = region === 'beach'
-    ? [hasNet ? 'Casting net' : 'Find Perry’s casting net', fishing.book && 'Soaked book',
+    ? [hasNet ? 'Casting net' : 'Find Hugh Mungus’s casting net', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
     : equipment;
   el('hpText').textContent = health;
@@ -978,7 +978,7 @@ function updateNotes() {
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
     : region === 'mine' ? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? 'Lift running'
-      : ivoQuest ? 'Perry needs 1 tideglass gemstone' : 'Follow the lanterns to Perry')
+      : ivoQuest ? 'Hugh Mungus needs 1 tideglass gemstone' : 'Follow the lanterns to Hugh Mungus')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
     : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right'
@@ -1178,7 +1178,7 @@ function setQuest(state) {
 const campRequests = {
   mara: { who:'Lyss', amount:5, item:'berries', reward:2 },
   barry: { who:'Barry', amount:3, item:'wood', reward:3 },
-  ivo: { who:'Perry', amount:4, item:'iron ore', reward:3 }
+  ivo: { who:'Hugh Mungus', amount:4, item:'iron ore', reward:3 }
 };
 
 function requestBoardDialogue() {
@@ -1193,7 +1193,7 @@ function requestBoardDialogue() {
     ['Lyss · 5 berries · 2 tokens', () => startCampRequest('mara')],
     ['Barry · 3 wood · 3 tokens' + (catnipUnlocked ? '' : ' + catnip seed'), () => startCampRequest('barry')]
   ];
-  if (ivoQuest && fishing.tideglass === 'spent') choices.push(['Perry · 4 iron ore · 3 tokens' + (minecartCapacity === 8 ? ' + cart upgrade' : ''), () => startCampRequest('ivo')]);
+  if (ivoQuest && fishing.tideglass === 'spent') choices.push(['Hugh Mungus · 4 iron ore · 3 tokens' + (minecartCapacity === 8 ? ' + cart upgrade' : ''), () => startCampRequest('ivo')]);
   setDialogue(tokens + 'Choose one request. Bring the listed supplies back to that person. The requests can be repeated, but only one can be active at a time.', choices);
 }
 
@@ -1275,7 +1275,7 @@ function syncMinecart() {
 
 function minecartDialogue() {
   if (!(ivoQuest && fishing.tideglass === 'spent')) {
-    setDialogue('The cart is empty. Once Perry repairs the lift, it can carry ore between the mine and camp.');
+    setDialogue('The cart is empty. Once Hugh Mungus repairs the lift, it can carry ore between the mine and camp.');
     return;
   }
   syncMinecart();
@@ -1460,7 +1460,7 @@ function ivoDialogue() {
   }
   if (fishing.tideglass === 'caught') {
     setDialogue('That’s tideglass! It’ll fit the lift bearing. I can have it running right now.', [
-      ['Give Perry the tideglass', () => {
+      ['Give Hugh Mungus the tideglass', () => {
         fishing.tideglass = 'spent';
         ivoQuest = true;
         minecartUpdatedAt = Date.now();
@@ -1578,7 +1578,7 @@ const bookClue = 'The water blurred most of the writing. One sketch shows a rope
 
 function dockDialogue(result) {
   if (!hasNet) {
-    setDialogue('You need a casting net. Perry keeps one in the chest next to his lantern in Embervein Mine.');
+    setDialogue('You need a casting net. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
     return;
   }
   const choices = [['Cast the net', () => {
@@ -1603,7 +1603,7 @@ function finishCast() {
   openDialogue('dock');
   let message = 'You caught ' + result.catchName.toLowerCase() + '.';
   if (result.catchName === 'Soaked book') message = 'The net comes up heavy with a soaked book. There’s still a legible sketch inside.';
-  if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Perry to repair the lift.';
+  if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Hugh Mungus to repair the lift.';
   if (result.rare) message += ' Tangled in the net alongside it is the Godslayer.';
   dockDialogue(message);
 }
@@ -1721,7 +1721,7 @@ function inventoryItems() {
   if (victory?.ending) items.push(['⚿', 'Village gate key', 1, 'Opens the gate to the right of the Crown Arena.']);
   if (tools.charm) items.push(['◇', 'Shockwave charm', 1, 'Softens the King’s shockwaves.']);
   if (tools.helmet) items.push(['♧', 'Iron helmet', 1, 'Reduces incoming damage by 25%.']);
-  if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Perry to repair the lift.']);
+  if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Hugh Mungus to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
   if (adminRing) items.push(['◉', 'Admin Ring', 1, 'Open test tools and regional teleports from your backpack.']);
