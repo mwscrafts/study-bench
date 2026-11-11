@@ -84,6 +84,7 @@ let shadowHealth = new Map();
 let hasNet = false;
 let hughQuest = false;
 let tools = readTools();
+let pickaxeRecipeLearned = false;
 let treeHarvestDays = {};
 let fishing = readFishing();
 let casting = null;
@@ -731,11 +732,11 @@ function updateNotes() {
     : hearthLearned ? 'Return to Lyss for the flower crown'
     : quest === 'complete' ? 'Brass key earned · Find the hidden box'
     : quest === 'accepted' ? 'Lyss’s dusklilies · ' + collected.size + ' / 3'
-    : collected.size ? 'Dusklilies found · ' + collected.size + ' / 3'
     : 'Explore the trail and find Lyss by the fire.';
   const mineLoot = 'Iron ore · ' + ironStock + (hasNet ? ' · Casting net' : '');
   const equipment = tools.pickaxe ? gear[equipped][1]
-    : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
+    : tools.hatchet && pickaxeRecipeLearned ? 'Pickaxe · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
+    : tools.hatchet ? 'Hatchet · cuts marked pines'
     : 'Ask Lyss for a hatchet';
   const rootKeyNote = rootKeyQuest === 'ready' ? 'Return to Hugh for the Root Key'
     : rootKeyQuest === 'accepted' ? (rootKeyGuidance ? 'Old lodestones · ' + activatedLodestones.size + ' / 3'
@@ -879,7 +880,7 @@ function saveCamp() {
       version: 19, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
-      phaseClock, nightIndex, health, composure, berries, equipped, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
+      phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit,
@@ -922,6 +923,7 @@ function begin(save) {
   quest = savedQuest(save?.quest);
   hearthLearned = quest === 'complete' && save?.hearthLearned === true;
   tools = readTools(save?.tools);
+  pickaxeRecipeLearned = save?.pickaxeRecipeLearned === true;
   victory = readVictory(save?.victory, hearthLearned || tools.flowerCrown);
   crystals = savedKnownIds(save?.crystals, crystalNodes);
   rootglass = savedKnownIds(save?.rootglass, rootglassNodes);
@@ -1279,8 +1281,14 @@ function lyssDialogue() {
       equipped = 'hatchet';
       updateNotes();
       saveCamp();
+      setDialogue('Take my old hatchet. It cuts marked pines. When you are ready to make a pickaxe, ask me how.',
+        [['Back', lyssDialogue]]);
+      return;
     }
-    setDialogue('Take my old hatchet. It cuts marked pines. Find loose flint inside Embervein Mine, then use 3 wood and 1 flint at the workbench east of the fire to make a pickaxe.',
+    pickaxeRecipeLearned = true;
+    updateNotes();
+    saveCamp();
+    setDialogue('Find loose flint inside Embervein Mine, then use 3 wood and 1 flint at the workbench east of the fire to make a pickaxe.',
       [['Back', lyssDialogue]]);
   }];
   const paths = ['Where do the trails go?', () => setDialogue(
