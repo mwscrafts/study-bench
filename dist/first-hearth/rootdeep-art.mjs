@@ -58,8 +58,9 @@ function settlement(ctx) {
 
 export function buildRootdeepArt() {
   const canvas=document.createElement('canvas');
-  canvas.width=width; canvas.height=height;
-  const ctx=canvas.getContext('2d'); ctx.lineJoin='round';
+  const scale=0.5;
+  canvas.width=Math.ceil(width*scale); canvas.height=Math.ceil(height*scale);
+  const ctx=canvas.getContext('2d'); ctx.scale(scale,scale); ctx.lineJoin='round';
   const rand=random(672019);
   const background=ctx.createLinearGradient(0,0,0,height);
   background.addColorStop(0,'#192a30'); background.addColorStop(.52,'#293a3a'); background.addColorStop(1,'#172a30');
