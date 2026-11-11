@@ -60,6 +60,12 @@ Two one-time board commissions (`camp-festival`, `rootdeep-welcome`) are defined
 
 The Lantern Keeper, Stonecarver, and Common Keeper use deterministic routes in `rootdeep.mjs` and a shared clock in `playtest.mjs`. Dawn: home doorstep to work. Day: work. Dusk: common fire. Early night: walk home. Late night: inside their corresponding home. The exterior interaction landmarks follow the sprites; the interior sprite and landmark are present only during the home phase. The manual Sky selector previews matching phases. Dorrin stays at his forge and Bram at the shaft guard post so quest gates remain accessible. Route positions are local day-clock presentation, not multiplayer-synchronized NPC state. Dialogue handlers in `playtest.mjs` reflect saved branch lanterns, winch, tunnel and Glowcap progress without changing quest gates. See `docs/rootdeep-design.md` for route coordinates and verification.
 
+## Public Auto sky and Composure
+
+Public Auto time in `playtest.mjs` derives its phase from `Date.now()` and a fixed 136-second cycle; it is not restored from each player's saved `phaseClock`. The personal `nightIndex` still advances on observed cycle boundaries for regrowth and local ghost difficulty. Manual Sky modes remain local previews; Solo retains the prior pausable per-player clock and sleep-to-morning. Public bed rest heals but does not skip the shared sky. The King trial and finished King scene override normal sky intentionally. Public clocks assume devices keep accurate time; no server-authoritative clock or shared ghost positions exist yet.
+
+A saved victory only suppresses Composure drain in the completed King scene. Other regions still check proximity to local ghosts, including for players who already defeated the King. Do not reintroduce a global `if (victory) return` in `updateComposure`. See the latest handoff checkpoint for checks.
+
 ## Playtest ownership
 
 The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change unless the owner explicitly authorizes that specific test. Static source review is useful, but describe clearly when the game itself has not been played through after a change.
