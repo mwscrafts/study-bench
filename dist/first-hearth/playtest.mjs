@@ -2319,7 +2319,7 @@ function grantTestItem(kind, amount = 1) {
     case 'tideglass': fishing.tideglass = 'caught'; break;
     case 'godslayer': fishing.godslayer = true; equipped = 'godslayer'; break;
     case 'hatchet': tools.hatchet = true; equipped = 'hatchet'; break;
-    case 'pickaxe': tools.pickaxe = true; tools.pickaxePaid = false; equipped = 'pickaxe'; break;
+    case 'pickaxe': tools.pickaxe = true; equipped = 'pickaxe'; break;
     case 'ironSword': tools.ironSword = true; equipped = 'ironSword'; break;
     case 'shadowBlade': tools.shadowBlade = true; equipped = 'shadowBlade'; break;
     case 'helmet': tools.helmet = true; break;
@@ -2337,7 +2337,7 @@ function giveBossTestKit() {
   health = 100; composure = 100; berries = Math.max(berries, 12);
   ironStock += 12; shadowStock += 12;
   crystals = new Set(crystalNodes.map(node => node.id));
-  tools.hatchet = true; tools.pickaxe = true; tools.pickaxePaid = false; tools.ironSword = true;
+  tools.hatchet = true; tools.pickaxe = true; tools.ironSword = true;
   tools.shadowBlade = true; tools.helmet = true; tools.charm = true;
   tools.flowerCrown = true; hearthLearned = true; quest = 'complete';
   fishing.godslayer = true; equipped = 'godslayer';
