@@ -84,7 +84,8 @@ export class HearthTimes extends DurableObject {
   }
 }
 
-const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut']);
+const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut',
+  'rootdeep','rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common']);
 const TOOLS = new Set(['hatchet','pickaxe','ironSword','shadowBlade','godslayer','net']);
 const DOORS = {
   'mine-lift': [{ region: 'mine', x: 2165 }, { region: 'mine', x: 4510 }, { region: 'camp', x: 2425 }],
@@ -94,9 +95,17 @@ const numberBetween = (value,min,max) => typeof value === 'number' && Number.isF
 
 function readPose(data) {
   if (!data || typeof data !== 'object' || !AREAS.has(data.region)
-    || !numberBetween(data.x,0,7000) || !numberBetween(data.y,-500,1600)
+    || !numberBetween(data.x,0,7000) || !numberBetween(data.y,-500,6000)
     || !numberBetween(data.gait,0,7) || !numberBetween(data.swing,0,2)) return null;
   const rawName = typeof data.name === 'string' ? data.name.trim().normalize('NFC') : '';
+  const cat = data.alvin && typeof data.alvin === 'object' &&
+    numberBetween(data.alvin.x,0,7000) && numberBetween(data.alvin.y,-500,6000) ? {
+      x: data.alvin.x, y: data.alvin.y,
+      direction: data.alvin.direction === -1 ? -1 : 1,
+      gait: numberBetween(data.alvin.gait,0,1000000) ? data.alvin.gait % (Math.PI * 2) : 0,
+      size: numberBetween(data.alvin.size,1,3) ? data.alvin.size : 1,
+      indoors: data.alvin.indoors === true
+    } : null;
   return {
     region: data.region, x: data.x, y: data.y,
     direction: data.direction === -1 ? -1 : 1,
@@ -105,7 +114,8 @@ function readPose(data) {
     avatar: data.avatar === 'girl' ? 'girl' : 'boy',
     tool: TOOLS.has(data.tool) ? data.tool : null,
     helmet: data.helmet === true,
-    name: rawName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(rawName) ? rawName : 'Adventurer'
+    name: rawName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(rawName) ? rawName : 'Adventurer',
+    alvin: cat
   };
 }
 
