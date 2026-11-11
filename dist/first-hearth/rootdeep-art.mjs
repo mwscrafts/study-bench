@@ -145,8 +145,8 @@ export function paintRootglass(ctx,node,clock) {
   if(pulse>.92) orb(ctx,x+22,y-53,3,'#dcfff0');
 }
 
-export function paintDorrin(ctx,x,y,clock) {
-  ctx.save(); ctx.translate(x,y);
+export function paintDorrin(ctx,x,y,clock,scale=.5) {
+  ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
   // Stocky little digger with soot-brown curls, beard, lantern and a bright chain.
   poly(ctx,[[-34,-49],[-32,-78],[-21,-96],[20,-96],[34,-77],[35,-49]],'#bf8d68');
   poly(ctx,[[-35,-49],[-31,-79],[-19,-95],[18,-95],[30,-80],[34,-49]],'#d0a17b');
