@@ -7,8 +7,8 @@ import { buildMineArt } from './mine-art.mjs?v=06';
 import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=8';
 import { buildRootdeepArt } from './rootdeep-art.mjs?v=12';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=1';
-import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=1';
-import { buildBeachArt } from './beach-art.mjs';
+import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=2';
+import { buildBeachArt } from './beach-art.mjs?v=2';
 import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=10';
 import { buildHearthArt } from './hearth-art.mjs';
@@ -44,7 +44,7 @@ export const regions = {
   },
   beach: {
     title: ['The', 'Beach'],
-    intro: 'Follow the bluff to Driftwood Cove and cast Hugh Mungus’s net off Lantern Dock.',
+    intro: 'Follow the bluff to Driftwood Cove, inspect the broken bridge, and cast Hugh Mungus’s net off Lantern Dock.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
   },
@@ -104,6 +104,8 @@ export const conversations = {
   hugh: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
   dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
   'rootdeep-guard': { name: 'Bram', role: 'SHAFT GUARD' },
+  'beach-bridge-west': { name: 'Cove Bridge', role: 'BROKEN CROSSING' },
+  'beach-bridge-east': { name: 'Cove Bridge', role: 'BROKEN CROSSING' },
   'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
   'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
   'rootdeep-lanternkeeper': { name: 'Lantern Keeper', role: 'ROOTDEEP SETTLER', greeting: 'Welcome in. The lanterns stay lit through every shift. This landing is safe, even when the roots below begin to stir.' },

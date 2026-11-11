@@ -8,8 +8,8 @@ import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel,
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns } from './rootdeep.mjs?v=8';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=12';
-import { beachFlower, readFishing, castNet } from './beach.mjs?v=1';
-import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
+import { beachFlower, beachTerrain, beachBridgeTerrain, BRIDGE_WOOD_COST, BRIDGE_IRON_COST, readFishing, castNet } from './beach.mjs?v=2';
+import { paintBeachHorizon, paintBeachDetails, paintCoveBridge } from './beach-art.mjs?v=2';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -23,7 +23,7 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { paintRestoredKing } from './village.mjs?v=12';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=8';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=9';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -44,7 +44,8 @@ const journalCatalog = [
   { id: 'alvin', title: 'A quiet moment with Alvin', body: 'Pet Alvin in the hut to restore up to 25 Composure. The hut is a safe place to recover before heading back into danger.' },
   { id: 'iron-branch', title: 'The dark iron gallery', body: 'The iron gallery has an unlit lantern. A Glowcap can restore it and make a safer pocket beside this branch. Other parts of Rootdeep remain dangerous.' },
   { id: 'root-branch', title: 'The shadow-root branch', body: 'A lantern has gone dark among the tangled roots. Restore it with a Glowcap to ease the danger nearby. This light is separate from the settlement and the old tunnel.' },
-  { id: 'old-tunnel', title: 'The old minecart tunnel', body: 'The collapsed tunnel may join Rootdeep to Hugh’s mine. First clear the cave goblins. Relight the passage with Glowcaps so the dwarves can assess it; then bring timber for supports. The carts will run only after excavation is finished.' }
+  { id: 'old-tunnel', title: 'The old minecart tunnel', body: 'The collapsed tunnel may join Rootdeep to Hugh’s mine. First clear the cave goblins. Relight the passage with Glowcaps so the dwarves can assess it; then bring timber for supports. The carts will run only after excavation is finished.' },
+  { id: 'cove-bridge', title: 'The broken cove bridge', body: 'A wooden span once crossed above Driftwood Cove. Repair it with renewable wood and iron fittings to open a high route toward Lantern Dock. The lower shore path remains open.' }
 ];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
@@ -79,6 +80,7 @@ let tunnelGuardSpoken = false;
 let tunnelQuestAccepted = false;
 let pendingTunnelReunion = false;
 let hughStiltsRevealed = false;
+let beachBridgeQuest = 'unoffered';
 let defeatedTunnelGoblins = new Set();
 let tunnelGoblins = [];
 let rootKeyQuest = 'unoffered';
@@ -453,6 +455,7 @@ function paint() {
     if(hughStiltsRevealed) paintDiscardedStilts(ctx,1955,hugh.y);
     drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, hughStiltsRevealed ? 64 : 105);
   } else if (region === 'beach') {
+    paintCoveBridge(ctx, beachBridgeQuest === 'complete', animationClock);
     paintBeachDetails(ctx, camera, animationClock, night, casting);
     paintRegionalLodestones();
   } else if (region === 'hearth') {
@@ -690,7 +693,8 @@ function currentLandmarks() {
   return candidates.filter(item =>
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
     (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
-    (item.id !== 'restored-king' || victory?.ending === 'free'));
+    (item.id !== 'restored-king' || victory?.ending === 'free') &&
+    (!item.id.startsWith('beach-bridge-') || beachBridgeQuest !== 'complete'));
 }
 
 function canSleepAtBed() {
@@ -771,12 +775,15 @@ function updateNotes() {
     : rootKeyQuest === 'accepted' ? (rootKeyGuidance ? 'Old lodestones · ' + activatedLodestones.size + ' / 3'
       : 'Ask Lyss about Hugh’s old symbols') : '';
   const glowcapNote = glowcapQuest === 'accepted' ? 'Glowcaps for the lanterns · ' + Math.min(glowcaps, 3) + ' / 3' : '';
+  const bridgeNote = region === 'beach' && beachBridgeQuest === 'accepted'
+    ? 'Cove Bridge · Wood ' + Math.min(spareWood(tools),BRIDGE_WOOD_COST) + '/' + BRIDGE_WOOD_COST +
+      ' · Iron ' + Math.min(ironStock,BRIDGE_IRON_COST) + '/' + BRIDGE_IRON_COST : '';
   const tunnelNote = tunnelQuestAccepted && tunnelStage !== 'open' && (region === 'rootdeep' || region === 'mine')
     ? ({ goblins: 'Tunnel · Clear cave goblins ' + defeatedTunnelGoblins.size + ' / 2',
       light: 'Tunnel · Relight with 2 Glowcaps · ' + Math.min(glowcaps,2) + ' / 2',
       assess: 'Tunnel · Ask Dorrin to assess the lit passage',
       timber: 'Tunnel · Timber supports · ' + Math.min(spareWood(tools),4) + ' / 4' })[tunnelStage] : '';
-  el('quest-tracker').textContent = rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
+  el('quest-tracker').textContent = bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
     ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : rootdeepQuest === 'accepted' ? 'Rootglass · ' + rootglass.size + ' / 3' : '')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
@@ -932,6 +939,7 @@ function saveCamp() {
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
       tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, pendingTunnelReunion, hughStiltsRevealed,
+      beachBridgeQuest,
       defeatedTunnelGoblins: [...defeatedTunnelGoblins],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
@@ -987,6 +995,8 @@ function begin(save) {
   tunnelQuestAccepted = save?.tunnelQuestAccepted === true || ['assess','timber','open'].includes(tunnelStage);
   pendingTunnelReunion = save?.pendingTunnelReunion === true;
   hughStiltsRevealed = save?.hughStiltsRevealed === true;
+  beachBridgeQuest = ['accepted','complete'].includes(save?.beachBridgeQuest) ? save.beachBridgeQuest : 'unoffered';
+  regions.beach.terrain = beachBridgeQuest === 'complete' ? beachBridgeTerrain : beachTerrain;
   tunnelGuardSpoken = save?.tunnelGuardSpoken === true || tunnelQuestAccepted ||
     save?.region === 'rootdeep' && save?.footing?.ground === 'rootdeep-floor';
   defeatedTunnelGoblins = new Set(['goblin-west','goblin-east'].filter(id =>
@@ -2043,6 +2053,41 @@ const interactionHandlers = {
   'fallen-crown': endingDialogue
 };
 
+function coveBridgeDialogue() {
+  openDialogue('beach-bridge-west');
+  visited.add('beach-bridge-west');
+  recordJournalEntry('cove-bridge', { quiet: true });
+  if(beachBridgeQuest === 'unoffered') {
+    setDialogue('The old bridge stops over Driftwood Cove. From up here it could lead toward Lantern Dock without winding through the lower shore. The far bank is still reachable on foot. It needs five wood for new decking and two iron fittings. Will you restore it?', [
+      ['I’ll repair the bridge', () => {
+        beachBridgeQuest = 'accepted';
+        updateNotes(); saveCamp();
+        setDialogue('Gather five spare wood and two iron ore, then return to either end of the broken bridge. The marked pines regrow.');
+      }],
+      ['Leave it', closeDialogue]
+    ]);
+  } else if(spareWood(tools) < BRIDGE_WOOD_COST || ironStock < BRIDGE_IRON_COST) {
+    setDialogue('The bridge needs ' + BRIDGE_WOOD_COST + ' wood and ' + BRIDGE_IRON_COST +
+      ' iron. You have ' + spareWood(tools) + ' wood and ' + ironStock + ' iron. The lower shore route remains open.');
+  } else {
+    setDialogue('The timber and iron fittings are ready. Rebuild the span over Driftwood Cove?', [
+      ['Repair the bridge', () => {
+        tools.woodDonated = (tools.woodDonated ?? 0) + BRIDGE_WOOD_COST;
+        ironStock -= BRIDGE_IRON_COST;
+        beachBridgeQuest = 'complete';
+        regions.beach.terrain = beachBridgeTerrain;
+        terrain = beachBridgeTerrain;
+        notice = 'Cove Bridge repaired · upper route open';
+        noticeUntil = animationClock + 3;
+        updateNotes(); saveCamp();
+        setDialogue('The new planks lock into the old supports. You can cross above the cove toward Lantern Dock. The shore below is still there when you want it.');
+      }],
+      ['Keep the materials', closeDialogue]
+    ]);
+  }
+  saveCamp();
+}
+
 function tunnelGuardDialogue() {
   tunnelGuardSpoken = true;
   visited.add('rootdeep-guard');
@@ -2247,6 +2292,10 @@ function interact() {
       ]);
     }
     saveCamp();
+    return;
+  }
+  if (id.startsWith('beach-bridge-')) {
+    coveBridgeDialogue();
     return;
   }
   if (id === 'rootdeep-tunnel' || id === 'mine-tunnel') {

@@ -1,5 +1,5 @@
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
-import { beachTerrain, beachLandmarks } from './beach.mjs';
+import { beachTerrain, beachLandmarks } from './beach.mjs?v=2';
 
 const { width, height, floor, ledges } = beachTerrain;
 const colors = {
@@ -94,7 +94,7 @@ export function buildBeachArt() {
   path(ctx,westBank,'#e1c694',5);
   path(ctx,eastBank,'#e1c694',5);
   path(ctx,bank.map(([x,y],i)=>[x,y+34+(i%3)*7]),'#afa083',6);
-  for(const ledge of ledges) {
+  for(const ledge of ledges.filter(surface => !surface.id.startsWith('cove-bridge-'))) {
     poly(ctx,[...ledge.points,...ledge.points.map(([x,y],i)=>[x,y+25+(i%3)*10]).reverse()],'#897f66');
     path(ctx,ledge.points,'#c2b58c',5);
   }
@@ -127,6 +127,63 @@ export function buildBeachArt() {
   sign(ctx,1795,627,'Lantern Dock →');
   sign(ctx,2860,592,'Tide Arch →');
   return canvas;
+}
+
+function bridgeDeck(ctx,left,right,yStart,yEnd) {
+  const slope=(yEnd-yStart)/(right-left);
+  poly(ctx,[[left,yStart],[right,yEnd],[right,yEnd+18],[left,yStart+18]],'#594638');
+  path(ctx,[[left,yStart+15],[right,yEnd+15]],'#8e6c4b',7);
+  for(let x=left+10;x<right;x+=31){
+    const y=yStart+(x-left)*slope;
+    poly(ctx,[[x,y-3],[Math.min(x+27,right),y-3+27*slope],
+      [Math.min(x+27,right),y+12+27*slope],[x,y+12]],x%3<1?'#b19062':'#9d7a52');
+    path(ctx,[[x+25,y-2+25*slope],[x+25,y+11+25*slope]],'#5b4637',2);
+    orb(ctx,x+7,y+5,2,'#d1ad73');
+  }
+}
+
+export function paintCoveBridge(ctx,repaired,clock) {
+  // An elevated route above Driftwood Cove. Both ends can be explored while the
+  // middle is missing; the lower sand path remains intact.
+  for(const [x,top,bottom] of [[838,504,600],[984,502,616],[1585,523,664],[1722,526,641]]) {
+    path(ctx,[[x,top+13],[x+8,bottom]],'#6b5641',12);
+    path(ctx,[[x-13,top-5],[x+15,top-5]],'#cfb282',5);
+    path(ctx,[[x-8,top+46],[x+11,top+46]],'#493a30',4);
+  }
+  bridgeDeck(ctx,820,1015,504,501);
+  bridgeDeck(ctx,1560,1740,522,526);
+  if(repaired) {
+    bridgeDeck(ctx,1015,1310,501,511);
+    bridgeDeck(ctx,1310,1560,511,522);
+    for(let x=850;x<=1720;x+=145){
+      const y= x<=1015 ? 504+(x-820)*(501-504)/195
+        : x<=1310 ? 501+(x-1015)*10/295
+        : x<=1560 ? 511+(x-1310)*11/250
+        : 522+(x-1560)*4/180;
+      path(ctx,[[x,y-7],[x,y-86]],'#735b43',8);
+      orb(ctx,x,y-86,5,'#d9bd8a');
+      path(ctx,[[x-11,y-80],[x+10,y-80]],'#d4af72',3);
+    }
+    path(ctx,[[850,423],[1015,420],[1160,425],[1310,430],[1450,438],[1590,444],[1720,444]],'#b99869',5);
+    path(ctx,[[1015,518],[1170,548],[1310,527],[1455,558],[1560,539]],'#66503b',7);
+    for(const x of [1110,1270,1450]){
+      const y=501+(x-1015)*.033;
+      path(ctx,[[x,y+17],[x+32,y+50]],'#8b6a49',5);
+      path(ctx,[[x+32,y+50],[x+65,y+17]],'#8b6a49',5);
+    }
+  } else {
+    // Snapped rails and dangling rope reveal the gap from either approach.
+    path(ctx,[[850,423],[990,422],[1019,447],[1027,489]],'#a8916c',5);
+    path(ctx,[[1590,444],[1563,467],[1551,493]],'#a8916c',5);
+    path(ctx,[[1012,500],[1039,541],[1024,556]],'#6c5440',7);
+    path(ctx,[[1562,521],[1536,560],[1545,576]],'#6c5440',7);
+    poly(ctx,[[1270,607],[1320,598],[1370,614],[1342,637],[1281,635]],'#6b6455');
+    path(ctx,[[1292,602],[1347,611]],'#b59469',6);
+  }
+  for(const [x,y] of [[852,503],[1712,524]]) {
+    const glint=.65+.35*Math.sin(clock*1.8+x);
+    orb(ctx,x,y-12,4,'rgba(239,202,143,'+glint+')');
+  }
 }
 
 export function paintBeachDetails(ctx, view, clock, night, casting) {

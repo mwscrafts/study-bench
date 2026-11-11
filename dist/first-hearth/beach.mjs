@@ -6,7 +6,13 @@ const sand = { id: 'shore-sand', points: [
 ] };
 const drift = { id: 'drift-ledge', points: [[925,601],[1030,585],[1255,582],[1460,594],[1650,610],[1760,624]] };
 const lookout = { id: 'lookout-rock', points: [[3040,473],[3160,460],[3350,460],[3440,483]] };
-export const beachTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout]);
+const westBridgeStub = { id: 'cove-bridge-west', points: [[820,504],[1015,501]] };
+const eastBridgeStub = { id: 'cove-bridge-east', points: [[1560,522],[1740,526]] };
+const repairedBridgeSpan = { id: 'cove-bridge-span', points: [[1015,501],[1310,511],[1560,522]] };
+export const beachTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout, westBridgeStub, eastBridgeStub]);
+export const beachBridgeTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout, westBridgeStub, eastBridgeStub, repairedBridgeSpan]);
+export const BRIDGE_WOOD_COST = 5;
+export const BRIDGE_IRON_COST = 2;
 
 function at(surface, id, x, label, radius = 74) {
   return { id, x, y: surfaceAt(surface, x), label, radius };
@@ -16,11 +22,14 @@ export const beachLandmarks = [
   at(sand,'shore-return',165,'Return to Alder Camp',88),
   dock,
   at(lookout,'lodestone-shore',3260,'Inspect the old lodestone',70),
-  at(sand,'tide-arch',3525,'Look out from Tide Arch',90)
+  at(sand,'tide-arch',3525,'Look out from Tide Arch',90),
+  at(sand,'beach-bridge-west',850,'Inspect the broken cove bridge',85),
+  at(sand,'beach-bridge-east',1720,'Inspect the broken cove bridge',85)
 ];
 export const beachFlower = at(drift,'beach',1420,'Pick Driftwood Cove dusklily',58);
 
 export function beachLocation(player) {
+  if (player.ground?.startsWith('cove-bridge-')) return 'Cove Bridge';
   if (player.x < 870) return 'Salt Pines';
   if (player.x < 1800) return 'Driftwood Cove';
   if (player.x < 2720) return 'Lantern Dock';
