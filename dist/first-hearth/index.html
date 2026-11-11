@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth playtest</title>
-  <link rel="stylesheet" href="./playtest.css?v=15">
+  <link rel="stylesheet" href="./playtest.css?v=16">
 </head>
 <body>
   <main class="page">
@@ -153,6 +153,23 @@
             <small>Tap a tool to equip it. Gear, materials, and berries save with your adventure.</small>
           </section>
         </div>
+        <div id="journalOverlay" class="overlay" hidden>
+          <section class="journal-panel" role="dialog" aria-modal="true" aria-labelledby="journalTitle">
+            <div class="panel-head">
+              <div><p class="eyebrow">NOTES FROM THE TRAIL</p><h2 id="journalTitle">Field journal</h2></div>
+              <button id="closeJournal" class="secondary bag-close" type="button" aria-label="Close journal">×</button>
+            </div>
+            <div class="journal-layout">
+              <nav id="journalEntryList" class="journal-list" aria-label="Journal entries"></nav>
+              <article class="journal-entry" aria-live="polite">
+                <p id="journalTopic" class="eyebrow">FIELD NOTE</p>
+                <h3 id="journalEntryTitle"></h3>
+                <p id="journalEntryBody"></p>
+              </article>
+            </div>
+            <small>New notes are recorded as you discover things. Press J to close.</small>
+          </section>
+        </div>
         <div id="paused" class="overlay" hidden>
           <div class="pause-card">
             <p class="eyebrow">A MOMENT TO BREATHE</p>
@@ -166,6 +183,7 @@
         <div class="inventory">
           <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>▣ Backpack <kbd>I</kbd></button>
           <button id="quickBerry" class="inventory-button" type="button" aria-label="Eat a berry" disabled>● Berry <span id="berryCount">3</span></button>
+          <button id="journalButton" class="inventory-button" type="button" aria-label="Open field journal" title="Open field journal (J)" disabled>✎ Journal <kbd>J</kbd></button>
         </div>
         <div class="control-deck">
           <div class="move-controls">
@@ -187,6 +205,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=60"></script>
+  <script type="module" src="./playtest.mjs?v=61"></script>
 </body>
 </html>

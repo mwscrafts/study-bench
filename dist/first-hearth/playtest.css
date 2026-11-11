@@ -199,6 +199,45 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .dialogue #line { font-size: 13px; margin: 6px 0; }
 }
 
+/* Field journal */
+.journal-panel {
+  width: min(760px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  text-align: left;
+  padding: 20px;
+  color: #e8e4cd;
+  background: #1b342c;
+  border: 1px solid #e9c79055;
+  border-radius: 14px;
+  box-shadow: 0 10px 26px #0e201c66;
+}
+.journal-panel .panel-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.journal-panel h2 { margin: 0 0 16px; }
+.journal-layout { display: grid; grid-template-columns: minmax(150px, .72fr) minmax(0, 1.5fr); gap: 14px; }
+.journal-list { display: grid; align-content: start; gap: 6px; }
+.journal-entry-button {
+  padding: 10px 12px;
+  border: 1px solid #6c806044;
+  border-radius: 6px;
+  color: #d6debd;
+  background: #27483855;
+  text-align: left;
+}
+.journal-entry-button[aria-pressed="true"] { border-color: #edc88999; color: #fff1d1; background: #355243; }
+.journal-entry { min-height: 180px; padding: 14px 16px; border: 1px solid #e9c79033; border-radius: 8px; background: #152b25aa; }
+.journal-entry .eyebrow { color: #d2bb91; }
+.journal-entry h3 { margin: 6px 0 12px; color: #fff1d1; font-size: 20px; }
+.journal-entry > p:last-child { color: #d6debd; line-height: 1.6; }
+.journal-panel > small { display: block; margin-top: 12px; color: #bacdb6; font-size: 11px; }
+@media (max-width: 640px) {
+  .journal-panel { padding: 14px; }
+  .journal-layout { grid-template-columns: 1fr; gap: 9px; }
+  .journal-list { display: flex; overflow-x: auto; padding-bottom: 4px; }
+  .journal-entry-button { flex: 0 0 auto; max-width: 70vw; }
+  .journal-entry { min-height: 130px; }
+}
+
 /* Backpack styles ported from Emberwild and scoped to this game. */
 .backpack-panel {
   width: min(560px, 100%);

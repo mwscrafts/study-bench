@@ -33,6 +33,16 @@ const el = id => document.getElementById(id);
 const world = el('world');
 const ctx = world.getContext('2d');
 const SAVE_KEY = 'first-hearth:alder-camp:v1';
+const journalCatalog = [
+  { id: 'first-steps', title: 'A field journal', body: 'The trail will teach you as you explore. New notes are added here when you encounter useful things, so you can keep moving and read them whenever you like.' },
+  { id: 'controls', title: 'Finding your way', body: 'Move with A and D or the arrow keys. Space jumps; E interacts with nearby people and objects, or swings your equipped tool. On touch screens, use the controls below the world.' },
+  { id: 'composure', title: 'Keeping your composure', body: 'Nearby threats wear down Composure, and fighting while one is close drains it faster. At zero Composure, you lose 1 health each second. In the hut, pet Alvin to restore up to 25 Composure.' },
+  { id: 'gathering', title: 'Gathering along the trail', body: 'Get close to a plant, ore vein, or other resource and use E (or the action button). Some things need the right tool. Supplies save with your adventure; useful notes appear here as you discover them.' },
+  { id: 'berries', title: 'Berries and health', body: 'Berry bushes add berries to your backpack. Eat one with the Berry button or from your backpack to restore health.' },
+  { id: 'gear', title: 'Tools and gear', body: 'Open your backpack with I to review supplies and equipment. Tap a piece of gear you own to equip it; E uses your equipped tool when you act.' },
+  { id: 'regions', title: 'Beyond Alder Camp', body: 'Entrances and gates lead between regions. Explore each trail for new people, resources, and routes. Your adventure, discoveries, and journal are saved on this device.' },
+  { id: 'alvin', title: 'A quiet moment with Alvin', body: 'Pet Alvin in the hut to restore up to 25 Composure. The hut is a safe place to recover before heading back into danger.' }
+];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
 const ROOTDEEP_LADDER_X = 1780;
@@ -103,6 +113,8 @@ let campTokens = 0;
 let hutDecorations = new Set();
 let equipped = null;
 let inventoryOpen = false;
+let journalOpen = false;
+let journalEntries = new Set();
 let testRun = false;
 let adminRing = false;
 let adminPanelFromRing = false;
@@ -589,7 +601,7 @@ function updateCatnipLeap() {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting && !inventoryOpen &&
+  return playing && !paused && !talking && !casting && !inventoryOpen && !journalOpen &&
     trial?.stage !== 'alvin' && finaleDelay <= 0 && !endingScene;
 }
 
@@ -783,6 +795,62 @@ function savedInteger(value, min, max, fallback) {
   return Number.isSafeInteger(value) ? clamp(value, min, max) : fallback;
 }
 
+function recordJournalEntry(id, options = {}) {
+  const entry = journalCatalog.find(item => item.id === id);
+  if (!entry || journalEntries.has(id)) return;
+  journalEntries.add(id);
+  if (!options.quiet && (!notice || noticeUntil <= animationClock)) {
+    notice = 'Journal updated · ' + entry.title;
+    noticeUntil = animationClock + 2.2;
+  }
+  saveCamp();
+}
+
+function showJournalEntry(id) {
+  const entry = journalCatalog.find(item => item.id === id && journalEntries.has(id));
+  if (!entry) return;
+  el('journalTopic').textContent = 'FIELD NOTE';
+  el('journalEntryTitle').textContent = entry.title;
+  el('journalEntryBody').textContent = entry.body;
+  for (const button of el('journalEntryList').children) {
+    button.setAttribute('aria-pressed', String(button.dataset.entryId === id));
+  }
+}
+
+function renderJournal() {
+  const list = el('journalEntryList');
+  list.replaceChildren();
+  const entries = journalCatalog.filter(entry => journalEntries.has(entry.id));
+  for (const entry of entries) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'journal-entry-button';
+    button.dataset.entryId = entry.id;
+    button.textContent = entry.title;
+    button.addEventListener('click', () => showJournalEntry(entry.id));
+    list.append(button);
+  }
+  showJournalEntry(entries.at(-1)?.id ?? 'first-steps');
+}
+
+function openJournal() {
+  if (!controlsActive()) return;
+  journalOpen = true;
+  clearControls();
+  renderJournal();
+  el('journalOverlay').hidden = false;
+  updatePrompt();
+  el('closeJournal').focus({ preventScroll: true });
+}
+
+function closeJournal() {
+  journalOpen = false;
+  el('journalOverlay').hidden = true;
+  clearControls();
+  updatePrompt();
+  world.focus({ preventScroll: true });
+}
+
 function treeStage(id) {
   if (!tools.chopped.includes(id)) return 'mature';
   const harvestedOn = Number.isSafeInteger(treeHarvestDays[id]) ? treeHarvestDays[id] : nightIndex;
@@ -811,7 +879,7 @@ function saveCamp() {
       version: 19, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
-      phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
+      phaseClock, nightIndex, health, composure, berries, equipped, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit,
@@ -849,6 +917,7 @@ function begin(save) {
   }
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
   visited = savedKnownIds(save?.visited, knownLandmarks);
+  journalEntries = savedKnownIds(save?.journalEntries, journalCatalog);
   collected = savedKnownIds(save?.flowers, knownFlowers, id => id === 'timber' ? beachFlower.id : id);
   quest = savedQuest(save?.quest);
   hearthLearned = quest === 'complete' && save?.hearthLearned === true;
@@ -907,6 +976,7 @@ function begin(save) {
   equipped = ownsGear(save?.equipped) ? save.equipped
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
+  el('journalButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
   const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
@@ -915,6 +985,10 @@ function begin(save) {
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
   enterRegion(savedRegion, footing);
   connectPresence();
+  recordJournalEntry('first-steps', { quiet: true });
+  recordJournalEntry('controls', { quiet: true });
+  if (composure < 100) recordJournalEntry('composure', { quiet: true });
+  saveCamp();
   if (region === 'king' && victory && !victory.ending) {
     openDialogue('fallen-crown');
     endingDialogue();
@@ -976,6 +1050,7 @@ function enterRegion(next, footing) {
   updateLocation();
   updateCamera(true);
   updatePrompt();
+  if (next !== 'camp') recordJournalEntry('regions');
   saveCamp();
   world.focus({ preventScroll: true });
 }
@@ -1181,6 +1256,7 @@ function petAlvin() {
   composure = Math.min(100, composure + 25);
   notice = restored > 0 ? 'Alvin purrs and restores ' + restored + ' Composure.' : 'Alvin leans into your hand and purrs.';
   noticeUntil = animationClock+2.2;
+  recordJournalEntry('alvin');
   closeDialogue();
 }
 
@@ -1670,6 +1746,7 @@ function equipTool(id) {
     swing = 0;
   }
   equipped = id;
+  recordJournalEntry('gear');
   updateNotes();
   updatePrompt();
   saveCamp();
@@ -1702,6 +1779,7 @@ function eatBerry() {
   berries--;
   const heal = Math.min(BERRY_HEAL, 100 - health);
   health += heal;
+  recordJournalEntry('berries');
   floater(floaters, player.x, player.y - 97, '+' + heal + ' health', '#b5dda1');
   updateNotes();
   saveCamp();
@@ -1760,6 +1838,7 @@ function gather(item) {
     notice = 'Dusklily picked · ' + collected.size + ' / 3';
   }
   noticeUntil = animationClock + 1.6;
+  recordJournalEntry('gathering');
   updateNotes();
   updatePrompt();
   saveCamp();
@@ -2124,6 +2203,7 @@ function updateComposure(dt) {
       composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)));
     }
   }
+  if (composure < 100) recordJournalEntry('composure');
   if (composure <= 0) {
     composureDamageClock += dt;
     while (composureDamageClock >= 1) {
@@ -2548,6 +2628,8 @@ el('fullscreen').addEventListener('click', async () => {
 
 el('inventoryButton').addEventListener('click', () => inventoryOpen ? closeInventory() : openInventory());
 el('closeInventory').addEventListener('click', closeInventory);
+el('journalButton').addEventListener('click', () => journalOpen ? closeJournal() : openJournal());
+el('closeJournal').addEventListener('click', closeJournal);
 el('bagEat').addEventListener('click', eatBerry);
 el('bagFeed').addEventListener('click', feedAlvin);
 el('bagAdminRing').addEventListener('click', () => {
@@ -2563,6 +2645,15 @@ const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (key === 'j' && !event.repeat) {
+    if (journalOpen) closeJournal();
+    else openJournal();
+    return;
+  }
+  if (journalOpen) {
+    if (key === 'escape') closeJournal();
+    return;
+  }
   if (key === 'i' && !event.repeat) {
     if (inventoryOpen) closeInventory();
     else openInventory();
