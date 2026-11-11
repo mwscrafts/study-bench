@@ -162,12 +162,12 @@ export function advanceTrial(trial, player, dt) {
       if (final) boss.finalHit = true;
     }
     if (boss.timer <= 0) {
-      if (final && !boss.finalHit) {
+      if (final) {
         trial.stage = 'alvin';
         trial.pounce = 0;
       } else {
-        boss.mode = final ? 'final-tell' : 'recover';
-        boss.timer = final ? 1.25 : enraged ? 1.15 : 1.65;
+        boss.mode = 'recover';
+        boss.timer = enraged ? 1.15 : 1.65;
       }
     }
   } else if (boss.mode === 'recover' && boss.timer <= 0) {
