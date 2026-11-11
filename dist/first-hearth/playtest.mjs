@@ -54,6 +54,7 @@ const journalCatalog = [
 ];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
+const WORLD_CYCLE_MS = DAY_LENGTH * 1000;
 const ROOTDEEP_LADDER_X = 1780;
 const ROOTDEEP_CLIMB_SPEED = 430;
 const BERRY_GROW_MS = 3 * 60 * 1000;
@@ -162,6 +163,7 @@ let playing = false;
 let paused = false;
 let talking = false;
 let phaseClock = 0;
+let publicClockCycle = null;
 let animationClock = 0;
 let skyMode = 'auto';
 let gait = 0;
@@ -283,6 +285,23 @@ function paintPeers() {
     ctx.fillText(label,peer.x,peer.y-107,150);
     ctx.restore();
   }
+}
+
+// Public Auto uses the same UTC-based phase for every browser. The personal
+// nightIndex still counts nights played for regrowth and difficulty.
+function syncPublicClock() {
+  if (!onlineEnabled) { publicClockCycle = null; return; }
+  const now = Date.now();
+  const cycle = Math.floor(now / WORLD_CYCLE_MS);
+  if (publicClockCycle !== null && cycle > publicClockCycle) {
+    nightIndex = Math.min(1000000, nightIndex + cycle - publicClockCycle);
+    advanceTreeRegrowth();
+    iron.clear();
+    defeatedShadows.clear();
+    shadowHealth.clear();
+  }
+  publicClockCycle = cycle;
+  phaseClock = (now - cycle * WORLD_CYCLE_MS) / 1000;
 }
 
 function skyState() {
@@ -1124,6 +1143,7 @@ function begin(save) {
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
+  if (onlineEnabled) syncPublicClock();
   enterRegion(savedRegion, footing);
   connectPresence();
   recordJournalEntry('first-steps', { quiet: true });
@@ -1445,12 +1465,14 @@ function bedDialogue() {
     setDialogue('The room is quiet. ' + guidance);
     return;
   }
-  setDialogue('Sleep until morning? You will wake with full health.', [['Sleep', () => {
-    phaseClock = 0; nightIndex++; advanceTreeRegrowth(); health = 100; skyMode = 'auto';
+  setDialogue(onlineEnabled ? 'Rest and restore your health? The public sky will keep its shared time.' : 'Sleep until morning? You will wake with full health.', [['Sleep', () => {
+    if (onlineEnabled) syncPublicClock();
+    else { phaseClock = 0; nightIndex++; advanceTreeRegrowth(); }
+    health = 100; skyMode = 'auto';
     el('sky-toggle').textContent = 'Sky: Auto';
     iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
     updateShadows(); updateNotes(); saveCamp();
-    setDialogue('Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
+    setDialogue(onlineEnabled ? 'You feel rested. The shared sky continues outside, and Alvin is still tucked into his little bed.' : 'Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
   }], ['Not yet', () => closeDialogue()]]);
 }
 
@@ -2746,7 +2768,7 @@ function inRestoredBranchLight(x, y) {
 }
 
 function updateComposure(dt) {
-  if (victory) return;
+  if (victory && region === 'king') return;
   const previousComposure = Math.round(composure);
   let healthChanged = false;
   if (region !== 'hut') {
@@ -2924,6 +2946,8 @@ function updateShadows(dt = 0) {
 function frame(time) {
   const dt = Math.min(.08, (time - (lastFrame || time)) / 1000);
   lastFrame = time;
+  if (playing && onlineEnabled) syncPublicClock();
+  else if (!onlineEnabled) publicClockCycle = null;
   if (wave > 0) wave = Math.max(0, wave - dt);
   if (!paused && !talking && !inventoryOpen) animationClock += dt;
   if (casting && animationClock - casting.start >= .92) finishCast();
@@ -3031,14 +3055,16 @@ function frame(time) {
         saveCamp();
       }
     }
-    phaseClock += dt;
-    if (phaseClock >= DAY_LENGTH) {
-      phaseClock -= DAY_LENGTH;
-      nightIndex++;
-      advanceTreeRegrowth();
-      iron.clear();
-      defeatedShadows.clear();
-      shadowHealth.clear();
+    if (!onlineEnabled) {
+      phaseClock += dt;
+      if (phaseClock >= DAY_LENGTH) {
+        phaseClock -= DAY_LENGTH;
+        nightIndex++;
+        advanceTreeRegrowth();
+        iron.clear();
+        defeatedShadows.clear();
+        shadowHealth.clear();
+      }
     }
     updateShadows(dt);
     updateTunnelGoblins(dt);
@@ -3082,7 +3108,8 @@ el('continue').addEventListener('click', () => begin(getSavedCamp()));
 el('presence-toggle').addEventListener('click', () => {
   onlineEnabled = !onlineEnabled;
   try { localStorage.setItem(PRESENCE_KEY, onlineEnabled ? 'public' : 'solo'); } catch { /* Session toggle still works. */ }
-  if (onlineEnabled) connectPresence(); else disconnectPresence();
+  if (onlineEnabled) { syncPublicClock(); connectPresence(); }
+  else { publicClockCycle = null; disconnectPresence(); }
   updatePresenceButton();
 });
 el('close-dialogue').addEventListener('click', closeDialogue);
