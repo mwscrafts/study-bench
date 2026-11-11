@@ -51,6 +51,10 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 - `canvas-art.mjs` owns state-independent image loading, sprite bounds, sprite drawing, portraits, and small shared effects. Keep game-state decisions and scene composition in `playtest.mjs`.
 - The public site deploys from the repository's `main` branch. Do not change site access or publish through another destination without an explicit request.
 
+## Rootdeep resident schedules
+
+The Lantern Keeper, Stonecarver, and Common Keeper use deterministic routes in `rootdeep.mjs` and a shared clock in `playtest.mjs`. Dawn: home doorstep to work. Day: work. Dusk: common fire. Early night: walk home. Late night: inside their corresponding home. The exterior interaction landmarks follow the sprites; the interior sprite and landmark are present only during the home phase. The manual Sky selector previews matching phases. Dorrin stays at his forge and Bram at the shaft guard post so quest gates remain accessible. Route positions are local day-clock presentation, not multiplayer-synchronized NPC state. Dialogue handlers in `playtest.mjs` reflect saved branch lanterns, winch, tunnel and Glowcap progress without changing quest gates. See `docs/rootdeep-design.md` for route coordinates and verification.
+
 ## Playtest ownership
 
 The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change unless the owner explicitly authorizes that specific test. Static source review is useful, but describe clearly when the game itself has not been played through after a change.

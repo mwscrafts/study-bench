@@ -52,6 +52,15 @@ Glowcaps are a separate saved resource. Turning in three to the Common Keeper li
 - Keep each interior as its own `region` ID. Public presence groups peers by region, so this prevents players in different houses from appearing in the same room.
 - Door IDs in `rootdeep.mjs`, entry gates in `world-data.mjs`, interior exit landmarks, and exit gates must be updated as a set.
 
+## Settler routines and responsive dialogue
+
+- The Lantern Keeper (`rootdeep-lanternkeeper`) goes from the lantern home outdoor start x=345 to the lamp rack x=425 and then to the west side of the common fire x=835.
+- The Stonecarver (`rootdeep-stonecarver`) goes from the stone home outdoor start x=720 to the cutting bench x=790 and then to x=995 at the fire.
+- The Common Keeper (`rootdeep-commonkeeper`) goes from the common house outdoor start x=1300 to the Glowcap basket x=1340 and then to x=1110 at the fire.
+- These three share the existing 136-second day cycle. Tick 0–12: walk to work; 12–39: work; 39–55: walk to fire; 55–73: gather at fire; 73–101: walk home; 101–136: inside their own homes. Manual Sky day/dusk/night/dawn maps to work/fire/home/outbound respectively. The clock is a local presentation clock, so two public players may see a settler in different places if their local clocks differ.
+- A resident's interaction point uses the same computed x/y as the visible sprite outdoors. The indoor sprite and landmark are hidden while the resident is out, and shown only after they return. Doorways remain usable regardless of schedule. Outdoor starts are offset from doors to keep talk and door prompts distinct. Dorrin and Bram remain fixed for their progression and guard duties.
+- The Lantern Keeper's dialogue acknowledges dark branches and restored pockets. The Stonecarver comments on the winch or staged tunnel work when discovered, without revealing later requirements before Dorrin assesses the roof. The Common Keeper retains the three-Glowcap quest, then comments on later lights or the reopened minecart. Dialogue reads existing saved progress; the routine itself adds no save fields.
+
 ## Code map
 
 - `rootdeep.mjs`: terrain, side platforms, landmarks, ores, Glowcaps, and night patrol routes.
@@ -64,4 +73,4 @@ The browser loads versioned module URLs. When changing one of these modules, bum
 
 ## Playtest handoff
 
-Source review can catch broken IDs and missing imports, but it cannot confirm jump reach, interaction spacing, or touch controls. Marshall and Ash do the live playthrough. The useful manual route is: unlock with the Root Key, enter and return, visit each home and leave, gather Glowcaps and turn them in, jump to the two iron branches and flooded boardwalk, then repair the winch and ride between its endpoints. Check public presence in separate homes and in Lanternstead with another player.
+Source review can catch broken IDs and missing imports, but it cannot confirm jump reach, interaction spacing, or touch controls. Marshall and Ash do the live playthrough. The useful manual route is: unlock with the Root Key, enter and return, compare daylight work, dusk fire, and nighttime interiors with the Sky selector; check each talk prompt on mobile, door access, and dialogue before and after repairs. Then gather Glowcaps and turn them in, jump to the two iron branches and flooded boardwalk, and repair the winch and ride between its endpoints. Check public presence in separate homes and in Lanternstead with another player.
