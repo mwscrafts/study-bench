@@ -36,6 +36,12 @@ export const rootdeepLandmarks = [
   spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84)
 ];
 
+// These side-ledge lanterns are independent of the Common Keeper's settlement quest.
+export const rootdeepBranchLanterns = [
+  { ...spot(galleries[0], 'branch-lantern-iron', 530, 'Restore the iron gallery lantern', 78), journal: 'iron-branch', name: 'Iron Gallery' },
+  { ...spot(galleries[4], 'branch-lantern-roots', 1260, 'Restore the shadow-root lantern', 78), journal: 'root-branch', name: 'Shadow Roots' }
+];
+
 // Glowcaps regrow after three nights; iron and rootglass veins still require a pickaxe.
 export const glowcapNodes = [
   spot(tiers[2][0], 'glowcap-west', 220, 'Gather glowcaps', 58),
@@ -60,7 +66,7 @@ export const rootglassNodes = [
 
 export const rootdeepLights = [
   [120,211,115],[610,740,104],[1450,755,126],[220,1315,118],[1450,1875,148],
-  [550,2435,110],[1540,2438,128],[480,2995,142],[1470,3555,116],
+  [925,2435,110],[1540,2438,128],[480,2995,142],[930,3555,116],
   [1550,4115,132],[650,4700,185]
 ];
 

@@ -5,9 +5,9 @@ import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownw
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=15';
 import { paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=04';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes } from './rootdeep.mjs?v=5';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns } from './rootdeep.mjs?v=6';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
-  paintRootdeepSettler, paintGlowcap, buildRootdeepArt } from './rootdeep-art.mjs?v=9';
+  paintRootdeepSettler, paintGlowcap, buildRootdeepArt } from './rootdeep-art.mjs?v=10';
 import { beachFlower, readFishing, castNet } from './beach.mjs?v=1';
 import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
@@ -41,7 +41,9 @@ const journalCatalog = [
   { id: 'berries', title: 'Berries and health', body: 'Berry bushes add berries to your backpack. Eat one with the Berry button or from your backpack to restore health.' },
   { id: 'gear', title: 'Tools and gear', body: 'Open your backpack with I to review supplies and equipment. Tap a piece of gear you own to equip it; E uses your equipped tool when you act.' },
   { id: 'regions', title: 'Beyond Alder Camp', body: 'Entrances and gates lead between regions. Explore each trail for new people, resources, and routes. Your adventure, discoveries, and journal are saved on this device.' },
-  { id: 'alvin', title: 'A quiet moment with Alvin', body: 'Pet Alvin in the hut to restore up to 25 Composure. The hut is a safe place to recover before heading back into danger.' }
+  { id: 'alvin', title: 'A quiet moment with Alvin', body: 'Pet Alvin in the hut to restore up to 25 Composure. The hut is a safe place to recover before heading back into danger.' },
+  { id: 'iron-branch', title: 'The dark iron gallery', body: 'The iron gallery has an unlit lantern. A Glowcap can restore it and make a safer pocket beside this branch. Other parts of Rootdeep remain dangerous.' },
+  { id: 'root-branch', title: 'The shadow-root branch', body: 'A lantern has gone dark among the tangled roots. Restore it with a Glowcap to ease the danger nearby. This light is separate from the settlement and the old tunnel.' }
 ];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
@@ -69,6 +71,7 @@ let gatheredGlowcaps = new Set();
 let glowcaps = 0;
 let glowcapQuest = 'unoffered';
 let glowcapLanternLit = false;
+let branchLanternsLit = new Set();
 let rootKeyQuest = 'unoffered';
 let rootKeyGuidance = false;
 let hasRootKey = false;
@@ -396,7 +399,7 @@ function paint() {
     paintRegionalLodestones();
     paintRootdeepLock();
   } else if (region === 'rootdeep') {
-    paintRootdeepLights(ctx, camera, animationClock, night, glowcapLanternLit);
+    paintRootdeepLights(ctx, camera, animationClock, night, glowcapLanternLit, branchLanternsLit);
     for (const node of rootglassNodes) if (!rootglass.has(node.id)) paintRootglass(ctx,node,animationClock);
     for (const node of rootdeepOreNodes) if (!iron.has(node.id)) paintOre(ctx,node,animationClock);
     for (const node of glowcapNodes) if (!gatheredGlowcaps.has(node.id)) paintGlowcap(ctx,node,animationClock);
@@ -682,7 +685,8 @@ function updatePrompt() {
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
   if (region === 'rootdeep') items.push(...rootglassNodes.filter(node => !rootglass.has(node.id)),
     ...rootdeepOreNodes.filter(node => !iron.has(node.id)),
-    ...glowcapNodes.filter(node => !gatheredGlowcaps.has(node.id)));
+    ...glowcapNodes.filter(node => !gatheredGlowcaps.has(node.id)),
+    ...rootdeepBranchLanterns.filter(lamp => lamp.ground === player.ground));
   if (region === 'mine') {
     items.push(...oreNodes.filter(node => !iron.has(node.id)));
     if (!tools.flint) items.push(flint);
@@ -696,6 +700,7 @@ function updatePrompt() {
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const onLadder = nearRootdeepLadder() || rootdeepClimbing;
   const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
+    rootdeepBranchLanterns.includes(current) && branchLanternsLit.has(current.id) ? 'Inspect the restored lantern' :
     current?.id === 'hut-bed' && !canSleepAtBed() ? 'Rest by the window' :
     current?.id === 'rootdeep-entrance' && !hasRootKey && !sharedDoors.has('rootdeep-entrance') ? 'Sealed Rootdeep entrance' :
     (current?.id === 'rootdeep-lift-high' || current?.id === 'rootdeep-lift-low') && rootdeepQuest === 'complete' ? 'Ride the restored winch' :
@@ -897,7 +902,7 @@ function saveCamp() {
       phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
-      glowcapQuest, glowcapLanternLit,
+      glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools,
@@ -945,6 +950,7 @@ function begin(save) {
   glowcaps = savedInteger(save?.glowcaps, 0, 999999, gatheredGlowcaps.size);
   glowcapQuest = ['accepted','complete'].includes(save?.glowcapQuest) ? save.glowcapQuest : 'unoffered';
   glowcapLanternLit = save?.glowcapLanternLit === true;
+  branchLanternsLit = savedKnownIds(save?.branchLanternsLit, rootdeepBranchLanterns);
   rootdeepQuest = savedQuest(save?.rootdeepQuest);
   rootKeyQuest = ['accepted','ready','complete','declined'].includes(save?.rootKeyQuest) ? save.rootKeyQuest : 'unoffered';
   rootKeyGuidance = save?.rootKeyGuidance === true;
@@ -1722,7 +1728,7 @@ function inventoryItems() {
     ['◆', 'Crystal', crystals.size - (tools.charm ? 2 : 0), 'Gathered with a pickaxe in Crownwood.'],
     ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein and the Rootdeep branch galleries.'],
     ['◇', 'Rootglass', rootglass.size, 'Rare green stone gathered in Rootdeep for Dorrin’s winch repair.'],
-    ['✧', 'Glowcaps', glowcaps, 'Hand-gathered in the damp grotto. The settlement uses them in its lanterns.'],
+    ['✧', 'Glowcaps', glowcaps, 'Gathered in the damp grotto. Relights dark Rootdeep branches and the settlement lanterns.'],
     ['✦', 'Shadow essence', shadowStock, 'Dropped by defeated night shadows.'],
     ['●', 'Berries', berries, 'Saved until you eat them. Restores up to 25 health.'],
     ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Lyss for a brass key.']
@@ -2045,6 +2051,29 @@ function interact() {
       : { x: 310, ground: 'rootdeep-level-2' });
     return;
   }
+  if (rootdeepBranchLanterns.includes(item)) {
+    recordJournalEntry(item.journal, { quiet: true });
+    openDialogue(id);
+    if (branchLanternsLit.has(id)) {
+      setDialogue('The ' + item.name + ' lantern is burning steadily. Its light makes this stretch safer, but the dark continues beyond it.');
+    } else if (glowcaps < 1) {
+      setDialogue('This branch lantern has gone out. One Glowcap could restore it. Gather one in the Glowcap Hollows and return here.');
+    } else {
+      setDialogue('The ' + item.name + ' lantern is cold. Use one Glowcap to relight this branch?', [
+        ['Use 1 Glowcap', () => {
+          glowcaps--;
+          branchLanternsLit.add(id);
+          notice = item.name + ' lantern restored';
+          noticeUntil = animationClock + 3;
+          updateNotes(); updatePrompt(); saveCamp();
+          closeDialogue();
+        }],
+        ['Leave it', closeDialogue]
+      ]);
+    }
+    saveCamp();
+    return;
+  }
   if (id === 'deep-seal') {
     openDialogue(id);
     setDialogue('An ancient stone seal blocks the lowest passage. Its markings are too worn to read. Dorrin might recognize the old work.');
@@ -2214,6 +2243,11 @@ function composureDamageFactor() {
   return .85 + .15 * (composure / 100);
 }
 
+function inRestoredBranchLight(x, y) {
+  return region === 'rootdeep' && rootdeepBranchLanterns.some(lamp =>
+    branchLanternsLit.has(lamp.id) && Math.hypot(x - lamp.x, y - lamp.y) < 205);
+}
+
 function updateComposure(dt) {
   if (victory) return;
   const previousComposure = Math.round(composure);
@@ -2228,7 +2262,8 @@ function updateComposure(dt) {
     }
     if (proximity > 0) {
       const fighting = swing > 0 || cooldown > 0 || swingCombat;
-      composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)));
+      composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)) *
+        (inRestoredBranchLight(player.x, player.y) ? .4 : 1));
     }
   }
   if (composure < 100) recordJournalEntry('composure');
@@ -2350,7 +2385,8 @@ function updateShadows(dt = 0) {
   const hit = creatures.some(creature =>
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
   if (!hit) return;
-  const hitDamage = difficulty === 'hard' ? 20 : 8;
+  const hitDamage = (difficulty === 'hard' ? 20 : 8) *
+    (inRestoredBranchLight(player.x, player.y) ? .5 : 1);
   const composureHit = Math.ceil(hitDamage * (1 + .15 * (1 - composure / 100)));
   health = Math.max(0, health - (tools.helmet ? Math.ceil(composureHit * .75) : composureHit));
   hitUntil = animationClock + 1.8;

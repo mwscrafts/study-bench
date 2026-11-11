@@ -1,5 +1,5 @@
 import { random, poly, path, orb, stone } from './camp-art.mjs?v=12';
-import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks } from './rootdeep.mjs?v=5';
+import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=6';
 
 const { width, height, floor, ledges } = rootdeepTerrain;
 
@@ -309,12 +309,35 @@ export function buildRootdeepArt(winchRepaired=false) {
   return canvas;
 }
 
-export function paintRootdeepLights(ctx,camera,clock,night,glowcapLanternLit=false) {
+export function paintRootdeepLights(ctx,camera,clock,night,glowcapLanternLit=false,branchLanternsLit=new Set()) {
   if(night>0){
     const veil=ctx.createLinearGradient(camera.x,camera.y,camera.x,camera.y+camera.height);
     veil.addColorStop(0,'rgba(10,17,31,'+(night*.24)+')');
     veil.addColorStop(1,'rgba(10,17,31,'+(night*.42)+')');
     ctx.fillStyle=veil; ctx.fillRect(camera.x,camera.y,camera.width,camera.height);
+  }
+  // Dark side passages remain visible from the nearby landing. Each restored lamp
+  // warms only its own branch; the main galleries and other branches stay dangerous.
+  for (const lamp of rootdeepBranchLanterns) {
+    const lit = branchLanternsLit.has(lamp.id);
+    const {x,y} = lamp;
+    const shade = ctx.createRadialGradient(x,y-42,42,x,y-42,390);
+    shade.addColorStop(0,lit?'rgba(12,23,27,.18)':'rgba(5,10,18,.72)');
+    shade.addColorStop(.62,lit?'rgba(12,23,27,.12)':'rgba(5,10,18,.52)');
+    shade.addColorStop(1,'rgba(5,10,18,0)');
+    ctx.fillStyle=shade; ctx.fillRect(x-390,y-432,780,780);
+    // The stone lip and hanging bracket read as a side passage even before repair.
+    path(ctx,[[x-175,y-34],[x-116,y-125],[x+110,y-125],[x+172,y-35]],lit?'#718273':'#647075',7);
+    path(ctx,[[x,y-126],[x,y-76]],'#887052',6);
+    if (lit) {
+      const pulse=.85+.15*Math.sin(clock*2+x);
+      orb(ctx,x,y-77,204,'rgba(255,202,122,'+(pulse*.15)+')');
+      rootLantern(ctx,x,y-70,1.2);
+    } else {
+      poly(ctx,[[x-17,y-80],[x+17,y-80],[x+19,y-45],[x-19,y-45]],'#29383b');
+      poly(ctx,[[x-11,y-72],[x+11,y-72],[x+12,y-51],[x-12,y-51]],'#607575');
+      path(ctx,[[x-20,y-82],[x+20,y-82]],'#92816a',4);
+    }
   }
   for(const [x,y,r] of rootdeepLights){
     const pulse=.8+.2*Math.sin(clock*1.8+x);
