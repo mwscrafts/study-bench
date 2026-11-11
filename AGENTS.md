@@ -15,8 +15,9 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 | Player movement and collision | `terrain.mjs`, coordinated by `playtest.mjs` |
 | Starting camp and world props | `camp-art.mjs`, `camp-idle.mjs`, `crafting.mjs` |
 | Crownwood | `crownwood.mjs`, `crownwood-art.mjs` |
+| Beach and Cove Bridge | `beach.mjs`, `beach-art.mjs`, with repair state and terrain switch in `playtest.mjs` |
 | Rootdeep | `rootdeep.mjs`, `rootdeep-art.mjs`, `rootdeep-home.mjs`, `rootdeep-home-art.mjs`, with traversal in `playtest.mjs` |
-| Embervein Mine and beach | `mine.mjs`, `mine-art.mjs`, `beach.mjs`, `beach-art.mjs` |
+| Embervein Mine | `mine.mjs`, `mine-art.mjs` |
 | Hollow King and endings | `king.mjs`, `king-art.mjs`, `time-board.mjs`, `village.mjs` |
 | Hut and idle features | `camp-idle.mjs` |
 | Public presence and shared doors | `presence.mjs`, with pose drawing in `playtest.mjs` |
@@ -30,6 +31,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 - A guard dwarf (Bram) stands beside the ladder on Rootdeep level 8. Players cannot descend to the bedrock floor until they speak with him. Speaking allows descent; explicitly agreeing to help unlocks the tunnel tracker and Glowcap lighting. Goblins cleared before accepting still count. Preserve this split across keyboard, touch, and drop-through movement.
 - After the open cart carries a player from Rootdeep to Embervein, Hugh's next dialogue is his family reunion. The two family sprites appear by his alcove once the tunnel is open. The optional close/revisit before choosing the reveal repeats that moment; choosing the response saves `hughStiltsRevealed`, makes Hugh visibly shorter, and leaves discarded stilts nearby. Preserve this trigger and keep his later dialogue consistent with the reunion.
 - The collapsed tunnel has two visible minecart endpoints: the far-left bedrock floor below Rootdeep landing 8, and Embervein's deep seam. Its per-save stages must remain goblins → 2 Glowcaps → Dorrin assesses the lit roof → 4 renewable wood for supports/excavation → carts open. Keep the separate camp/Crownwood routes available. The Deep Seal stays on landing 8 and is a different story chamber.
+- The Cove Bridge is a real alternate upper beach path over Driftwood Cove. Its west/east stubs are always solid; the missing middle platform exists only in `beachBridgeTerrain` after paying 5 spare wood and 2 iron. Set `regions.beach.terrain` from saved `beachBridgeQuest` before entering/loading beach, and switch the active `terrain` on repair. The lower sand route and all exits stay open. See `docs/cove-bridge-design.md`.
 - New region and route artwork should use layered, detailed native-resolution scenes. Check the visual quality in context before reducing asset detail; investigate code causes of freezes separately.
 - Rootdeep's two side-branch lanterns are separate saved discoveries from the Common Keeper's Glowcap quest; each costs one Glowcap, lights a local area, and reduces (but does not remove) shadow danger nearby. Keep their landmarks on their ledges, darkness visible from main landings, and the Glowcap stock renewable.
 - Rootdeep art is authored at the map's native `1920 × 4920` resolution; `playtest.mjs` draws camera crops from that full-size canvas. Keep the level-8 Deep Seal doorway centered on the `deep-seal` landmark at y≈4170. The lower bedrock catch floor at y=4860 is below the eight landings and must be labelled separately. Do not reintroduce half-resolution art as a response to a freeze without first identifying the actual code path.
