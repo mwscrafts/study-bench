@@ -9,7 +9,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
-The latest code commit is `8797f784fa0a19eb1c7120e48f9fcc98d8653912` (“Build staged Rootdeep to Embervein minecart tunnel”). It follows `e3e75f14c8153916c11d8b4849a0800e7c842832` (“Add restorable dark branches in Rootdeep”). It follows `97af1e746d26e5b9ea9fe7d1729c28d0c3e28f43` (“Restore Rootdeep art quality and align Deep Seal”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
+The latest code commit is `57460cd2246d0b496f51bdccbf41f89502994ddc` (“Gate bedrock shaft and tunnel quest behind guard”). It follows `8797f784fa0a19eb1c7120e48f9fcc98d8653912` (“Build staged Rootdeep to Embervein minecart tunnel”). It follows `e3e75f14c8153916c11d8b4849a0800e7c842832` (“Add restorable dark branches in Rootdeep”). It follows `97af1e746d26e5b9ea9fe7d1729c28d0c3e28f43` (“Restore Rootdeep art quality and align Deep Seal”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
@@ -23,7 +23,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=67` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=68` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
@@ -32,7 +32,7 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=6
 - Restored the Rootdeep background canvas from `960 × 2460` to its native `1920 × 4920` resolution. The reduced canvas had one quarter of the pixels, making the entire region look soft when enlarged in the camera viewport. Git history identifies this as a prior memory-footprint change; it was unrelated to the entry freeze, so do not reduce the art again without diagnosing a demonstrated memory problem.
 - The `deep-seal` interaction point was already on landing 8 at y≈4170. The drawn sealed door was incorrectly placed at y=4860 on the lower catch floor. The door art now anchors to the landmark; the catch floor is labelled **Bedrock Floor** so a fall below level 8 does not read as the chamber.
 - Added cave-wall stone/crack detail and a built-up sealed doorway while keeping the chamber closed for the later story chapter. The eight landings and their feature plan remain as listed in `docs/rootdeep-design.md`.
-- Current Rootdeep cache versions are `rootdeep.mjs?v=7` and `rootdeep-art.mjs?v=11`; their importers in `playtest.mjs` and `world-data.mjs` are aligned. Main entry uses `playtest.mjs?v=67`.
+- Current Rootdeep cache versions are `rootdeep.mjs?v=8` and `rootdeep-art.mjs?v=12`; their importers in `playtest.mjs` and `world-data.mjs` are aligned. Main entry uses `playtest.mjs?v=68`.
 - Source review only; no live gameplay or browser visual check was performed by Codex. The owner/Ash should inspect the eighth landing and the overall visual sharpness after deployment. If the earlier freeze returns, investigate the code path separately instead of degrading scene assets.
 
 ### Restorable dark branches checkpoint
@@ -40,7 +40,7 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=6
 - The west iron-gallery side ledge on level 5 and east shadow-root side ledge on level 7 now have visible dark pockets and cold lanterns. Each is a separate journal entry and costs one Glowcap to relight. The player must stand on the ledge to interact.
 - The branch states save as `branchLanternsLit` independently of `glowcapLanternLit`, the Common Keeper's existing three-Glowcap quest. They do not consume a cap twice. Branch lights reduce shadow hit damage by half and nearby threat Composure drain to 40% within 205 world units; they do not remove shadows or protect the entire mine.
 - The regular warm lamps by these two galleries moved toward the main landings, making the dark branches readable from those routes. Rootdeep's Glowcaps continue to regenerate after three nights.
-- Rootdeep data/art imports are now `rootdeep.mjs?v=7` and `rootdeep-art.mjs?v=11`, with the playtest entry at `v=66`. Static source review only; the owner/Ash should visually verify lantern placement and the local shadow safety effect in the live game. Codex has not played the public world for this patch.
+- Rootdeep data/art imports are now `rootdeep.mjs?v=8` and `rootdeep-art.mjs?v=12`, with the playtest entry at `v=66`. Static source review only; the owner/Ash should visually verify lantern placement and the local shadow safety effect in the live game. Codex has not played the public world for this patch.
 - Next project: make the collapsed tunnel and both minecart endpoints visible, then implement the staged sequence **goblins → Glowcap lighting → dwarven timber assessment/request → supports/excavation → working minecart**. Preserve the alternate route throughout and keep this tunnel lighting separate from these branch discoveries.
 
 ### Collapsed tunnel checkpoint
@@ -49,8 +49,16 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=6
 - Two cave goblins guard the floor tunnel independent of night shadows; their defeats save across regions/reloads. Both must be cleared before two Glowcaps can light the passage. Only then does Dorrin identify four wood for timber support beams. `spareWood(tools)` is checked and four are deducted through `tools.woodDonated`. Once supports are built and his crew clears the excavation, both carts become a two-way route. Camp/Crownwood paths remain open.
 - Stage and discovery save in `tunnelStage`/`tunnelSeen`; defeated IDs save in `defeatedTunnelGoblins`. Goblins are client-local gameplay enemies; public presence continues to share player positions, not enemy or project state. The earlier branch lanterns and Common Keeper have separate Glowcap spending and saved state.
 - New art depicts a blocked masonry arch, rubble, old rails, unlit/relit sconces, support beams and carts at both endpoints, plus visible cave goblins. Continue using more detailed native-resolution region art. This patch adds route art within existing regions, not a new standalone region.
-- Imports are `rootdeep.mjs?v=7`, `rootdeep-art.mjs?v=11`, `mine.mjs?v=16`, and `mine-art.mjs?v=05`, with playtest entry `v=67`. A syntax-only compile of the edited modules passed. No live visual/gameplay test was performed by Codex; the owner/Ash should check the stages and the bottom-floor placement.
+- Imports are `rootdeep.mjs?v=8`, `rootdeep-art.mjs?v=12`, `mine.mjs?v=16`, and `mine-art.mjs?v=05`, with playtest entry `v=67`. A syntax-only compile of the edited modules passed. No live visual/gameplay test was performed by Codex; the owner/Ash should check the stages and the bottom-floor placement.
 - Next work from the owner's list: a visibly broken bridge in a different location from this tunnel; later the village home, Lyss's cabin, settler routines and request-board reward choices.
+
+### Guard and quest acceptance checkpoint
+
+- Owner found that the tunnel HUD tracked goblin kills/Glowcaps without accepting a quest. Bram, a helmeted dwarf, now stands on landing 8 by the ladder down to the bedrock floor. His dialogue warns that miners closed the shaft because corruption is spreading and cave goblins occupy the collapsed tunnel.
+- A player must speak to Bram before descending. The level-8 ladder clamp, keyboard drop-through, touch pointer and accessible click paths, and a fall fallback enforce this. Speaking and accepting are separate saved flags: `tunnelGuardSpoken` opens warned exploration; `tunnelQuestAccepted` starts the tunnel tracker and unlocks spending two Glowcaps at the mouth. Declining permits exploration and goblin combat; kills already made persist and count when accepted.
+- Older saves with bedrock-floor footing retain access, and stages already beyond lighting migrate as accepted. The tunnel tracker now requires acceptance; the unrelated Rootglass winch tracker also waits for Dorrin's quest acceptance. Empty Rootdeep quest text hides the tracker.
+- Source syntax checked, no live playthrough by Codex. Owner should check: before speaking, ladder down and drop-through stop on level 8; after speaking and declining, descent works but no tunnel tracker/lighting; after accepting, the tracker appears and prior goblin kills count. Confirm the guard is visible beside the ladder and the two-cap lighting then proceeds normally.
+- Current cache imports: `rootdeep.mjs?v=8`, `rootdeep-art.mjs?v=12`, `world-data.mjs?v=7`, and entry `playtest.mjs?v=68`.
 
 ### Suggested owner check for this checkpoint
 
