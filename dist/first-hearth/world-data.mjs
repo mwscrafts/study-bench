@@ -2,10 +2,10 @@ import { campTerrain, landmarks, flowers } from './terrain.mjs?v=15';
 import { buildCampArt } from './camp-art.mjs?v=13';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=13';
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=14';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=15';
-import { buildMineArt } from './mine-art.mjs?v=04';
-import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=6';
-import { buildRootdeepArt } from './rootdeep-art.mjs?v=10';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=16';
+import { buildMineArt } from './mine-art.mjs?v=05';
+import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=7';
+import { buildRootdeepArt } from './rootdeep-art.mjs?v=11';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=1';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=1';
 import { buildBeachArt } from './beach-art.mjs';
@@ -31,7 +31,7 @@ export const regions = {
   },
   rootdeep: {
     title: ['Rootdeep', 'Mine'],
-    intro: 'Eight old landings descend beneath Crownwood. Explore the lantern-lit homes, follow the side galleries, and help Dorrin restore the broken winch.',
+    intro: 'Eight old landings descend beneath Crownwood to a bedrock floor. Explore the lantern-lit homes, follow the side galleries, and help Dorrin reopen the collapsed tunnel.',
     terrain: rootdeepTerrain, landmarks: rootdeepLandmarks, flowers: [], buildArt: buildRootdeepArt,
     location: rootdeepLocation, shadows: rootdeepShadows, retreat: 'Rootbound Threshold'
   },

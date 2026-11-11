@@ -33,7 +33,8 @@ export const rootdeepLandmarks = [
   spot(tiers[3][0], 'rootdeep-house-common-door', 1200, 'Enter the common house', 72),
   spot(tiers[3][0], 'dorrin', 1540, 'Talk to Dorrin', 92),
   spot(tiers[7][0], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
-  spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84)
+  spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84),
+  spot(floor, 'rootdeep-tunnel', 160, 'Inspect the collapsed tunnel', 95)
 ];
 
 // These side-ledge lanterns are independent of the Common Keeper's settlement quest.

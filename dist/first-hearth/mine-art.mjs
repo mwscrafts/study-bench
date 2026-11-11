@@ -1,5 +1,5 @@
 import { random, poly, path, orb, sign, stone } from './camp-art.mjs';
-import { mineTerrain, mineLights, netChest, flint } from './mine.mjs?v=15';
+import { mineTerrain, mineLights, netChest, flint } from './mine.mjs?v=16';
 
 const { width, height, floor, ledges } = mineTerrain;
 const ceiling = [[0,212],[396,211],[640,233],[850,306],[1160,322],[1420,230],[1650,255],[1900,356],[2260,301],[2525,346],[2715,407],[2960,426],[3170,379],[3410,410],[3600,359],[3880,434],[4100,457],[4330,287],[4550,262],[4800,277]];
@@ -113,6 +113,27 @@ export function buildMineArt() {
   ledges.forEach(surface=>rockLedge(ctx,surface));
   for(const [x,y] of mineLights) lantern(ctx,x,y);
   return canvas;
+}
+
+export function paintMineTunnel(ctx, stage) {
+  const x=4110,y=758,open=stage==='open',lit=['assess','timber','open'].includes(stage);
+  // The second cart and blocked portal are visible long before the shortcut works.
+  poly(ctx,[[x-177,y],[x-164,y-153],[x-109,y-218],[x+100,y-218],[x+166,y-151],[x+179,y]],'#4c5e5b');
+  poly(ctx,[[x-135,y],[x-130,y-123],[x-78,y-177],[x+76,y-177],[x+130,y-123],[x+137,y]],open?'#1a3033':'#344044');
+  path(ctx,[[x-143,y-151],[x-91,y-209],[x+89,y-209],[x+146,y-151]],'#ad9872',9);
+  for(const z of [-1,1]) path(ctx,[[x+z*154,y],[x+z*154,y-146]],'#85684b',13);
+  for(let i=0;i<5;i++) path(ctx,[[x-165-i*11,y-9+i*9],[x+164+i*11,y-9+i*9]],'#947451',5);
+  if(!open) {
+    for(const [dx,dy,w,h] of [[-81,-24,60,52],[-20,-66,77,65],[69,-33,76,58],[32,-108,54,46]])
+      stone(ctx,x+dx,y+dy,w,h,'#6c786f');
+  } else {
+    for(const z of [-1,1]) path(ctx,[[x+z*105,y],[x+z*105,y-162]],'#a68155',14);
+    path(ctx,[[x-103,y-156],[x+102,y-156]],'#c49b63',12);
+  }
+  for(const dx of [-123,124]) orb(ctx,x+dx,y-132,lit?13:7,lit?'#eac480':'#687579');
+  poly(ctx,[[x-286,y-66],[x-181,y-66],[x-196,y-22],[x-269,y-22]],'#735c45');
+  path(ctx,[[x-292,y-69],[x-175,y-69]],'#c5a16b',6);
+  for(const dx of [-263,-202]) orb(ctx,x+dx,y-19,13,'#26302d');
 }
 
 export function paintMineLights(ctx, view, clock, night) {

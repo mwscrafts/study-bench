@@ -1,5 +1,5 @@
 import { random, poly, path, orb, stone } from './camp-art.mjs?v=12';
-import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=6';
+import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=7';
 
 const { width, height, floor, ledges } = rootdeepTerrain;
 
@@ -307,6 +307,65 @@ export function buildRootdeepArt(winchRepaired=false) {
   }
   deepSeal(ctx);
   return canvas;
+}
+
+export function paintRootdeepTunnel(ctx, stage, clock) {
+  const x=160,y=4860, open=stage==='open', lit=['assess','timber','open'].includes(stage);
+  // Masonry, steel rails and fractured stone give the far-left tunnel a readable silhouette.
+  poly(ctx,[[x-156,y+4],[x-156,y-105],[x-116,y-202],[x-65,y-252],[x+70,y-252],
+    [x+127,y-194],[x+156,y-103],[x+156,y+4]],'#4b5752');
+  poly(ctx,[[x-126,y+2],[x-126,y-102],[x-88,y-175],[x-48,y-207],[x+49,y-207],
+    [x+93,y-170],[x+126,y-99],[x+126,y+2]],open?'#162d31':'#263237');
+  for (const z of [-1,1]) {
+    path(ctx,[[x+z*145,y],[x+z*145,y-119],[x+z*102,y-207]],'#b59a6c',10);
+    path(ctx,[[x+z*133,y-87],[x+z*87,y-87]],'#899487',4);
+  }
+  path(ctx,[[x-106,y-210],[x-54,y-235],[x+56,y-235],[x+107,y-204]],'#a3a184',7);
+  for (let i=0;i<5;i++) {
+    const ry=y-12+i*9;
+    path(ctx,[[x-115-i*9,ry],[x+112+i*9,ry]],'#8d7758',4);
+  }
+  if (!open) {
+    for(const [dx,dy,w,h] of [[-70,-19,64,52],[0,-44,78,69],[70,-16,68,49],[-32,-105,62,52],[47,-111,61,52]])
+      stone(ctx,x+dx,y+dy,w,h,'#68736a');
+    path(ctx,[[x-118,y-68],[x-62,y-101],[x+5,y-58],[x+71,y-96],[x+127,y-67]],'#404a46',9);
+  } else {
+    for(const z of [-1,1]) path(ctx,[[x+z*90,y],[x+z*90,y-186],[x+z*49,y-212]],'#927657',11);
+    path(ctx,[[x-99,y-174],[x+102,y-174]],'#b7935e',11);
+  }
+  if(lit){
+    const glow=ctx.createRadialGradient(x,y-105,5,x,y-105,175);
+    glow.addColorStop(0,'rgba(238,194,105,.35)'); glow.addColorStop(1,'rgba(238,194,105,0)');
+    orb(ctx,x,y-105,175,glow);
+    for(const dx of [-108,109]) orb(ctx,x+dx,y-120,8+Math.sin(clock*2+dx)*1.2,'#f9d48d');
+  } else {
+    for(const dx of [-108,109]) orb(ctx,x+dx,y-120,7,'#62716c');
+  }
+  // Newly braced supports appear only after Dorrin has identified the need for timber.
+  if(open){
+    for(const dx of [-85,85]) path(ctx,[[x+dx,y],[x+dx,y-175]],'#aa8051',14);
+    path(ctx,[[x-85,y-170],[x+85,y-170]],'#d0a36d',12);
+  }
+  // A small cart remains visible before the route opens.
+  poly(ctx,[[x+198,y-68],[x+305,y-68],[x+286,y-20],[x+217,y-20]],'#745c48');
+  path(ctx,[[x+192,y-70],[x+312,y-70]],'#c5a46d',6);
+  for(const dx of [224,282]) orb(ctx,x+dx,y-17,13,'#262d2c');
+}
+
+export function paintTunnelGoblin(ctx, goblin, clock) {
+  const {x,y}=goblin, bob=Math.sin(clock*5+x)*2;
+  ctx.save(); ctx.translate(x,y+bob);
+  orb(ctx,0,-39,22,'rgba(109,145,74,.24)');
+  poly(ctx,[[-22,-7],[-18,-48],[-9,-58],[11,-58],[22,-44],[20,-7]],'#627647');
+  poly(ctx,[[-28,-51],[-44,-71],[-14,-66]],'#769457');
+  poly(ctx,[[28,-51],[43,-71],[12,-66]],'#769457');
+  orb(ctx,0,-61,24,'#758d51');
+  for(const z of [-1,1]) {
+    orb(ctx,z*9,-65,4,'#e3bc68');
+    path(ctx,[[z*7,-35],[z*13,-26]],'#c7bb91',3);
+  }
+  path(ctx,[[-20,-12],[24,-19]],'#a17d54',6);
+  ctx.restore();
 }
 
 export function paintRootdeepLights(ctx,camera,clock,night,glowcapLanternLit=false,branchLanternsLit=new Set()) {

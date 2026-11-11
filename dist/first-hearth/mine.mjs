@@ -24,7 +24,8 @@ export const mineLandmarks = [
   hugh,
   netChest,
   at(floor, 'lodestone-mine', 2915, 'Inspect the old lodestone', 70),
-  at(floor, 'mine-lift', 4510, 'Inspect the lift', 100)
+  at(floor, 'mine-lift', 4510, 'Inspect the lift', 100),
+  at(floor, 'mine-tunnel', 4110, 'Inspect the blocked minecart tunnel', 90)
 ];
 
 export const oreNodes = [
