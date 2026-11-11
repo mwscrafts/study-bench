@@ -1899,6 +1899,25 @@ function updateSwing(dt) {
   if (nearbyLandmark(player, [item])) gather(item);
 }
 
+const interactionHandlers = {
+  lyss: lyssDialogue,
+  hugh: hughDialogue,
+  barry: barryDialogue,
+  workbench: workbenchDialogue,
+  dock: dockDialogue,
+  'ember-box': emberBoxDialogue,
+  'request-board': requestBoardDialogue,
+  'player-board': openPlayerNoticeboard,
+  'berry-plot': berryPlotDialogue,
+  'catnip-garden': catnipDialogue,
+  minecart: minecartDialogue,
+  'hut-bed': bedDialogue,
+  'alvin-bed': petAlvin,
+  'hut-decor': decorateHutDialogue,
+  'night-altar': altarDialogue,
+  'fallen-crown': endingDialogue
+};
+
 function interact() {
   if (!controlsActive()) return;
   // Refresh the target at activation time; touch input can leave the previous frame's selection stale.
@@ -1977,22 +1996,7 @@ function interact() {
     return;
   }
   openDialogue(id);
-  if (id === 'lyss') lyssDialogue();
-  else if (id === 'hugh') hughDialogue();
-  else if (id === 'barry') barryDialogue();
-  else if (id === 'workbench') workbenchDialogue();
-  else if (id === 'dock') dockDialogue();
-  else if (id === 'ember-box') emberBoxDialogue();
-  else if (id === 'request-board') requestBoardDialogue();
-  else if (id === 'player-board') openPlayerNoticeboard();
-  else if (id === 'berry-plot') berryPlotDialogue();
-  else if (id === 'catnip-garden') catnipDialogue();
-  else if (id === 'minecart') minecartDialogue();
-  else if (id === 'hut-bed') bedDialogue();
-  else if (id === 'alvin-bed') petAlvin();
-  else if (id === 'hut-decor') decorateHutDialogue();
-  else if (id === 'night-altar') altarDialogue();
-  else if (id === 'fallen-crown') endingDialogue();
+  if (Object.hasOwn(interactionHandlers, id)) interactionHandlers[id]();
   else setDialogue(conversations[id].greeting);
 }
 

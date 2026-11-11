@@ -23,6 +23,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 - NPC interaction branches must call `openDialogue(id)` before content helpers such as `dorrinDialogue()`; those helpers only fill the dialogue panel and do not open it.
 - Player progress is stored in local storage under `first-hearth:alder-camp:v1`. Save loading happens in `begin()` and footing conversion in `enterRegion()`. This cleanup deliberately does not migrate old NPC request IDs; the owner accepted lost progress for those requests.
 - `savedKnownIds`, `savedQuest`, and `savedInteger` in `playtest.mjs` keep the common save validations in one place. Preserve each field's fallback and bounds when changing them.
+- `interact()` handles movement, gathering, gates, ladders, and drops before dispatching ordinary landmark dialogue through `interactionHandlers`. Keep exceptional interactions ahead of the handler table.
 - NPC IDs in landmarks, dialogue, sprite keys, and camp requests are `lyss`, `barry`, `hugh`, and `dorrin`. The stored `hughQuest` records accepting Hugh's gemstone request; a spent tideglass records the repaired Embervein lift. Rootdeep's lift follows `rootdeepQuest === 'complete'` without a second flag.
 - `interact()` recalculates the nearest target at activation time. Keep NPC talk handlers ahead of swing and gathering guards so a stale attack target cannot block dialogue.
 - The public site deploys from the repository's `main` branch. Do not change site access or publish through another destination without an explicit request.
