@@ -36,7 +36,7 @@ export const rootdeepLandmarks = [
   spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84)
 ];
 
-// Glowcaps are hand-gathered; the iron and rootglass veins still require a pickaxe.
+// Glowcaps regrow after three nights; iron and rootglass veins still require a pickaxe.
 export const glowcapNodes = [
   spot(tiers[2][0], 'glowcap-west', 220, 'Gather glowcaps', 58),
   spot(tiers[2][0], 'glowcap-middle', 730, 'Gather glowcaps', 58),
@@ -70,6 +70,10 @@ const names = [
 ];
 
 export function rootdeepLocation(player) {
+  // The lower bedrock floor catches falls below the eighth landing; keep its label distinct.
+  const bottomLanding = heights.at(-1);
+  const bedrockFloor = floor.points[0][1];
+  if (player.y > (bottomLanding + bedrockFloor) / 2) return 'Bedrock Floor';
   const level = Math.max(1, Math.min(8, Math.floor((player.y - 200) / 560) + 1));
   return names[level - 1];
 }

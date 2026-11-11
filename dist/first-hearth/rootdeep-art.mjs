@@ -1,5 +1,5 @@
 import { random, poly, path, orb, stone } from './camp-art.mjs?v=12';
-import { rootdeepTerrain, rootdeepLights } from './rootdeep.mjs?v=4';
+import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks } from './rootdeep.mjs?v=5';
 
 const { width, height, floor, ledges } = rootdeepTerrain;
 
@@ -16,6 +16,31 @@ function rootLadder(ctx, x, top, bottom) {
   path(ctx,[[x-width/2+8,top],[x-width/2+8,bottom]],'#b29368',3);
   path(ctx,[[x+width/2-8,top],[x+width/2-8,bottom]],'#b29368',3);
   for(let y=top+18;y<bottom-4;y+=34) path(ctx,[[x-width/2+3,y],[x+width/2-3,y]],'#c2a274',5);
+}
+
+function caveWallDetails(ctx) {
+  const rand = random(20261111);
+  ctx.save();
+  ctx.globalAlpha = .32;
+  for (let i = 0; i < 138; i++) {
+    const x = 24 + rand() * (width - 48);
+    const y = 40 + rand() * (height - 420);
+    const w = 18 + rand() * 56;
+    const h = 10 + rand() * 34;
+    stone(ctx, x, y, w, h, i % 3 === 0 ? '#4c5a50' : i % 3 === 1 ? '#40504b' : '#364648');
+  }
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = .24;
+  for (let i = 0; i < 74; i++) {
+    const x = 35 + rand() * (width - 70);
+    const y = 60 + rand() * (height - 500);
+    const lean = (rand() - .5) * 54;
+    const drop = 18 + rand() * 52;
+    path(ctx, [[x, y], [x + lean * .35, y + drop * .35], [x + lean, y + drop]],
+      i % 2 ? '#718076' : '#27383a', 1.3 + rand() * 1.2);
+  }
+  ctx.restore();
 }
 
 function ledgeFace(ctx, surface, index) {
@@ -179,21 +204,68 @@ function rootboundEntrance(ctx) {
   rootLantern(ctx,x-84,y,.72);
 }
 
+function deepSeal(ctx) {
+  const seal = rootdeepLandmarks.find(item => item.id === 'deep-seal');
+  const { x, y } = seal;
+  // A carved alcove sits directly on the eighth landing, behind its interaction point.
+  poly(ctx,[[x-330,y+12],[x-318,y-154],[x-266,y-248],[x-183,y-306],[x-84,y-338],
+    [x+104,y-338],[x+218,y-286],[x+294,y-207],[x+334,y-106],[x+343,y+12]],'#253538');
+  poly(ctx,[[x-276,y+8],[x-265,y-153],[x-211,y-236],[x-150,y-273],[x+151,y-273],
+    [x+225,y-220],[x+273,y-149],[x+282,y+8]],'#46514c');
+  poly(ctx,[[x-228,y+4],[x-219,y-142],[x-177,y-203],[x-119,y-237],[x+122,y-237],
+    [x+182,y-202],[x+222,y-136],[x+231,y+4]],'#303e40');
+  path(ctx,[[x-274,y-155],[x-220,y-240],[x-151,y-279],[x+150,y-279],[x+224,y-224],[x+279,y-151]],'#9a8a67',8);
+  // Block seams make this read as dwarven masonry set into natural stone.
+  for (const side of [-1,1]) {
+    const sx = x + side * 190;
+    path(ctx,[[sx-side*28,y-191],[sx+side*16,y-191]],'#758078',3);
+    path(ctx,[[sx-side*36,y-130],[sx+side*32,y-130]],'#758078',3);
+    path(ctx,[[sx-side*43,y-68],[sx+side*39,y-68]],'#758078',3);
+    path(ctx,[[sx,y-227],[sx,y-196]],'#758078',3);
+    // Old, unlit lantern brackets flank the sealed passage.
+    path(ctx,[[x+side*244,y-12],[x+side*244,y-83],[x+side*220,y-83]],'#715b43',7);
+    poly(ctx,[[x+side*215,y-79],[x+side*192,y-79],[x+side*192,y-38],[x+side*215,y-38]],'#394443');
+    poly(ctx,[[x+side*210,y-73],[x+side*198,y-73],[x+side*198,y-44],[x+side*210,y-44]],'#657067');
+  }
+  // The door is an intact stone slab, not an open passage.
+  poly(ctx,[[x-105,y+2],[x-105,y-150],[x-83,y-176],[x+83,y-176],[x+105,y-150],[x+105,y+2]],'#1c2b31');
+  poly(ctx,[[x-83,y],[x-83,y-141],[x-68,y-157],[x+68,y-157],[x+83,y-141],[x+83,y]],'#344348');
+  path(ctx,[[x-102,y-145],[x-79,y-174],[x+79,y-174],[x+102,y-145]],'#b49a6b',7);
+  path(ctx,[[x-76,y-8],[x-76,y-133],[x-55,y-151]],'#6b7469',3);
+  path(ctx,[[x+76,y-8],[x+76,y-133],[x+55,y-151]],'#6b7469',3);
+  // A sealed rootglass mark gives the chamber a focal point without opening it.
+  orb(ctx,x,y-89,76,'rgba(119,190,177,.10)');
+  ctx.save();
+  ctx.strokeStyle='#87a99d'; ctx.lineWidth=5; ctx.globalAlpha=.78;
+  ctx.beginPath(); ctx.ellipse(x,y-96,31,46,0,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x,y-144); ctx.lineTo(x,y-48);
+  ctx.moveTo(x-26,y-110); ctx.lineTo(x+26,y-82);
+  ctx.moveTo(x+26,y-110); ctx.lineTo(x-26,y-82); ctx.stroke();
+  ctx.restore();
+  path(ctx,[[x-97,y-42],[x-61,y-63],[x-40,y-48]],'#765b70',5);
+  path(ctx,[[x+97,y-42],[x+61,y-63],[x+40,y-48]],'#765b70',5);
+  // Broken stone and rootglass chips at the threshold.
+  stone(ctx,x-141,y+4,45,25,'#596459');
+  stone(ctx,x+151,y+5,54,29,'#4e5c56');
+  stone(ctx,x-105,y-4,24,13,'#71827b');
+  stone(ctx,x+103,y-3,31,18,'#62716b');
+}
+
 export function buildRootdeepArt(winchRepaired=false) {
   const canvas=document.createElement('canvas');
-  const scale=0.5;
-  canvas.width=Math.ceil(width*scale); canvas.height=Math.ceil(height*scale);
-  const ctx=canvas.getContext('2d'); ctx.scale(scale,scale); ctx.lineJoin='round';
+  canvas.width=width; canvas.height=height;
+  const ctx=canvas.getContext('2d'); ctx.lineJoin='round';
   const rand=random(672019);
   const background=ctx.createLinearGradient(0,0,0,height);
   background.addColorStop(0,'#192a30'); background.addColorStop(.52,'#293a3a'); background.addColorStop(1,'#172a30');
   ctx.fillStyle=background; ctx.fillRect(0,0,width,height);
   // Deep, overlapping stone faces keep the mine readable across its long vertical drop.
-  for(let i=0;i<32;i++){
+  for(let i=0;i<58;i++){
     const x=rand()*width, y=rand()*height, w=90+rand()*300, h=180+rand()*440;
     poly(ctx,[[x-w/2,y-h/2],[x-w*.24,y-h/2-35],[x+w*.46,y-h*.37],[x+w/2,y+h*.34],[x+w*.1,y+h/2],[x-w*.4,y+h*.31]],i%2?'#304342':'#354744');
     poly(ctx,[[x-w/2,y-h/2],[x-w*.24,y-h/2-35],[x-w*.05,y+h*.1],[x-w*.4,y+h*.31]],'#405249');
   }
+  caveWallDetails(ctx);
   rootfall(ctx);
   // Bedrock and floor.
   const earth=ctx.createLinearGradient(0,4700,0,height);
@@ -233,13 +305,7 @@ export function buildRootdeepArt(winchRepaired=false) {
     poly(ctx,[[x+5,y],[x+8,y-38],[x+22,y-49],[x+30,y-25],[x+25,y]],'#74bcb0');
     path(ctx,[[x+8,y-37],[x+22,y-49],[x+22,y-8]],'#c2f2de',2);
   }
-  // The bottom seal is old stonework with a quiet, warm rune.
-  const y=4860;
-  poly(ctx,[[170,y+90],[170,y-118],[250,y-190],[595,y-190],[674,y-118],[674,y+90]],'#3b4847');
-  poly(ctx,[[207,y+80],[207,y-112],[276,y-160],[559,y-160],[637,y-112],[637,y+80]],'#202f34');
-  path(ctx,[[231,y-133],[312,y-147],[531,y-147],[612,y-131]],'#82917b',5);
-  poly(ctx,[[349,y-34],[421,y-107],[493,y-34],[493,y+26],[349,y+26]],'#31484a');
-  path(ctx,[[369,y-22],[421,y-74],[473,y-22]],'#d09c61',4);
+  deepSeal(ctx);
   return canvas;
 }
 

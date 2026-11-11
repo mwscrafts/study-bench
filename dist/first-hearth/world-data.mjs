@@ -4,8 +4,8 @@ import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocatio
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=14';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=15';
 import { buildMineArt } from './mine-art.mjs?v=04';
-import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=4';
-import { buildRootdeepArt } from './rootdeep-art.mjs?v=8';
+import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=5';
+import { buildRootdeepArt } from './rootdeep-art.mjs?v=9';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=1';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=1';
 import { buildBeachArt } from './beach-art.mjs';
