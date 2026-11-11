@@ -5,9 +5,9 @@ import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownw
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
 import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=06';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns } from './rootdeep.mjs?v=8';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
-  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=12';
+  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=13';
 import { beachFlower, beachTerrain, beachBridgeTerrain, BRIDGE_WOOD_COST, BRIDGE_IRON_COST, readFishing, castNet } from './beach.mjs?v=2';
 import { paintBeachHorizon, paintBeachDetails, paintCoveBridge } from './beach-art.mjs?v=2';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
@@ -25,7 +25,7 @@ import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, L
 import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor } from './home-projects-art.mjs?v=1';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=10';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=11';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -431,10 +431,11 @@ function paint() {
     const dorrin = rootdeepLandmarks.find(item => item.id === 'dorrin');
     shadow(dorrin.x,dorrin.y,15);
     paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
-    for (const [x,variant] of [[430,1],[810,2]]) {
-      const y = surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-4'),x);
-      shadow(x,y,13);
-      paintRootdeepSettler(ctx,x,y,animationClock,variant,.46);
+    for (const route of rootdeepSettlerRoutes) {
+      const state = rootdeepSettlerState(route,rootdeepRoutineTime());
+      if(state.atHome) continue;
+      shadow(state.x,state.y,13);
+      paintRootdeepSettler(ctx,state.x,state.y,animationClock,route.variant,.46,state.moving);
     }
     const high = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-high');
     const low = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-low');
@@ -443,9 +444,11 @@ function paint() {
     paintRootdeepLift(ctx,low.x,low.y,rootdeepQuest === 'complete');
   } else if (region.startsWith('rootdeep-home-')) {
     const resident = regions[region].landmarks[1];
-    shadow(resident.x,resident.y,13);
-    paintRootdeepSettler(ctx,resident.x,resident.y,animationClock,
-      region.endsWith('lantern') ? 1 : region.endsWith('stone') ? 2 : 3,.52);
+    if(rootdeepResidentAtHome(resident.id)) {
+      shadow(resident.x,resident.y,13);
+      paintRootdeepSettler(ctx,resident.x,resident.y,animationClock,
+        region.endsWith('lantern') ? 1 : region.endsWith('stone') ? 2 : 3,.52);
+    }
   } else if (region === 'mine') {
     paintMineLights(ctx, camera, animationClock, night);
     paintMineTunnel(ctx, tunnelStage);
@@ -699,16 +702,31 @@ function currentFlowers() {
   return regions[region].flowers;
 }
 
+function rootdeepRoutineTime() {
+  return skyMode === 'auto' ? phaseClock % DAY_LENGTH
+    : ({day:20,dusk:62,night:112,dawn:4})[skyMode] ?? phaseClock % DAY_LENGTH;
+}
+
+function rootdeepResidentAtHome(id) {
+  const route=rootdeepSettlerRoutes.find(item => item.id === id);
+  return route ? rootdeepSettlerState(route,rootdeepRoutineTime()).atHome : false;
+}
+
 function currentLandmarks() {
   if (region === 'king' && trial && !victory) return [];
   const candidates = [...regions[region].landmarks,
     ...(region === 'camp' ? campFacilities : []),
-  ];
+  ].map(item => {
+    const route = region === 'rootdeep' ? rootdeepSettlerRoutes.find(resident => resident.id === item.id) : null;
+    return route ? { ...item, ...rootdeepSettlerState(route,rootdeepRoutineTime()) } : item;
+  });
   return candidates.filter(item =>
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
     (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
     (item.id !== 'restored-king' || victory?.ending === 'free') &&
     (!item.id.startsWith('beach-bridge-') || beachBridgeQuest !== 'complete') &&
+    !(region === 'rootdeep' && item.atHome) &&
+    !(region.startsWith('rootdeep-home-') && rootdeepSettlerRoutes.some(route => route.id === item.id) && !rootdeepResidentAtHome(item.id)) &&
     (item.id !== 'village-home-site' || !!victory?.ending && villageHomeQuest !== 'complete') &&
     (item.id !== 'village-home-door' || villageHomeQuest === 'complete') &&
     (item.id !== 'lyss-tent-site' || lyssCabinQuest !== 'complete') &&
@@ -1455,9 +1473,48 @@ function barryDialogue() {
   ]);
 }
 
+function lanternKeeperDialogue() {
+  if (branchLanternsLit.size >= rootdeepBranchLanterns.length) {
+    setDialogue('I can see both side galleries from here now. Their lanterns give travelers a place to catch their breath, though the shadows still gather beyond the light.');
+  } else if (branchLanternsLit.size) {
+    setDialogue('One dark gallery has its light back. The other still needs a Glowcap. Follow the unlit branch from the main ladder and look for its old lantern.');
+  } else if (glowcapLanternLit) {
+    setDialogue('The common fire is bright again. Two side galleries still have dark lanterns of their own. A Glowcap in each would give explorers a safer place to stand.');
+  } else {
+    setDialogue('I tend the lamps along the mine. Look into the side galleries and you can see where the light stops. A Glowcap can wake each old lantern, but it will only make a safe pocket, not clear the whole branch.');
+  }
+}
+
+function stonecarverDialogue() {
+  if (tunnelStage === 'open') {
+    setDialogue('The new timbers hold firm. Our people can reach Hugh’s mine by cart again. I still come back to this bench; a clear road does not finish the work of keeping it safe.');
+  } else if (tunnelStage === 'timber') {
+    setDialogue('Dorrin can finally see the collapsed roof. Four sound pieces of wood will make the support beams. Bring them to the tunnel mouth on the floor below.');
+  } else if (tunnelStage === 'assess') {
+    setDialogue('With the goblins gone and the tunnel lamps lit, Dorrin can inspect the roof. Speak to him by the forge before we cut the support beams.');
+  } else if (tunnelStage === 'light' && tunnelSeen) {
+    setDialogue('The goblins are gone, but the tunnel is still too dark for us to inspect. A Glowcap in the old lamp at the tunnel mouth should let us see the roof.');
+  } else if (tunnelStage === 'goblins' && tunnelSeen) {
+    setDialogue('No one can work under that collapsed roof while cave goblins hold the tunnel. Speak to Bram at the bottom ladder before going down.');
+  } else if (rootdeepQuest === 'complete') {
+    setDialogue('You restored Dorrin’s winch. We can carry stone between the landings again. The sealed chamber farther down still has us wondering.');
+  } else if (visited.has('deep-seal')) {
+    setDialogue('You found the deep seal? Those stones are older than our homes. I would leave the doorway alone until we understand what is behind it.');
+  } else {
+    setDialogue('I shape replacement stones for the mine. Dorrin’s forge stands east of the common fire, and the old winch above us needs careful work.');
+  }
+}
+
 function glowcapKeeperDialogue() {
   if (glowcapQuest === 'complete') {
-    setDialogue('The Glowcaps keep the settlement lanterns bright. You can hear the old lamps humming again. Thank you.');
+    const news = tunnelStage === 'open'
+      ? 'And now the minecart road reaches Hugh’s mine again.'
+      : branchLanternsLit.size === rootdeepBranchLanterns.length
+        ? 'Even the dark side galleries have pockets of light again.'
+        : tunnelStage === 'timber' || tunnelStage === 'assess'
+          ? 'I heard you got light into the lower tunnel too.'
+          : '';
+    setDialogue('The Glowcaps keep the settlement lanterns bright. You can hear the old lamps humming again. Thank you. ' + news);
     return;
   }
   if (glowcapQuest === 'accepted' && glowcaps >= 3) {
@@ -2085,6 +2142,8 @@ const interactionHandlers = {
   'hut-bed': bedDialogue,
   'alvin-bed': petAlvin,
   'hut-decor': decorateHutDialogue,
+  'rootdeep-lanternkeeper': lanternKeeperDialogue,
+  'rootdeep-stonecarver': stonecarverDialogue,
   'rootdeep-commonkeeper': glowcapKeeperDialogue,
   'village-beyond': () => setDialogue(villageHomeQuest === 'complete'
     ? 'Your home is just beyond the arch. There is more country east of the village, but for now it feels good to have a place here.'

@@ -32,11 +32,33 @@ export const rootdeepLandmarks = [
   spot(tiers[3][0], 'rootdeep-house-stone-door', 620, 'Enter the stonecarver’s home', 72),
   spot(tiers[3][0], 'rootdeep-house-common-door', 1200, 'Enter the common house', 72),
   spot(tiers[3][0], 'dorrin', 1540, 'Talk to Dorrin', 92),
+  spot(tiers[3][0], 'rootdeep-lanternkeeper', 245, 'Talk to the Lantern Keeper', 78),
+  spot(tiers[3][0], 'rootdeep-stonecarver', 620, 'Talk to the Stonecarver', 78),
+  spot(tiers[3][0], 'rootdeep-commonkeeper', 1200, 'Talk to the Common Keeper', 82),
   spot(tiers[7][0], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
   spot(tiers[7][0], 'rootdeep-guard', 1855, 'Talk to the shaft guard', 76),
   spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84),
   spot(floor, 'rootdeep-tunnel', 160, 'Inspect the collapsed tunnel', 95)
 ];
+
+// The three household residents follow the same day clock in the settlement and
+// are only present inside their homes during the home phase. Dorrin and Bram stay posted.
+export const rootdeepSettlerRoutes = [
+  { id:'rootdeep-lanternkeeper', homeX:345, workX:425, fireX:835, variant:1, home:'rootdeep-home-lantern' },
+  { id:'rootdeep-stonecarver', homeX:720, workX:790, fireX:995, variant:2, home:'rootdeep-home-stone' },
+  { id:'rootdeep-commonkeeper', homeX:1300, workX:1340, fireX:1110, variant:3, home:'rootdeep-home-common' }
+];
+export function rootdeepSettlerState(route,time) {
+  const t=((time%136)+136)%136;
+  const travel=(from,to,start,end) => from+(to-from)*Math.max(0,Math.min(1,(t-start)/(end-start)));
+  const atHome=t>=101;
+  const x=t<12 ? travel(route.homeX,route.workX,0,12)
+    : t<39 ? route.workX
+    : t<55 ? travel(route.workX,route.fireX,39,55)
+    : t<73 ? route.fireX
+    : t<101 ? travel(route.fireX,route.homeX,73,101) : route.homeX;
+  return { x,y:surfaceAt(tiers[3][0],x),atHome,moving:t<12||t>=39&&t<55||t>=73&&t<101 };
+}
 
 // These side-ledge lanterns are independent of the Common Keeper's settlement quest.
 export const rootdeepBranchLanterns = [

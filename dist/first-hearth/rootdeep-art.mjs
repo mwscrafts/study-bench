@@ -1,5 +1,5 @@
 import { random, poly, path, orb, stone } from './camp-art.mjs?v=12';
-import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=8';
+import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=9';
 
 const { width, height, floor, ledges } = rootdeepTerrain;
 
@@ -85,6 +85,20 @@ function settlement(ctx) {
   house(86,315,'#626d5d','#59604a',245,'#e6b36e');
   house(460,320,'#566665','#6e6554',620,'#cfdbb1');
   house(1050,305,'#69604f','#78604a',1200,'#f0c27b');
+  // Three work spots make the daily routes legible even when residents are at home.
+  path(ctx,[[409,y],[409,y-80],[447,y-80],[447,y]],'#80664b',7);
+  for(const xx of [421,441]) {
+    poly(ctx,[[xx-9,y-78],[xx+9,y-78],[xx+10,y-47],[xx-9,y-47]],'#53493a');
+    poly(ctx,[[xx-5,y-73],[xx+5,y-73],[xx+6,y-52],[xx-5,y-52]],'#d5ab70');
+  }
+  poly(ctx,[[775,y],[775,y-31],[836,y-31],[836,y]],'#736c5b');
+  stone(ctx,801,y-33,26,27,'#a29e81');
+  path(ctx,[[822,y-49],[838,y-70]],'#b49b70',5);
+  poly(ctx,[[1294,y],[1294,y-46],[1371,y-46],[1371,y]],'#806347');
+  for(const xx of [1310,1334,1353]) {
+    orb(ctx,xx,y-49,9,'#759f86');
+    path(ctx,[[xx,y-51],[xx+3,y-65]],'#b7d6b1',2);
+  }
   // A central lantern, low fire, and banners make the settlement’s safe hub unmistakable.
   path(ctx,[[845,y-7],[845,y-157],[998,y-157],[998,y-7]],'#916d45',10);
   path(ctx,[[857,y-145],[986,y-145]],'#c19b65',6);
@@ -449,7 +463,7 @@ export function paintDorrin(ctx,x,y,clock,scale=.5) {
   ctx.restore();
 }
 
-export function paintRootdeepSettler(ctx,x,y,clock=0,variant=0,scale=.46) {
+export function paintRootdeepSettler(ctx,x,y,clock=0,variant=0,scale=.46,moving=false) {
   ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
   const coats=['#607066','#765e4a','#58656a','#796248'];
   poly(ctx,[[-30,-46],[-42,-30],[-36,-4],[-27,0],[-20,-15],[20,-15],[27,0],[37,-4],[42,-30],[30,-46]],coats[variant%coats.length]);
@@ -463,8 +477,9 @@ export function paintRootdeepSettler(ctx,x,y,clock=0,variant=0,scale=.46) {
     path(ctx,[[-25,-70],[25,-70]],'#b49365',5);
   }
   ctx.fillStyle='#302a25'; ctx.fillRect(-10,-75,3,3); ctx.fillRect(8,-75,3,3);
-  poly(ctx,[[-22,-4],[-25,0],[-7,0],[-5,-5]],'#403930');
-  poly(ctx,[[6,-5],[8,0],[26,0],[24,-4]],'#403930');
+  const stride=moving?Math.sin(clock*11+x*.01)*9:0;
+  poly(ctx,[[-22+stride,-4],[-25+stride,0],[-7+stride,0],[-5+stride,-5]],'#403930');
+  poly(ctx,[[6-stride,-5],[8-stride,0],[26-stride,0],[24-stride,-4]],'#403930');
   const bob=Math.sin(clock*1.7+x*.01)*1.2;
   poly(ctx,[[-5,-90+bob],[5,-90+bob],[4,-87+bob],[-4,-87+bob]],'#46382d');
   ctx.restore();
