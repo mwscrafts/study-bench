@@ -9,7 +9,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
-The latest code commit is `9c7b55236855bf05518f556c9136bffa11c110b1` (“Build repairable upper bridge over Driftwood Cove”). It follows `b02df8516ad3f2a63a99caebab682cc5755cac7b` (“Reunite Hugh with family and reveal his stilts”). It follows `57460cd2246d0b496f51bdccbf41f89502994ddc` (“Gate bedrock shaft and tunnel quest behind guard”). It follows `8797f784fa0a19eb1c7120e48f9fcc98d8653912` (“Build staged Rootdeep to Embervein minecart tunnel”). It follows `e3e75f14c8153916c11d8b4849a0800e7c842832` (“Add restorable dark branches in Rootdeep”). It follows `97af1e746d26e5b9ea9fe7d1729c28d0c3e28f43` (“Restore Rootdeep art quality and align Deep Seal”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
+The latest code commit is `2e61fc220e83e8830718f92da159ce1a2b7c3efc` (“Build village home and Lyss log cabin”). It follows `9c7b55236855bf05518f556c9136bffa11c110b1` (“Build repairable upper bridge over Driftwood Cove”). It follows `b02df8516ad3f2a63a99caebab682cc5755cac7b` (“Reunite Hugh with family and reveal his stilts”). It follows `57460cd2246d0b496f51bdccbf41f89502994ddc` (“Gate bedrock shaft and tunnel quest behind guard”). It follows `8797f784fa0a19eb1c7120e48f9fcc98d8653912` (“Build staged Rootdeep to Embervein minecart tunnel”). It follows `e3e75f14c8153916c11d8b4849a0800e7c842832` (“Add restorable dark branches in Rootdeep”). It follows `97af1e746d26e5b9ea9fe7d1729c28d0c3e28f43` (“Restore Rootdeep art quality and align Deep Seal”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
@@ -23,7 +23,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=70` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=71` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
@@ -32,7 +32,7 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=7
 - Restored the Rootdeep background canvas from `960 × 2460` to its native `1920 × 4920` resolution. The reduced canvas had one quarter of the pixels, making the entire region look soft when enlarged in the camera viewport. Git history identifies this as a prior memory-footprint change; it was unrelated to the entry freeze, so do not reduce the art again without diagnosing a demonstrated memory problem.
 - The `deep-seal` interaction point was already on landing 8 at y≈4170. The drawn sealed door was incorrectly placed at y=4860 on the lower catch floor. The door art now anchors to the landmark; the catch floor is labelled **Bedrock Floor** so a fall below level 8 does not read as the chamber.
 - Added cave-wall stone/crack detail and a built-up sealed doorway while keeping the chamber closed for the later story chapter. The eight landings and their feature plan remain as listed in `docs/rootdeep-design.md`.
-- Current Rootdeep cache versions are `rootdeep.mjs?v=8` and `rootdeep-art.mjs?v=12`; their importers in `playtest.mjs` and `world-data.mjs` are aligned. Main entry uses `playtest.mjs?v=70`.
+- Current Rootdeep cache versions are `rootdeep.mjs?v=8` and `rootdeep-art.mjs?v=12`; their importers in `playtest.mjs` and `world-data.mjs` are aligned. Main entry uses `playtest.mjs?v=71`.
 - Source review only; no live gameplay or browser visual check was performed by Codex. The owner/Ash should inspect the eighth landing and the overall visual sharpness after deployment. If the earlier freeze returns, investigate the code path separately instead of degrading scene assets.
 
 ### Restorable dark branches checkpoint
@@ -58,23 +58,34 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=7
 - A player must speak to Bram before descending. The level-8 ladder clamp, keyboard drop-through, touch pointer and accessible click paths, and a fall fallback enforce this. Speaking and accepting are separate saved flags: `tunnelGuardSpoken` opens warned exploration; `tunnelQuestAccepted` starts the tunnel tracker and unlocks spending two Glowcaps at the mouth. Declining permits exploration and goblin combat; kills already made persist and count when accepted.
 - Older saves with bedrock-floor footing retain access, and stages already beyond lighting migrate as accepted. The tunnel tracker now requires acceptance; the unrelated Rootglass winch tracker also waits for Dorrin's quest acceptance. Empty Rootdeep quest text hides the tracker.
 - Source syntax checked, no live playthrough by Codex. Owner should check: before speaking, ladder down and drop-through stop on level 8; after speaking and declining, descent works but no tunnel tracker/lighting; after accepting, the tracker appears and prior goblin kills count. Confirm the guard is visible beside the ladder and the two-cap lighting then proceeds normally.
-- Current cache imports: `rootdeep.mjs?v=8`, `rootdeep-art.mjs?v=12`, `world-data.mjs?v=9`, and entry `playtest.mjs?v=70`.
+- Current cache imports: `rootdeep.mjs?v=8`, `rootdeep-art.mjs?v=12`, `world-data.mjs?v=10`, and entry `playtest.mjs?v=71`.
 
 ### Hugh reunion checkpoint
 
 - The tunnel payoff now includes Hugh's family. Once the Rootdeep-to-Embervein cart is used, `pendingTunnelReunion` persists until Hugh is spoken to; his next conversation takes priority over the request board and old lift/key lines. He recalls being locked outside the sealed Rootdeep shaft, fearing corruption killed his family, and seeing them alive when the cart reopened. Two Rootdeep family sprites stand by him after the tunnel opens.
 - The response choice makes Hugh step off the stilts: `hughStiltsRevealed` saves, the full-body sprite height changes from 105 to 64 while its feet stay on the ground, a pair of stilts appears by his alcove, and his later dialogue reflects the reunion. Closing before the response keeps the reunion pending for the next conversation. This trigger occurs on travel from Rootdeep to the mine, not simply when the tunnel is repaired.
-- Imports are `mine-art.mjs?v=06` and `world-data.mjs?v=9`, with playtest entry `v=69`. The edited JavaScript syntax was checked. No live gameplay/visual check was performed by Codex. Owner should travel via cart, speak to Hugh, choose the response, confirm he shrinks, reload, and speak again.
+- Imports are `mine-art.mjs?v=06` and `world-data.mjs?v=10`, with playtest entry `v=69`. The edited JavaScript syntax was checked. No live gameplay/visual check was performed by Codex. Owner should travel via cart, speak to Hugh, choose the response, confirm he shrinks, reload, and speak again.
 
 ### Cove Bridge checkpoint
 
 - A distinct broken bridge sits above Driftwood Cove on the beach. The two end stubs are always walkable; the missing middle is a real terrain ledge added only when repaired. The lower shore route remains open throughout, so this repair cannot trap the player. It is separate from Rootdeep's minecart tunnel.
 - Inspect either end to discover it. Accepting the repair request starts a beach-only material tracker; the cost is 5 **spare** wood and 2 iron. Wood is deducted via `tools.woodDonated` and iron via `ironStock`. The saved `beachBridgeQuest` state controls the visual and terrain switch after reload. The bridge markers disappear when complete.
 - The bridge artwork draws broken timber, dangling rope, end pilings, a missing deck and remnants below. Once repaired, it draws a detailed continuous plank deck, rivets, rails, rope and braces. The collision surface is `cove-bridge-span`; the pre-existing stub surfaces remain in both terrain variants. Its upper route runs roughly x=820–1740 above the cove. The lower shore path runs beneath it.
-- See `docs/cove-bridge-design.md` for exact geometry, ownership and manual route. Imports are `beach.mjs?v=2`, `beach-art.mjs?v=2`, `world-data.mjs?v=9`, with playtest entry `v=70`. Syntax/source checks passed; Codex did not do a public gameplay/visual test.
+- See `docs/cove-bridge-design.md` for exact geometry, ownership and manual route. Imports are `beach.mjs?v=2`, `beach-art.mjs?v=2`, `world-data.mjs?v=10`, with playtest entry `v=70`. Syntax/source checks passed; Codex did not do a public gameplay/visual test.
 - Next features from the owner's list: village home after the King, Lyss's tent-to-cabin upgrade, Rootdeep settler routines, and request-board choice rewards.
 
+### Two home projects checkpoint
+
+- The village now extends east of the existing arch to a new plot around x≈3170. The existing celebration house remains at x≈2020. After the player's King ending, the plot offers a separate build for **8 spare wood + 4 iron**. Completion draws a detailed exterior, unlocks the `village-home` interior, and allows three saved, freely toggleable decorations: Alvin's cushion, a tapestry, and a bookshelf.
+- Lyss's existing tent around x≈1960 in Alder Camp offers a separate build for **6 spare wood + 2 iron**. Completion rebuilds the camp background with her log cabin, opens a distinct `lyss-cabin` interior, and lets the player place/remove a herb shelf, woven rug and warm lantern. Lyss has a one-time thank-you dialogue after completion.
+- Each site has an `unoffered → accepted → complete` save state and a material tracker only after acceptance in its own region. Wood uses `spareWood(tools)` and spends through `tools.woodDonated`; iron spends from `ironStock`. Saved sets `villageHomeDecor` and `lyssCabinDecor` drive the visible furnishings. Neither build advances the other.
+- `home-projects.mjs` owns interior terrain, landmarks and costs; `home-projects-art.mjs` draws the village exterior and two interiors/decor overlays. `village.mjs` extends the road, `camp-art.mjs` swaps tent for cabin, `world-data.mjs` registers distinct region/gate IDs, and `playtest.mjs` owns progress and saves. See `docs/home-projects-design.md`.
+- Cache imports: `terrain.mjs?v=16`, `camp-art.mjs?v=14`, `village.mjs?v=13`, `home-projects.mjs?v=1`, `home-projects-art.mjs?v=1`, `world-data.mjs?v=10`, playtest entry `v=71`. Edited module syntax checked; no live gameplay/visual test by Codex.
+- Next owner-list features: Rootdeep settlers' day routines and repair-aware dialogue; special request-board reward choices with player/Alvin cosmetics, house decor or recipes.
+
 ### Suggested owner check for this checkpoint
+
+In the village after the King, follow the east path beyond the arch, accept the new plot project, build with 8 wood/4 iron, enter, toggle each decoration, leave and reload. At Alder Camp, inspect Lyss's tent, accept/build with 6 wood/2 iron, confirm the tent changes to a cabin, enter and furnish it, then talk to Lyss. Check both interiors exit to the right exterior and that one project does not spend or finish the other.
 
 At the beach, inspect the west or east broken bridge and accept the repair. Try crossing the missing middle before paying; it should remain absent and the lower shore should be usable. Bring 5 spare wood and 2 iron, repair it, walk across from both sides, reload while standing on the span, and confirm the path and material spend persist.
 
