@@ -25,6 +25,7 @@ import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, L
 import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor } from './home-projects-art.mjs?v=1';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
+import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=11';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
@@ -136,6 +137,8 @@ let activeRequest = null;
 let completedRequests = new Set();
 let campTokens = 0;
 let hutDecorations = new Set();
+let specialRewards = new Set();
+let pendingSpecialReward = null;
 let equipped = null;
 let inventoryOpen = false;
 let journalOpen = false;
@@ -191,8 +194,9 @@ const presence = createPresence({
     direction: player.direction, moving: controlsActive() && player.moving,
     gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100,
     avatar, tool: equipped, helmet: tools.helmet, name: publicName,
+    scarf: specialRewards.has('scarf'),
     alvin: { x: cat.x, y: cat.y, direction: cat.direction, gait: cat.gait,
-      size: 1 + fishFed / 4, indoors: region === 'hut' }
+      size: 1 + fishFed / 4, indoors: region === 'hut', bell: specialRewards.has('bell') }
   }),
   isOnline: () => onlineEnabled,
   isPlaying: () => playing,
@@ -252,6 +256,7 @@ function paintPeers() {
       drawSprite(ctx, sprites.alvin, peer.alvinX, peer.alvinY, (indoor ? 37 : 44) * size,
         indoor ? 1 : alvin.direction, indoor ? 0 : -Math.abs(Math.sin(alvin.gait || 0)) * 2.2,
         indoor ? -Math.PI / 2 : Math.sin(alvin.gait || 0) * .035);
+      if (alvin.bell === true) paintAlvinBell(ctx,peer.alvinX,peer.alvinY,size,indoor);
       ctx.restore();
     }
     peer.x += (pose.x - peer.x) * .38;
@@ -262,6 +267,7 @@ function paintPeers() {
     if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
     shadow(peer.x,peer.y,22);
     drawSprite(ctx,sprites[pose.avatar],peer.x,peer.y,97,pose.direction,bob,tilt);
+    if (pose.scarf === true) paintTrailScarf(ctx,peer.x,peer.y,pose.direction,bob);
     if (pose.helmet) {
       ctx.fillStyle = '#a3b9b5';
       ctx.beginPath(); ctx.ellipse(peer.x,peer.y-69+bob,19,10,0,Math.PI,0); ctx.fill();
@@ -482,11 +488,13 @@ function paint() {
     paintVillageHomeExterior(ctx,villageHomeQuest === 'complete');
   } else if (region === 'village-home') {
     paintVillageHomeDecor(ctx,villageHomeDecor);
+    paintSpecialHomeDecor(ctx,'village',specialRewards,hutDecorations);
   } else if (region === 'lyss-cabin') {
     paintLyssCabinDecor(ctx,lyssCabinDecor);
   } else if (region === 'hut') {
     paintHutWindow(ctx, phase, animationClock);
     paintHutDecor(ctx, hutDecorations);
+    paintSpecialHomeDecor(ctx,'hut',specialRewards,hutDecorations);
   }
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
   currentFlowers().forEach(flower => {
@@ -503,6 +511,7 @@ function paint() {
     shadow(catX, catY, 17);
     drawSprite(ctx, sprites.alvin, catX, catY, (indoor ? 37 : 44) * (1 + fishFed / 4), indoor ? 1 : cat.direction,
       indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2, indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
+    if (specialRewards.has('bell')) paintAlvinBell(ctx,catX,catY,1 + fishFed / 4,indoor);
     if (indoor && petHeartsUntil > animationClock) {
       const left = petHeartsUntil-animationClock;
       ctx.fillStyle = 'rgba(244,170,198,'+Math.min(.95,left)+')'; ctx.font='15px system-ui';
@@ -524,6 +533,7 @@ function paint() {
   const tilt = (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
   const facing = swing > 0 ? swingDirection : player.direction;
   drawSprite(ctx, sprites[avatar], player.x, player.y, 97, facing, bob, tilt);
+  if (specialRewards.has('scarf')) paintTrailScarf(ctx,player.x,player.y,facing,bob);
   if (tools.helmet && playing) {
     ctx.fillStyle = '#a3b9b5';
     ctx.beginPath(); ctx.ellipse(player.x, player.y - 69 + bob, 19, 10, 0, Math.PI, 0); ctx.fill();
@@ -811,6 +821,8 @@ function updateNotes() {
     : rootKeyQuest === 'accepted' ? (rootKeyGuidance ? 'Old lodestones · ' + activatedLodestones.size + ' / 3'
       : 'Ask Lyss about Hugh’s old symbols') : '';
   const glowcapNote = glowcapQuest === 'accepted' ? 'Glowcaps for the lanterns · ' + Math.min(glowcaps, 3) + ' / 3' : '';
+  const specialNote = region === 'camp' && activeRequest && specialRequests[activeRequest]
+    ? specialRequests[activeRequest].title + ' · ' + specialSupplyText(specialRequests[activeRequest]) : '';
   const bridgeNote = region === 'beach' && beachBridgeQuest === 'accepted'
     ? 'Cove Bridge · Wood ' + Math.min(spareWood(tools),BRIDGE_WOOD_COST) + '/' + BRIDGE_WOOD_COST +
       ' · Iron ' + Math.min(ironStock,BRIDGE_IRON_COST) + '/' + BRIDGE_IRON_COST : '';
@@ -825,7 +837,7 @@ function updateNotes() {
       light: 'Tunnel · Relight with 2 Glowcaps · ' + Math.min(glowcaps,2) + ' / 2',
       assess: 'Tunnel · Ask Dorrin to assess the lit passage',
       timber: 'Tunnel · Timber supports · ' + Math.min(spareWood(tools),4) + ' / 4' })[tunnelStage] : '';
-  el('quest-tracker').textContent = villageHomeNote || lyssCabinNote || bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
+  el('quest-tracker').textContent = villageHomeNote || specialNote || lyssCabinNote || bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
     ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : rootdeepQuest === 'accepted' ? 'Rootglass · ' + rootglass.size + ' / 3' : '')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
@@ -973,7 +985,7 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 19, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 20, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
@@ -990,7 +1002,8 @@ function saveCamp() {
       treeHarvestDays, glowcapHarvestDays, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
-      activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations]
+      activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations],
+      specialRewards: [...specialRewards], pendingSpecialReward
     }));
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
@@ -1093,19 +1106,21 @@ function begin(save) {
   minecartUpdatedAt = Number.isSafeInteger(save?.minecartUpdatedAt) ? save.minecartUpdatedAt : Date.now();
   minecartCapacity = save?.minecartCapacity === 12 ? 12 : 8;
   minecartOre = savedInteger(save?.minecartOre, 0, minecartCapacity, 0);
-  activeRequest = Object.hasOwn(campRequests, save?.activeRequest) ? save.activeRequest : null;
+  activeRequest = Object.hasOwn(campRequests, save?.activeRequest) || Object.hasOwn(specialRequests, save?.activeRequest) ? save.activeRequest : null;
   completedRequests = new Set(Array.isArray(save?.completedRequests)
-    ? save.completedRequests.filter(id => Object.hasOwn(campRequests, id)) : []);
+    ? save.completedRequests.filter(id => Object.hasOwn(campRequests, id) || Object.hasOwn(specialRequests, id)) : []);
   campTokens = savedInteger(save?.campTokens, 0, 999, 0);
   hutDecorations = new Set(Array.isArray(save?.hutDecorations) ? save.hutDecorations.filter(id =>
-    ['canopy-banner','lake-painting','patchwork-quilt'].includes(id)) : []);
+    ['canopy-banner','lake-painting','patchwork-quilt','glowcap-garland'].includes(id)) : []);
+  specialRewards = new Set(Array.isArray(save?.specialRewards) ? save.specialRewards.filter(id => specialRewardChoices.some(choice => choice.id === id)) : []);
+  pendingSpecialReward = Object.hasOwn(specialRequests, save?.pendingSpecialReward) && !completedRequests.has(save.pendingSpecialReward) ? save.pendingSpecialReward : null;
   equipped = ownsGear(save?.equipped) ? save.equipped
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   el('journalButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1226,17 +1241,76 @@ function requestStock(id) {
   return ironStock;
 }
 
+function specialSupplyText(request) {
+  return [request.berries && request.berries + ' berries',
+    request.wood && request.wood + ' wood',
+    request.glowcaps && request.glowcaps + ' Glowcaps'].filter(Boolean).join(' + ');
+}
+
+function chooseSpecialReward() {
+  if (!pendingSpecialReward) return requestBoardDialogue();
+  const choices = specialRewardChoices.filter(reward => !specialRewards.has(reward.id))
+    .map(reward => [reward.label, () => {
+      if (!pendingSpecialReward || specialRewards.has(reward.id)) return chooseSpecialReward();
+      specialRewards.add(reward.id);
+      completedRequests.add(pendingSpecialReward);
+      pendingSpecialReward = null;
+      updateNotes(); saveCamp(); sendPose(true);
+      const followup = reward.id === 'scarf' ? 'Your trail scarf is on now.'
+        : reward.id === 'bell' ? 'Alvin has his little bell collar on now.'
+        : reward.id === 'mobile' ? 'The hanging star mobile is in your camp hut and, once built, your village home.'
+        : 'The Glowcap garland recipe is now at the camp workbench. It is a decoration, not required for the story.';
+      setDialogue('Your choice is yours to keep. ' + followup, [['Back to requests', requestBoardDialogue]]);
+    }]);
+  setDialogue('Your special request is complete. Pick one reward. You can leave the board and make this choice later.', choices);
+}
+
+function finishSpecialRequest(id) {
+  const request = specialRequests[id];
+  if (activeRequest !== id || !request) return requestBoardDialogue();
+  const wood = spareWood(tools);
+  if (berries < request.berries || wood < request.wood || glowcaps < request.glowcaps) {
+    setDialogue(request.title + ' needs ' + specialSupplyText(request) + '. You have ' +
+      berries + ' berries, ' + wood + ' wood, and ' + glowcaps + ' Glowcaps.', [
+      ['Back to board', requestBoardDialogue]
+    ]);
+    return;
+  }
+  berries -= request.berries;
+  tools.woodDonated = (tools.woodDonated ?? 0) + request.wood;
+  glowcaps -= request.glowcaps;
+  activeRequest = null;
+  pendingSpecialReward = id;
+  updateNotes(); saveCamp();
+  chooseSpecialReward();
+}
+
 function requestBoardDialogue() {
   const tokens = 'You have ' + campTokens + ' Hearth tokens. ';
+  if (pendingSpecialReward) return chooseSpecialReward();
+  if (activeRequest && Object.hasOwn(specialRequests,activeRequest)) {
+    const request = specialRequests[activeRequest];
+    setDialogue(tokens + request.title + ': bring ' + specialSupplyText(request) + ' back to this board. Choose one optional reward when you turn it in.', [
+      ['Hand in supplies', () => finishSpecialRequest(activeRequest)],
+      ['Keep gathering', closeDialogue]
+    ]);
+    return;
+  }
   if (activeRequest) {
     const request = campRequests[activeRequest];
     setDialogue(tokens + 'You accepted ' + request.who + '’s request: bring ' + request.amount + ' ' + request.item + '. Return to ' + request.who + ' to hand it over.',
       [['All right', () => closeDialogue()]]);
     return;
   }
-  const choices = [requestChoice('lyss'), requestChoice('barry', catnipUnlocked ? '' : ' + catnip seed')];
+  const choices = [];
+  for (const [id,request] of Object.entries(specialRequests)) {
+    if (completedRequests.has(id) || id === 'rootdeep-welcome' && !hasRootKey) continue;
+    choices.push([request.title + ' · ' + specialSupplyText(request) + ' · choose a keepsake',
+      () => { activeRequest = id; updateNotes(); saveCamp(); requestBoardDialogue(); }]);
+  }
+  choices.push(requestChoice('lyss'), requestChoice('barry', catnipUnlocked ? '' : ' + catnip seed'));
   if (hughQuest && fishing.tideglass === 'spent') choices.push(requestChoice('hugh', minecartCapacity === 8 ? ' + cart upgrade' : ''));
-  setDialogue(tokens + 'Choose one request. Bring the listed supplies back to that person. The requests can be repeated, but only one can be active at a time.', choices);
+  setDialogue(tokens + 'Special commissions offer a choice of keepsakes. Everyday requests give Hearth tokens. Only one request can be active at a time.', choices);
 }
 
 function startCampRequest(id) {
@@ -1697,7 +1771,7 @@ function workbenchDialogue() {
   const wood = spareWood(tools);
   const crystalCount = crystals.size - (tools.charm ? 2 : 0);
   const inventory = 'You have: Wood ' + wood + ' · Flint ' + Number(tools.flint) +
-    ' · Iron ' + ironStock + ' · Crystals ' + crystalCount + ' · Shadow essence ' + shadowStock + '.';
+    ' · Iron ' + ironStock + ' · Glowcaps ' + glowcaps + ' · Crystals ' + crystalCount + ' · Shadow essence ' + shadowStock + '.';
   const choices = [];
 
   function reportMissing(label, missing) {
@@ -1755,6 +1829,22 @@ function workbenchDialogue() {
     shadowStock -= 2;
     updateNotes(); saveCamp(); workbenchDialogue();
   }]);
+
+  if (specialRewards.has('garland-recipe') && !hutDecorations.has('glowcap-garland')) {
+    choices.push(['Craft Glowcap garland · 1 wood + 1 Glowcap', () => {
+      const missing = [];
+      if (wood < 1) missing.push('1 wood');
+      if (glowcaps < 1) missing.push('1 Glowcap');
+      if (reportMissing('craft the Glowcap garland', missing)) return;
+      tools.woodDonated = (tools.woodDonated ?? 0) + 1;
+      glowcaps--;
+      hutDecorations.add('glowcap-garland');
+      updateNotes(); saveCamp();
+      setDialogue('Your Glowcap garland now hangs in the camp hut and, once built, your village home.', [
+        ['Back to workbench', workbenchDialogue]
+      ]);
+    }]);
+  }
 
   if (!tools.helmet) choices.push(['Craft helmet · 4 iron', () => {
     const missing = [];
@@ -1920,6 +2010,11 @@ function inventoryItems() {
   if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Hugh Mungus to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
+  if (specialRewards.has('scarf')) items.push(['✦', 'Trail scarf', 1, 'A cosmetic from a special request. Worn by your adventurer.']);
+  if (specialRewards.has('bell')) items.push(['♫', 'Alvin’s bell collar', 1, 'A cosmetic from a special request. Alvin wears it beside you.']);
+  if (specialRewards.has('mobile')) items.push(['✧', 'Star mobile', 1, 'Hangs in your camp hut and village home.']);
+  if (specialRewards.has('garland-recipe')) items.push(['▤', 'Glowcap garland recipe', 1,
+    hutDecorations.has('glowcap-garland') ? 'Crafted and hanging at home.' : 'Craft at the camp workbench with one spare wood and one Glowcap.']);
   if (adminRing) items.push(['◉', 'Admin Ring', 1, 'Open test tools and regional teleports from your backpack.']);
   return items;
 }
