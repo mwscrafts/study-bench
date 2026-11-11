@@ -37,6 +37,7 @@ const ROOTDEEP_LADDER_X = 1780;
 const ROOTDEEP_CLIMB_SPEED = 430;
 const BERRY_GROW_MS = 3 * 60 * 1000;
 const CATNIP_GROW_MS = 10 * 60 * 1000;
+const ALVIN_GROWTH_SECONDS = 10 * 60;
 const MINECART_TICK_MS = 4 * 60 * 1000;
 const skyModes = ['auto', 'day', 'dusk', 'night', 'dawn'];
 const skyLabels = { day: 'Daylight', dusk: 'Dusk', night: 'Night', dawn: 'Dawn' };
@@ -76,6 +77,7 @@ let catnipUnlocked = false;
 let alvinCatnipVisits = 0;
 let catCombat = null;
 let catCombatReadyAt = 0;
+let alvinGrowthRemaining = 0;
 let catnipReadyAt = 0;
 let catnipShowUntil = 0;
 let catnipLeap = null;
@@ -721,7 +723,7 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 16, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
+      version: 16, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
@@ -749,6 +751,13 @@ function begin(save) {
     choice.setAttribute('aria-pressed', String(choice.dataset.difficulty === difficulty));
   }
   fishFed = savedInteger(save?.fishFed, 0, 8, 0);
+  alvinGrowthRemaining = Number.isFinite(save?.alvinGrowthRemaining)
+    ? clamp(save.alvinGrowthRemaining, 0, ALVIN_GROWTH_SECONDS)
+    : fishFed ? ALVIN_GROWTH_SECONDS : 0;
+  if (!fishFed || alvinGrowthRemaining === 0) {
+    fishFed = 0;
+    alvinGrowthRemaining = 0;
+  }
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
   visited = savedKnownIds(save?.visited, knownLandmarks);
   collected = savedKnownIds(save?.flowers, knownFlowers, id => id === 'timber' ? beachFlower.id : id);
@@ -1448,17 +1457,20 @@ function refreshInventory() {
   renderInventory(el, inventoryItems(), ownsGear, equipped, equipTool, berries, health);
   el('bagAdminRing').hidden = !adminRing;
   el('bagFeed').disabled = !fishing.fish || fishFed >= 8;
-  el('bagFeed').textContent = 'Feed Alvin a fish · ' + fishing.fish + ' fish · ' + Math.round((1 + fishFed / 4) * 100) + '% size';
+  const growthTimer = fishFed ? ' · ' + Math.ceil(alvinGrowthRemaining / 60) + ' active min left' : '';
+  el('bagFeed').textContent = 'Feed Alvin a fish · ' + fishing.fish + ' fish · ' + Math.round((1 + fishFed / 4) * 100) + '% size' + growthTimer;
 }
 
 function feedAlvin() {
   if (!playing || !inventoryOpen || fishing.fish < 1 || fishFed >= 8) return;
   fishing.fish--;
   fishFed++;
+  alvinGrowthRemaining = ALVIN_GROWTH_SECONDS;
   notice = alvinCatnipVisits >= 3
-    ? 'Alvin grew and feels stronger in a fight.'
-    : 'Alvin grew. Three catnip visits unlock his battle strength.';
+    ? 'Alvin grew for 10 minutes of play and feels stronger in a fight.'
+    : 'Alvin grew for 10 minutes of play. Three catnip visits unlock his battle strength.';
   noticeUntil = animationClock + 2.6;
+  sendPose(true);
   refreshInventory();
   updateNotes();
   saveCamp();
@@ -2099,6 +2111,15 @@ function frame(time) {
     if (player.moving) gait += dt * 15;
     updateSwing(dt);
     [particles, floaters] = advanceGatheringEffects(particles, floaters, dt);
+    if (fishFed > 0) {
+      alvinGrowthRemaining = Math.max(0, alvinGrowthRemaining - dt);
+      if (alvinGrowthRemaining === 0) {
+        fishFed = 0;
+        sendPose(true);
+        refreshInventory();
+        saveCamp();
+      }
+    }
     phaseClock += dt;
     if (phaseClock >= DAY_LENGTH) {
       phaseClock -= DAY_LENGTH;
