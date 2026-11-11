@@ -1,8 +1,8 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
-  groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs?v=13';
+  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=14';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=10';
-import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=10';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberTrees, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=11';
+import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=11';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
@@ -20,6 +20,7 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
 import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=17';
 
+const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const el = id => document.getElementById(id);
 const world = el('world');
 const ctx = world.getContext('2d');
@@ -590,6 +591,7 @@ function paint() {
     paintCampFacilities(ctx, { berryPlots, growMs:BERRY_GROW_MS, catnipUnlocked,
       catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && ivoQuest }, animationClock);
   } else if (region === 'crownwood') {
+    paintCrownwoodPines(ctx, tools.chopped);
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
     shadow(barry.x, barry.y, 29);
     ctx.save();
@@ -860,6 +862,8 @@ function updatePrompt() {
   if (region === 'camp') {
     items.push(...timberTrees.filter(tree => !tools.chopped.includes(tree.id)));
     items.push(...berryBushes.filter(bush => !pickedBushes.has(bush.id)));
+  } else if (region === 'crownwood') {
+    items.push(...crownwoodTimberTrees.filter(tree => !tools.chopped.includes(tree.id)));
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const label = current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
@@ -1708,7 +1712,7 @@ function gather(item) {
   } else if (item === flint) {
     tools.flint = true;
     notice = 'Flint picked up';
-  } else if (timberTrees.includes(item)) {
+  } else if (allTimberTrees.includes(item)) {
     tools.chopped.push(id);
     notice = 'Wood gathered';
     puff(particles, x, y - 32, '#c4b98b');
@@ -1788,7 +1792,7 @@ function interact() {
   }
   const id = item.id;
   const mineral = crystalNodes.includes(item) || oreNodes.includes(item);
-  const tree = timberTrees.includes(item);
+  const tree = allTimberTrees.includes(item);
   if (mineral || tree) {
     const required = mineral ? 'pickaxe' : 'hatchet';
     if (equipped === required) {
@@ -2433,6 +2437,11 @@ window.addEventListener('keydown', event => {
     event.preventDefault();
     heldKeys.add(key);
   }
+  if ((key === 'arrowdown' || key === 's') && !event.repeat) {
+    event.preventDefault();
+    dropThrough(player, terrain);
+    return;
+  }
   if (jumpKeys.has(key) && (key !== ' ' || !event.target.closest('button'))) {
     event.preventDefault();
     if (!event.repeat) jump(player);
@@ -2465,6 +2474,7 @@ for (const [id, direction] of [['left', -1], ['right', 1]]) {
   };
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, release));
 }
+el('down').addEventListener('click', () => { if (controlsActive()) dropThrough(player, terrain); });
 el('jump').addEventListener('pointerdown', event => {
   event.preventDefault();
   if (controlsActive()) jump(player);
