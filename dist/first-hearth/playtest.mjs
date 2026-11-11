@@ -1569,7 +1569,10 @@ function openAdminPanel(fromRing = false) {
   openDialogue('admin-tools');
   el('line').textContent = fromRing
     ? 'Use the test tools here, or return to your ring to teleport.'
-    : 'Test mode is on. This adventure will not submit a high score.';
+    : 'Claim your ring or choose a test action.';
+  el('admin-copy').textContent = testRun
+    ? 'This saved adventure is marked as a test run. Its time will not go on the public board.'
+    : 'Claiming the ring and teleporting leave your score eligible. Using item grants or boss-test tools marks the run as a test.';
   el('noticeboard-panel').hidden = false;
   el('notice-form').hidden = true;
   el('notice-list').hidden = true;
@@ -1577,7 +1580,7 @@ function openAdminPanel(fromRing = false) {
   el('admin-claim-ring').hidden = adminRing;
   el('notice-status').textContent = testRun
     ? 'This adventure is marked as a test run.'
-    : 'Claiming the ring and teleporting do not alter your game progress.';
+    : 'Ring access is ready. No test tools have been used.';
 }
 
 function isStrikeTool(id) {
@@ -2262,7 +2265,6 @@ el('notice-form').addEventListener('submit', async event => {
   const text = el('notice-text').value.trim();
   if (!text) return;
   if (text.toLowerCase() === 'alabaster') {
-    testRun = true;
     el('notice-text').value = '';
     saveCamp();
     openAdminPanel(false);
@@ -2290,6 +2292,7 @@ function debugStatus(message) {
   updateNotes();
   saveCamp();
   updatePrompt();
+  el('admin-copy').textContent = 'This saved adventure is marked as a test run. Its time will not go on the public board.';
   el('notice-status').textContent = message + ' · Test run; no high score will be posted.';
 }
 
@@ -2371,7 +2374,9 @@ el('admin-close').addEventListener('click', () => {
   }
   el('notice-form').hidden = false;
   el('notice-list').hidden = false;
-  el('notice-status').textContent = 'This adventure remains marked as a test run.';
+  el('notice-status').textContent = testRun
+    ? 'This adventure remains marked as a test run.'
+    : 'Ring access is ready. No test tools have been used.';
 });
 el('pause').addEventListener('click', () => setPause(!paused));
 el('resume').addEventListener('click', () => setPause(false));
