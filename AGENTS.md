@@ -13,6 +13,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 | Embervein Mine and beach | `mine.mjs`, `mine-art.mjs`, `beach.mjs`, `beach-art.mjs` |
 | Hollow King and endings | `king.mjs`, `king-art.mjs`, `time-board.mjs`, `village.mjs` |
 | Hut and idle features | `camp-idle.mjs` |
+| Public presence and shared doors | `presence.mjs`, with pose drawing in `playtest.mjs` |
 
 ## Important runtime conventions
 
@@ -27,6 +28,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 - `interact()` handles movement, gathering, gates, ladders, and drops before dispatching ordinary landmark dialogue through `interactionHandlers`. Keep exceptional interactions ahead of the handler table.
 - NPC IDs in landmarks, dialogue, sprite keys, and camp requests are `lyss`, `barry`, `hugh`, and `dorrin`. The stored `hughQuest` records accepting Hugh's gemstone request; a spent tideglass records the repaired Embervein lift. Rootdeep's lift follows `rootdeepQuest === 'complete'` without a second flag.
 - `interact()` recalculates the nearest target at activation time. Keep NPC talk handlers ahead of swing and gathering guards so a stale attack target cannot block dialogue.
+- `presence.mjs` owns the public socket, reconnect timer, peer poses, player ID, and shared-door set. `playtest.mjs` supplies current game state and draws peer sprites; keep callbacks from presence focused on UI refreshes.
 - The public site deploys from the repository's `main` branch. Do not change site access or publish through another destination without an explicit request.
 
 ## Playtest ownership

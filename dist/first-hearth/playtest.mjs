@@ -21,6 +21,7 @@ import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
 import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
+import { createPresence } from './presence.mjs?v=1';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const el = id => document.getElementById(id);
@@ -129,12 +130,6 @@ let savedFooting = { x: player.x, ground: player.ground };
 let publicName = 'Adventurer';
 let onlineEnabled = true;
 try { onlineEnabled = localStorage.getItem(PRESENCE_KEY) !== 'solo'; } catch { /* Online play still works. */ }
-let presenceSocket = null;
-let presenceRetry = null;
-let lastPoseAt = 0;
-let lastPose = '';
-const peers = new Map();
-const sharedDoors = new Set();
 
 const regions = {
   camp: {
@@ -260,6 +255,24 @@ const conversations = {
   }
 };
 
+const presence = createPresence({
+  getRegion: () => region,
+  getPose: () => ({
+    region, x: Math.round(player.x * 10) / 10, y: Math.round(player.y * 10) / 10,
+    direction: player.direction, moving: controlsActive() && player.moving,
+    gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100,
+    avatar, tool: equipped, helmet: tools.helmet, name: publicName
+  }),
+  isOnline: () => onlineEnabled,
+  isPlaying: () => playing,
+  isHidden: () => document.hidden,
+  onChange: updatePresenceButton,
+  onDoorsChange: () => { updatePrompt(); updateNotes(); },
+  onNotesChange: () => { if (playing) updateNotes(); }
+});
+const peers = presence.peers;
+const sharedDoors = presence.sharedDoors;
+
 function loadImage(url) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -366,131 +379,24 @@ function startWave() {
 }
 
 function openSharedDoor(door) {
-  if (sharedDoors.has(door)) return;
-  sharedDoors.add(door);
-  if (presenceSocket?.readyState === WebSocket.OPEN) {
-    sendPose(true);
-    presenceSocket.send(JSON.stringify({ type: 'open-door', door }));
-  }
-  updatePrompt();
-  updateNotes();
+  presence.openDoor(door);
 }
 
 function updatePresenceButton() {
   const button = el('presence-toggle');
-  const connected = presenceSocket?.readyState === WebSocket.OPEN;
+  const connected = presence.isConnected();
   button.textContent = onlineEnabled ? connected ? 'Public · ' + (peers.size + 1) : 'Public…' : 'Solo';
   button.setAttribute('aria-pressed', String(onlineEnabled));
   button.title = onlineEnabled ? 'Public world. Switch to solo play.' : 'Solo play. Switch to the public world.';
 }
 
 function disconnectPresence(reason = 'Leaving world') {
-  clearTimeout(presenceRetry);
-  presenceRetry = null;
-  const socket = presenceSocket;
-  presenceSocket = null;
-  if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, reason);
-  peers.clear();
-  sharedDoors.clear();
-  lastPose = '';
-  updatePresenceButton();
+  presence.disconnect(reason);
   if (playing) updateNotes();
 }
 
-function addPeer(id, pose) {
-  if (typeof id !== 'string' || id === presencePlayerId() || !pose || pose.region !== region) return;
-  const existing = peers.get(id);
-  peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y, leftAt: null });
-  updatePresenceButton();
-}
-
-let cachedPresenceId = null;
-function presencePlayerId() {
-  if (cachedPresenceId) return cachedPresenceId;
-  const key = 'first-hearth:presence-player:v1';
-  try {
-    let id = sessionStorage.getItem(key);
-    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-      id = crypto.randomUUID();
-      sessionStorage.setItem(key,id);
-    }
-    cachedPresenceId = id;
-  } catch { cachedPresenceId = crypto.randomUUID(); }
-  return cachedPresenceId;
-}
-
-function connectPresence() {
-  if (!onlineEnabled || !playing || document.hidden || presenceSocket) return;
-  const url = new URL('/first-hearth/api/presence', location.href);
-  url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  url.searchParams.set('player',presencePlayerId());
-  let socket;
-  try { socket = new WebSocket(url.href); } catch { updatePresenceButton(); return; }
-  presenceSocket = socket;
-  updatePresenceButton();
-  socket.onopen = () => {
-    if (socket !== presenceSocket) return;
-    lastPoseAt = 0;
-    sendPose(true);
-    updatePresenceButton();
-  };
-  socket.onmessage = event => {
-    if (socket !== presenceSocket) return;
-    let message;
-    try { message = JSON.parse(event.data); } catch { return; }
-    if (message.type === 'ready' && Array.isArray(message.doors)) {
-      sharedDoors.clear();
-      for (const door of message.doors) {
-        if (door === 'mine-lift' || door === 'village-gate') sharedDoors.add(door);
-      }
-      updatePrompt();
-      updateNotes();
-    } else if (message.type === 'door-open' && (message.door === 'mine-lift' || message.door === 'village-gate')) {
-      sharedDoors.add(message.door);
-      updatePrompt();
-      updateNotes();
-    } else if (message.type === 'snapshot' && Array.isArray(message.peers)) {
-      peers.clear();
-      for (const peer of message.peers) addPeer(peer.id, peer.pose);
-      updatePresenceButton();
-    } else if (message.type === 'pose') addPeer(message.id, message.pose);
-    else if (message.type === 'left') {
-      const peer = peers.get(message.id);
-      if (message.temporary && peer) peer.leftAt = Date.now();
-      else peers.delete(message.id);
-      updatePresenceButton();
-    }
-  };
-  socket.onclose = () => {
-    if (socket !== presenceSocket) return;
-    presenceSocket = null;
-    peers.clear();
-    sharedDoors.clear();
-    updatePresenceButton();
-    updateNotes();
-    if (onlineEnabled && playing && !document.hidden)
-      presenceRetry = setTimeout(() => { presenceRetry = null; connectPresence(); }, 2500);
-  };
-  socket.onerror = () => { if (socket.readyState < WebSocket.CLOSING) socket.close(); };
-}
-
-function sendPose(force = false) {
-  if (presenceSocket?.readyState !== WebSocket.OPEN || !playing) return;
-  const now = performance.now();
-  if (!force && now - lastPoseAt < 95) return;
-  const pose = {
-    region, x: Math.round(player.x * 10) / 10, y: Math.round(player.y * 10) / 10,
-    direction: player.direction, moving: controlsActive() && player.moving,
-    gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100, avatar, tool: equipped,
-    helmet: tools.helmet, name: publicName
-  };
-  const message = JSON.stringify({ type: 'pose', pose });
-  if (force || message !== lastPose || now - lastPoseAt > 1200) {
-    presenceSocket.send(message);
-    lastPose = message;
-    lastPoseAt = now;
-  }
-}
+function connectPresence() { presence.connect(); }
+function sendPose(force = false) { presence.sendPose(force); }
 
 function paintPeers() {
   for (const [id, peer] of peers) {
@@ -1143,7 +1049,7 @@ function enterRegion(next, footing) {
   catnipLeap = null;
   catCombat = null;
   tracker.length = 0;
-  peers.clear();
+  presence.clearPeers();
   updatePresenceButton();
   sendPose(true);
   const [firstWord, secondWord] = area.title;
