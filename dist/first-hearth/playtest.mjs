@@ -987,7 +987,7 @@ function begin(save) {
   connectPresence();
   recordJournalEntry('first-steps', { quiet: true });
   recordJournalEntry('controls', { quiet: true });
-  if (composure < 100) recordJournalEntry('composure', { quiet: true });
+  recordJournalEntry('composure', { quiet: true });
   saveCamp();
   if (region === 'king' && victory && !victory.ending) {
     openDialogue('fallen-crown');
