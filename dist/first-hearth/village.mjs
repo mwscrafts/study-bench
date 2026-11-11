@@ -9,13 +9,14 @@ const spot = (surface, id, x, label) => ({ id, x, y: surfaceAt(surface,x), radiu
 export const villageLandmarks = [
   spot(villageFloor,'village-return',115,'Return to King’s Grounds'),
   spot(villageFloor,'restored-king',1300,'Talk to the King'),
-  spot(villageFloor,'celebration-house',2020,'Enter the celebration house')
+  spot(villageFloor,'celebration-house',2020,'Enter the celebration house'),
+  spot(villageFloor,'village-beyond',2655,'Follow the path beyond the village')
 ];
 export const houseLandmarks = [
   spot(houseFloor,'house-return',95,'Step outside'),
   spot(houseFloor,'home-welcome',715,'Talk to the neighbors')
 ];
-export const villageLocation = player => player.x < 900 ? 'Lantern Lane' : player.x < 1800 ? 'Village Square' : 'Homecoming House';
+export const villageLocation = player => player.x < 900 ? 'Lantern Lane' : player.x < 1800 ? 'Village Square' : player.x < 2460 ? 'Homecoming House' : 'Old East Path';
 export const houseLocation = () => 'Homecoming';
 
 function person(ctx,x,y,coat) {
@@ -46,6 +47,21 @@ export function buildVillageArt() {
   }
   poly(ctx,[...villageFloor.points,[2760,900],[0,900]],'#65745c');
   path(ctx,villageFloor.points,'#b9b18b',6);
+  // The far-right path hints at a wider world; the gate has no destination yet.
+  poly(ctx,[[2450,633],[2550,613],[2760,617],[2760,671],[2538,661]],'#82785e');
+  path(ctx,[[2480,631],[2580,625],[2760,632]],'#c0a97a',20);
+  path(ctx,[[2490,638],[2600,633],[2760,638]],'#a48e68',3);
+  poly(ctx,[[2579,637],[2583,481],[2605,454],[2633,447],[2661,454],[2684,481],[2688,637]],'#665345');
+  poly(ctx,[[2600,637],[2603,487],[2620,466],[2633,462],[2648,466],[2665,487],[2667,637]],'#33443d');
+  path(ctx,[[2582,500],[2605,470],[2633,459],[2660,470],[2680,500]],'#b69b6c',8);
+  path(ctx,[[2596,520],[2671,520]],'#987c59',6);
+  for(const x of [2592,2675]) {
+    path(ctx,[[x,625],[x,507]],'#806448',7);
+    path(ctx,[[x-10,510],[x+10,510]],'#c1a574',5);
+  }
+  // Distant hills beyond the open frame make it read as an onward route, not a closed door.
+  poly(ctx,[[2604,545],[2626,522],[2643,540],[2662,514],[2680,547]],'#74846a');
+  poly(ctx,[[2618,552],[2640,530],[2660,553],[2674,535],[2681,562]],'#506e5d');
   for (const [x,color] of [[580,'#5f6654'],[760,'#926b61'],[1330,'#776793'],[1530,'#5c7765'],[1850,'#a47c5e'],[2480,'#566d81']]) {
     person(ctx,x,surfaceAt(villageFloor,x),color);
   }

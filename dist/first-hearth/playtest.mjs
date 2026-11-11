@@ -20,7 +20,7 @@ import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
 import { paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
-import { paintRestoredKing } from './village.mjs?v=11';
+import { paintRestoredKing } from './village.mjs?v=12';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=5';
@@ -1803,6 +1803,7 @@ const interactionHandlers = {
   'alvin-bed': petAlvin,
   'hut-decor': decorateHutDialogue,
   'rootdeep-commonkeeper': glowcapKeeperDialogue,
+  'village-beyond': () => setDialogue("Don't worry... You'll get to explore here soon."),
   'night-altar': altarDialogue,
   'fallen-crown': endingDialogue
 };

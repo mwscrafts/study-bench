@@ -14,7 +14,7 @@ import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=1
 import { buildHearthArt } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation } from './king.mjs?v=12';
 import { buildKingArt } from './king-art.mjs?v=13';
-import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt } from './village.mjs?v=11';
+import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt } from './village.mjs?v=12';
 import { hutTerrain, hutLandmarks, hutLocation, buildHutArt } from './camp-idle.mjs?v=18';
 
 export const regions = {
@@ -108,6 +108,7 @@ export const conversations = {
   'rootdeep-lanternkeeper': { name: 'Lantern Keeper', role: 'ROOTDEEP SETTLER', greeting: 'Welcome in. The lanterns stay lit through every shift. This landing is safe, even when the roots below begin to stir.' },
   'rootdeep-stonecarver': { name: 'Stonecarver', role: 'ROOTDEEP SETTLER', greeting: 'The galleries split around the old iron veins. Look for the timber braces; the ore lies on the side branches.' },
   'rootdeep-commonkeeper': { name: 'Common Keeper', role: 'ROOTDEEP SETTLER', greeting: 'There’s always room by the fire. The miners used to bring Glowcaps here to keep the lamps burning. At night, the roots pulse with the same violet light the shadows carry. Some say the blight started where the old roots touch stone.' },
+  'village-beyond': { name: 'The eastern path', role: 'BEYOND THE VILLAGE' },
   'deep-seal': { name: 'The Deep Seal', role: 'ROOTDEEP' },
   lodestone: { name: 'Old lodestone', role: 'ANCIENT MARKINGS' },
   'rootdeep-entrance': { name: 'Sealed Rootdeep entrance', role: 'CROWNWOOD' },
