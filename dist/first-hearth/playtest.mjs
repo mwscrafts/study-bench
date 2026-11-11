@@ -1556,11 +1556,12 @@ function adminTeleportDialogue() {
     ['Alder Camp Hut', 'hut', { x: 480, ground: 'hut-floor' }]
   ];
   openDialogue('admin-ring');
-  setDialogue('Choose a safe arrival point. Teleporting leaves your supplies and quest progress as they are.',
-    destinations.map(([label, destination, footing]) => [label, () => {
-      closeDialogue();
-      enterRegion(destination, footing);
-    }]));
+  const choices = destinations.map(([label, destination, footing]) => [label, () => {
+    closeDialogue();
+    enterRegion(destination, footing);
+  }]);
+  choices.push(['Back to ring', openAdminRing]);
+  setDialogue('Choose a safe arrival point. Teleporting leaves your supplies and quest progress as they are.', choices);
 }
 
 function openAdminPanel(fromRing = false) {
