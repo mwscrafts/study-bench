@@ -1,6 +1,6 @@
 import { surfaceAt } from './terrain.mjs';
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
-import { crownwoodTerrain, crownwoodLandmarks, crystalNodes } from './crownwood.mjs?v=09';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=11';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;
 const bridge = crownwoodTerrain.byId.get('rope-bridge');
@@ -137,6 +137,21 @@ export function buildCrownwoodArt() {
   path(ctx,[[gateX-33,gateY],[gateX-33,gateY-63],[gateX-17,gateY-85],[gateX+26,gateY-83],[gateX+41,gateY-59],[gateX+41,gateY]],'#53655b',14);
   path(ctx,[[gateX-41,gateY-54],[gateX-21,gateY-84],[gateX+27,gateY-85]],'#a6b39b',3);
   return canvas;
+}
+
+export function paintCrownwoodPines(ctx, chopped = []) {
+  for (const tree of crownwoodTimberTrees) {
+    const { x, y, id } = tree;
+    if (chopped.includes(id)) {
+      poly(ctx, [[x-19,y],[x-14,y-16],[x+12,y-17],[x+20,y]], '#776044');
+      path(ctx, [[x-14,y-16],[x+12,y-17]], '#c6a873', 4);
+      continue;
+    }
+    pine(ctx, x, y, 142, '#324f41', '#617a59');
+    ctx.fillStyle = '#84694a';
+    ctx.fillRect(x-9,y-39,18,39);
+    path(ctx, [[x-8,y-27],[x+8,y-27]], '#e5bb74', 5);
+  }
 }
 
 export function paintCrownwoodWater(ctx, clock) {
