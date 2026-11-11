@@ -2,7 +2,7 @@ import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, movePlayer, nearbyLandmark } from './terrain.mjs?v=13';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=10';
-import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=09';
+import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow } from './crownwood-art.mjs?v=10';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
@@ -1099,7 +1099,7 @@ function setDialogue(line, options = []) {
   (choices.firstElementChild ?? el('close-dialogue')).focus({ preventScroll: true });
 }
 
-const flowerHint = 'One grows here by the fire, one on Three Boughs inside Crownwood, and one on the raised ledge at Driftwood Cove, on the beach.';
+const flowerHint = 'The lilies answer to three kinds of place: warm ground near camp, the high green canopy, and salt air along the shore. Look carefully; I will not spoil their hiding places.';
 
 function setQuest(state) {
   quest = state;
