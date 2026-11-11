@@ -23,6 +23,7 @@ export const mineLandmarks = [
   at(floor, 'mine-return', 167, 'Return to Alder Camp', 90),
   hugh,
   netChest,
+  at(floor, 'lodestone-mine', 2915, 'Inspect the old lodestone', 70),
   at(floor, 'mine-lift', 4510, 'Inspect the lift', 100)
 ];
 

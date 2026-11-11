@@ -27,6 +27,7 @@ export const crownwoodLandmarks = [
   spot(bridge, 'barry', 1900, 'Talk to Barry', 94),
   { ...spot(bridge, 'mist-drop', 3380, 'Drop to the ledge below', 84), ground: bridge.id },
   { ...spot(mist, 'first-hearth', 3690, 'Enter behind the falls'), ground: mist.id },
+  { ...spot(mist, 'lodestone-canopy', 3930, 'Inspect the old lodestone', 70), ground: mist.id },
   spot(crown, 'king-trail', 5530, 'Enter the King’s Grounds', 100)
 ];
 

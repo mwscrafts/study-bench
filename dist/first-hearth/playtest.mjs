@@ -1,13 +1,13 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=15';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
-import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=12';
-import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
-import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=14';
-import { paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=03';
+import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
+import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=13';
+import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=15';
+import { paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=04';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes } from './rootdeep.mjs?v=3';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
-import { beachFlower, readFishing, castNet } from './beach.mjs';
+import { beachFlower, readFishing, castNet } from './beach.mjs?v=1';
 import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
@@ -22,9 +22,9 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { paintRestoredKing } from './village.mjs?v=11';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=3';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=4';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
-  paintWave, paintOpenLift } from './canvas-art.mjs?v=1';
+  paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const el = id => document.getElementById(id);
@@ -53,6 +53,11 @@ let terrain = campTerrain;
 let crystals = new Set();
 let rootglass = new Set();
 let rootdeepQuest = 'unoffered';
+let rootKeyQuest = 'unoffered';
+let rootKeyGuidance = false;
+let hasRootKey = false;
+let activatedLodestones = new Set();
+let alvinSignalUntil = 0;
 // Rootdeep uses one continuous ladder shaft; this flag keeps gravity off while attached.
 let rootdeepClimbing = false;
 let iron = new Set();
@@ -280,6 +285,29 @@ function shadow(x, y, width) {
   ctx.fill();
 }
 
+function paintRegionalLodestones() {
+  for (const stone of regions[region].landmarks.filter(item => item.id.startsWith('lodestone-'))) {
+    paintLodestone(ctx, stone, activatedLodestones.has(stone.id), animationClock);
+  }
+}
+
+function paintRootdeepLock() {
+  if (hasRootKey || sharedDoors.has('rootdeep-entrance')) return;
+  const stone = crownwoodLandmarks.find(item => item.id === 'rootdeep-entrance');
+  const x = stone.x, y = stone.y - 4;
+  ctx.save();
+  ctx.strokeStyle = '#6e8072'; ctx.lineWidth = 11; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x - 56, y - 8); ctx.lineTo(x - 56, y - 73);
+  ctx.moveTo(x + 56, y - 8); ctx.lineTo(x + 56, y - 73);
+  ctx.moveTo(x - 56, y - 65); ctx.lineTo(x + 56, y - 65);
+  ctx.moveTo(x - 56, y - 35); ctx.lineTo(x + 56, y - 35);
+  ctx.moveTo(x - 56, y - 5); ctx.lineTo(x + 56, y - 5); ctx.stroke();
+  ctx.fillStyle = '#e4c989'; ctx.strokeStyle = '#263a32'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y - 49, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillRect(x - 3, y - 44, 6, 14);
+  ctx.restore();
+}
+
 function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
@@ -343,6 +371,8 @@ function paint() {
     crystalNodes.forEach(node => {
       if (!crystals.has(node.id)) paintCrystal(ctx, node, animationClock);
     });
+    paintRegionalLodestones();
+    paintRootdeepLock();
   } else if (region === 'rootdeep') {
     paintRootdeepLights(ctx, camera, animationClock, night);
     for (const node of rootglassNodes) if (!rootglass.has(node.id)) paintRootglass(ctx,node,animationClock);
@@ -361,10 +391,12 @@ function paint() {
       if (!iron.has(node.id)) paintOre(ctx, node, animationClock);
     }
     if (!tools.flint) paintFlint(ctx);
+    paintRegionalLodestones();
     shadow(hugh.x, hugh.y, 26);
     drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, 105);
   } else if (region === 'beach') {
     paintBeachDetails(ctx, camera, animationClock, night, casting);
+    paintRegionalLodestones();
   } else if (region === 'hearth') {
     paintHearthDetails(ctx, animationClock, night, hearthLearned);
   } else if (region === 'king') {
@@ -514,6 +546,10 @@ function updateCat(dt) {
   const follow = 1 - Math.exp(-dt * 14);
   cat.x += (targetX - cat.x) * follow;
   cat.y += (targetY - cat.y) * follow;
+  if (animationClock < alvinSignalUntil) {
+    const t = 1 - (alvinSignalUntil - animationClock) / .95;
+    cat.y -= Math.max(0, Math.sin(Math.PI * t)) * 43;
+  }
   const movement = cat.x - oldX;
   if (Math.abs(movement) > .35) cat.direction = Math.sign(movement);
   cat.gait += Math.abs(movement) * .11;
@@ -605,7 +641,8 @@ function canSleepAtBed() {
 }
 
 function updatePrompt() {
-  const items = currentLandmarks().filter(item => !item.ground || item.ground === player.ground);
+  const items = currentLandmarks().filter(item => (!item.ground || item.ground === player.ground) &&
+    !(item.id.startsWith('lodestone-') && activatedLodestones.has(item.id)));
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
   if (region === 'rootdeep') items.push(...rootglassNodes.filter(node => !rootglass.has(node.id)));
@@ -623,6 +660,7 @@ function updatePrompt() {
   const onLadder = nearRootdeepLadder() || rootdeepClimbing;
   const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
     current?.id === 'hut-bed' && !canSleepAtBed() ? 'Rest by the window' :
+    current?.id === 'rootdeep-entrance' && !hasRootKey && !sharedDoors.has('rootdeep-entrance') ? 'Sealed Rootdeep entrance' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
@@ -663,10 +701,13 @@ function updateNotes() {
   const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : 'Ask Lyss for a hatchet';
-  el('quest-tracker').textContent = region === 'rootdeep'
+  const rootKeyNote = rootKeyQuest === 'ready' ? 'Return to Hugh for the Root Key'
+    : rootKeyQuest === 'accepted' ? (rootKeyGuidance ? 'Old lodestones · ' + activatedLodestones.size + ' / 3'
+      : 'Ask Lyss about Hugh’s old symbols') : '';
+  el('quest-tracker').textContent = rootKeyNote || (region === 'rootdeep'
     ? (rootdeepQuest === 'complete' ? 'Rootglass lift repaired' : 'Rootglass · ' + rootglass.size + ' / 3')
     : region === 'mine' ? mineLoot
-    : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue;
+    : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
   el('tool-notes').textContent = region === 'beach'
     ? [hasNet ? 'Casting net' : 'Find Hugh Mungus’s casting net', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
@@ -723,12 +764,13 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 16, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 17, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
-      rootglass: [...rootglass], rootdeepQuest, iron: [...iron],
+      rootglass: [...rootglass], rootdeepQuest, rootKeyQuest, rootKeyGuidance, hasRootKey,
+      activatedLodestones: [...activatedLodestones], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
@@ -768,6 +810,13 @@ function begin(save) {
   crystals = savedKnownIds(save?.crystals, crystalNodes);
   rootglass = savedKnownIds(save?.rootglass, rootglassNodes);
   rootdeepQuest = savedQuest(save?.rootdeepQuest);
+  rootKeyQuest = ['accepted','ready','complete','declined'].includes(save?.rootKeyQuest) ? save.rootKeyQuest : 'unoffered';
+  rootKeyGuidance = save?.rootKeyGuidance === true;
+  activatedLodestones = new Set(knownLandmarks.filter(item => item.id.startsWith('lodestone-') &&
+    Array.isArray(save?.activatedLodestones) && save.activatedLodestones.includes(item.id)).map(item => item.id));
+  hasRootKey = save?.hasRootKey === true || rootKeyQuest === 'complete' ||
+    save?.region === 'rootdeep' || (Array.isArray(save?.visited) && save.visited.includes('rootdeep-entrance'));
+  if (hasRootKey) rootKeyQuest = 'complete';
   iron = savedKnownIds(save?.iron, oreNodes);
   ironStock = Number.isSafeInteger(save?.ironStock) ? Math.max(0,save.ironStock) : iron.size;
   shadowStock = Number.isSafeInteger(save?.shadowStock) ? Math.max(0,save.shadowStock) : 0;
@@ -804,7 +853,7 @@ function begin(save) {
   el('inventoryButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1081,6 +1130,17 @@ function petAlvin() {
 
 function lyssDialogue() {
   if (finishCampRequest('lyss')) return;
+  const symbolOption = ['Hugh sent me about some old symbols', () => {
+    rootKeyGuidance = true;
+    updateNotes(); saveCamp();
+    setDialogue('I remember three stones that answer one another. One listens to the salt wind, one rests where the canopy hangs above the falls, and one is close to the mine’s deep iron hum. I can’t place them exactly. Alvin may hear their old song better than we can.', [['Back', lyssDialogue]]);
+  }];
+  const withSymbols = options => rootKeyQuest === 'accepted' ? [...options, symbolOption] : options;
+  if (rootKeyQuest === 'accepted' && !rootKeyGuidance) {
+    setDialogue('Hugh sent you to ask about old markings? I have seen stones like that, though never understood them.',
+      [symbolOption, ['Not now', lyssDialogue]]);
+    return;
+  }
   const tool = [tools.hatchet ? 'How do I make a pickaxe?' : 'Can I get a gathering tool?', () => {
     if (!tools.hatchet) {
       tools.hatchet = true;
@@ -1096,29 +1156,29 @@ function lyssDialogue() {
     [['Back', lyssDialogue]])];
   if (quest === 'complete') {
     if (tools.flowerCrown) {
-      setDialogue('The crown is yours now. Please be careful. Please save our king.', [tool, paths]);
+      setDialogue('The crown is yours now. Please be careful. Please save our king.', withSymbols([tool, paths]));
     } else if (hearthLearned) {
-      setDialogue('You found the ember box. I asked for those three flowers to weave a crown, just in case the old story was true. It can draw the shadows out of his mind.', [
+      setDialogue('You found the ember box. I asked for those three flowers to weave a crown, just in case the old story was true. It can draw the shadows out of his mind.', withSymbols([
         ['Accept the flower crown', () => {
           tools.flowerCrown = true;
           updateNotes();
           saveCamp();
           setDialogue('Please be careful. Please… save our king. Alvin, stay close to them.');
-        }], tool, paths]);
+        }], tool, paths]));
     } else {
-      setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there. Come back and tell me what you find.', [tool, paths]);
+      setDialogue('That brass key opens an old box. If you find a place where the fire still burns behind falling water, try it there. Come back and tell me what you find.', withSymbols([tool, paths]));
     }
   } else if (quest === 'accepted' && collected.size === knownFlowers.length) {
-    setDialogue('Three dusklilies! I used to pick these on the way home. Here’s the brass key I promised.', [
+    setDialogue('Three dusklilies! I used to pick these on the way home. Here’s the brass key I promised.', withSymbols([
       ['Give Lyss the 3 dusklilies', () => {
         setQuest('complete');
         setDialogue('Brass key received. Keep it for the old box behind falling water. Alvin, see if you can keep them out of trouble.');
-      }], tool, paths]);
+      }], tool, paths]));
   } else if (quest === 'accepted') {
-    setDialogue('You’ve found ' + collected.size + ' of the 3 dusklilies. ' + flowerHint, [tool, paths]);
+    setDialogue('You’ve found ' + collected.size + ' of the 3 dusklilies. ' + flowerHint, withSymbols([tool, paths]));
   } else {
     const greeting = quest === 'declined' ? 'Changed your mind? ' : 'Come warm up. Alvin already has. ';
-    setDialogue(greeting + 'Bring me 3 dusklilies and I’ll give you a brass key. ' + flowerHint + ' Will you help?', [
+    setDialogue(greeting + 'Bring me 3 dusklilies and I’ll give you a brass key. ' + flowerHint + ' Will you help?', withSymbols([
       ['Yes, I’ll find them', () => {
         setQuest('accepted');
         lyssDialogue();
@@ -1126,7 +1186,7 @@ function lyssDialogue() {
       ['No, maybe later', () => {
         setQuest('declined');
         setDialogue('Fair enough. The fire’s here whenever you need it.', [tool, paths]);
-      }], tool, paths]);
+      }], tool, paths]));
   }
 }
 
@@ -1180,7 +1240,40 @@ function dorrinDialogue() {
 function hughDialogue() {
   if (finishCampRequest('hugh')) return;
   if (fishing.tideglass === 'spent') {
-    setDialogue('The lift is running. It goes straight back to Lyss’s clearing. Step aboard at the far end of the mine.');
+    if (hasRootKey || rootKeyQuest === 'complete') {
+      setDialogue('The lift is running. It goes straight back to Lyss’s clearing. Step aboard at the far end of the mine. The Root Key should open the sealed road at the far edge of Crownwood.', [
+        ['Ask about the old signal', () => setDialogue('Good. Someone below is waiting for a way through. I only hope we’re not too late.', [['Back', hughDialogue]])]
+      ]);
+      return;
+    }
+    if (rootKeyQuest === 'ready') {
+      setDialogue('You heard it too? Something answered from beneath the roots. You’ve earned this. Take the Root Key and open the old way.', [
+        ['Take the Root Key', () => {
+          hasRootKey = true; rootKeyQuest = 'complete';
+          updateNotes(); updatePrompt(); saveCamp();
+          setDialogue('The Root Key is yours. The entrance lies at the far end of Crownwood’s lower trail. Go carefully—and if you meet anyone down there, tell them Hugh sent you.');
+        }],
+        ['Not yet', () => setDialogue('I’ll keep it safe until you’re ready.', [['Back', hughDialogue]])]
+      ]);
+      return;
+    }
+    if (rootKeyQuest === 'accepted') {
+      setDialogue(rootKeyGuidance
+        ? 'Have the three old stones answered yet? I can feel the mine humming when one wakes. ' + activatedLodestones.size + ' of 3 have answered.'
+        : 'Lyss knows the old markings better than I do. Ask her about the stones, then follow what Alvin hears.', [['Back', hughDialogue]]);
+      return;
+    }
+    setDialogue('The lift is running again. Now that you’ve proven yourself, there’s something else I’ve been meaning to ask. A signal from below—someone down there may need a hand. I probably shouldn’t involve you, but… would you help me find what is calling?', [
+      ['Yes, I’ll help', () => {
+        rootKeyQuest = 'accepted'; rootKeyGuidance = false; activatedLodestones.clear();
+        updateNotes(); saveCamp();
+        setDialogue('Thank you. Ask Lyss about the old symbols. She remembers more of the forest’s stories than I do.');
+      }],
+      ['No, maybe later', () => {
+        rootKeyQuest = 'declined'; updateNotes(); saveCamp();
+        setDialogue('I understand. I’ll keep listening for that signal. Come back if you change your mind.');
+      }]
+    ]);
     return;
   }
   if (fishing.tideglass === 'caught') {
@@ -1440,6 +1533,7 @@ function inventoryItems() {
     ['✿', 'Dusklilies', quest === 'complete' ? 0 : collected.size, 'Bring three to Lyss for a brass key.']
   ];
   if (quest === 'complete') items.push(['⚿', 'Brass key', 1, 'Lyss’s key. Look for an old box behind falling water.']);
+  if (hasRootKey) items.push(['⚿', 'Root Key', 1, 'Hugh entrusted it to you. It opens the sealed entrance at Crownwood’s far edge.']);
   if (fishing.book) items.push(['▤', 'Soaked book', 1, bookClue]);
   if (hearthLearned) items.push(['▤', 'Ember note', 1, hearthNote]);
   if (tools.flowerCrown) items.push(['✿', 'Flower crown', 1, 'Lyss’s crown can free the King from the shadows.']);
@@ -1656,6 +1750,38 @@ function interact() {
     return;
   }
   const id = item.id;
+  if (id.startsWith('lodestone-')) {
+    if (rootKeyQuest !== 'accepted' && rootKeyQuest !== 'ready') {
+      openDialogue('lodestone');
+      setDialogue('These markings are old and worn smooth. The stone feels quiet. I wonder who it belonged to.');
+      return;
+    }
+    if (!rootKeyGuidance) {
+      openDialogue('lodestone');
+      setDialogue('The markings look familiar, but Hugh asked you to speak with Lyss first. She may know how these stones fit together.');
+      return;
+    }
+    if (activatedLodestones.has(id)) {
+      notice = 'The lodestone hums softly. Alvin stays close, ears pricked.';
+      noticeUntil = animationClock + 2.2;
+      updatePrompt();
+      return;
+    }
+    activatedLodestones.add(id);
+    alvinSignalUntil = animationClock + .95;
+    if (activatedLodestones.size === 3) {
+      rootKeyQuest = 'ready';
+      notice = 'All three stones answer. A deep sound answers from below. Return to Hugh.';
+    } else {
+      const next = ['lodestone-canopy','lodestone-shore','lodestone-mine'].find(stoneId => !activatedLodestones.has(stoneId));
+      const direction = next === 'lodestone-canopy' ? 'the canopy above the falls'
+        : next === 'lodestone-shore' ? 'the salt wind' : 'the mine’s deep iron hum';
+      notice = 'Alvin’s ears flick toward ' + direction + '. The stone gives a faint answering hum.';
+    }
+    noticeUntil = animationClock + 3.4;
+    updateNotes(); updatePrompt(); saveCamp(); sendPose(true);
+    return;
+  }
   const mineral = crystalNodes.includes(item) || oreNodes.includes(item) || rootglassNodes.includes(item);
   const tree = allTimberTrees.includes(item);
   if (mineral || tree) {
@@ -1678,9 +1804,15 @@ function interact() {
     world.focus({ preventScroll: true });
     return;
   }
+  if (id === 'rootdeep-entrance' && !hasRootKey && !sharedDoors.has('rootdeep-entrance')) {
+    openDialogue('rootdeep-entrance');
+    setDialogue('A root-carved gate seals the tunnel. A keyhole is set into the stone. Whatever lies below, this entrance is not ready to open.');
+    return;
+  }
   visited.add(id);
   const gate = gates[id] ?? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? liftGates[id] : null);
   if (gate) {
+    if (id === 'rootdeep-entrance' && hasRootKey) openSharedDoor('rootdeep-entrance');
     if (id === 'village-gate' && victory?.ending) openSharedDoor('village-gate');
     if (liftGates[id] && fishing.tideglass === 'spent') openSharedDoor('mine-lift');
     enterRegion(gate.region, gate.footing);
@@ -2238,6 +2370,7 @@ function grantTestItem(kind, amount = 1) {
     case 'charm': tools.charm = true; break;
     case 'flowerCrown': tools.flowerCrown = true; hearthLearned = true; quest = 'complete'; break;
     case 'brassKey': quest = 'complete'; break;
+    case 'rootKey': hasRootKey = true; rootKeyQuest = 'complete'; break;
   }
   const option = el('admin-item').selectedOptions[0];
   const label = option && el('admin-item').value === kind ? option.textContent : kind;

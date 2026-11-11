@@ -15,6 +15,7 @@ export const dock = at(sand,'dock',2265,'Fish at Lantern Dock',107);
 export const beachLandmarks = [
   at(sand,'shore-return',165,'Return to Alder Camp',88),
   dock,
+  at(lookout,'lodestone-shore',3260,'Inspect the old lodestone',70),
   at(sand,'tide-arch',3525,'Look out from Tide Arch',90)
 ];
 export const beachFlower = at(drift,'beach',1420,'Pick Driftwood Cove dusklily',58);

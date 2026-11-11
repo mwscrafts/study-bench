@@ -2,6 +2,36 @@
 // so the game loop can focus on deciding what to draw, not how each shape is drawn.
 export const WAVE_TIME = 1.25;
 
+export function paintLodestone(context, stone, active, clock) {
+  const { x, y } = stone;
+  const pulse = active ? .5 + Math.sin(clock * 4 + x) * .18 : .12;
+  context.save();
+  if (active) {
+    const glow = context.createRadialGradient(x, y - 43, 2, x, y - 43, 65);
+    glow.addColorStop(0, `rgba(194, 160, 236, ${pulse})`);
+    glow.addColorStop(1, 'rgba(194, 160, 236, 0)');
+    context.fillStyle = glow;
+    context.beginPath(); context.arc(x, y - 43, 65, 0, Math.PI * 2); context.fill();
+  }
+  context.fillStyle = active ? '#8b78a8' : '#66746f';
+  context.beginPath();
+  context.moveTo(x - 27, y); context.lineTo(x - 24, y - 35); context.lineTo(x - 13, y - 67);
+  context.lineTo(x + 8, y - 76); context.lineTo(x + 27, y - 49); context.lineTo(x + 30, y - 6);
+  context.closePath(); context.fill();
+  context.fillStyle = active ? '#d6c3f1' : '#8f9a90';
+  context.beginPath(); context.moveTo(x - 9, y - 60); context.lineTo(x + 8, y - 76);
+  context.lineTo(x + 18, y - 53); context.lineTo(x + 6, y - 24); context.closePath(); context.fill();
+  context.strokeStyle = active ? '#e6d3ff' : '#a9b4a5';
+  context.lineWidth = 3;
+  context.beginPath(); context.moveTo(x - 8, y - 46); context.lineTo(x + 6, y - 38);
+  context.lineTo(x - 5, y - 29); context.lineTo(x + 8, y - 20); context.stroke();
+  if (active) {
+    context.fillStyle = '#f1d89c';
+    context.beginPath(); context.arc(x, y - 86 + Math.sin(clock * 4 + x) * 3, 4, 0, Math.PI * 2); context.fill();
+  }
+  context.restore();
+}
+
 export function loadImage(url) {
   return new Promise((resolve, reject) => {
     const image = new Image();
