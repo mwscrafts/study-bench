@@ -1,5 +1,5 @@
-import { campTerrain, landmarks, flowers } from './terrain.mjs?v=15';
-import { buildCampArt } from './camp-art.mjs?v=13';
+import { campTerrain, landmarks, flowers } from './terrain.mjs?v=16';
+import { buildCampArt } from './camp-art.mjs?v=14';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=13';
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=14';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=16';
@@ -14,8 +14,10 @@ import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=1
 import { buildHearthArt } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation } from './king.mjs?v=12';
 import { buildKingArt } from './king-art.mjs?v=13';
-import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt } from './village.mjs?v=12';
+import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt } from './village.mjs?v=13';
 import { hutTerrain, hutLandmarks, hutLocation, buildHutArt } from './camp-idle.mjs?v=18';
+import { villageHomeTerrain, villageHomeLandmarks, lyssCabinTerrain, lyssCabinLandmarks } from './home-projects.mjs?v=1';
+import { buildVillageHomeArt, buildLyssCabinArt } from './home-projects-art.mjs?v=1';
 
 export const regions = {
   camp: {
@@ -64,7 +66,11 @@ export const regions = {
   house: { title: ['Homecoming', 'House'], intro: 'The village has been waiting for you and Alvin.',
     terrain: houseTerrain, landmarks: houseLandmarks, flowers: [], buildArt: buildHouseArt, location: houseLocation },
   hut: { title: ['Alder Camp', 'Hut'], intro: 'A warm little room, a place to rest, and a bed for Alvin.',
-    terrain: hutTerrain, landmarks: hutLandmarks, flowers: [], buildArt: buildHutArt, location: hutLocation }
+    terrain: hutTerrain, landmarks: hutLandmarks, flowers: [], buildArt: buildHutArt, location: hutLocation },
+  'village-home': { title: ['Your Village', 'Home'], intro: 'Your own place to return to and make comfortable for Alvin.',
+    terrain: villageHomeTerrain, landmarks: villageHomeLandmarks, flowers: [], buildArt: buildVillageHomeArt, location: () => 'Your Home' },
+  'lyss-cabin': { title: ['Lyss’s', 'Cabin'], intro: 'A log cabin for Lyss, built beside the camp forge.',
+    terrain: lyssCabinTerrain, landmarks: lyssCabinLandmarks, flowers: [], buildArt: buildLyssCabinArt, location: () => 'Lyss’s Cabin' }
 };
 export const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
 export const knownFlowers = Object.values(regions).flatMap(area => area.flowers);
@@ -91,6 +97,10 @@ gates['village-gate'] = { region: 'village' };
 gates['village-return'] = { region: 'king', footing: { x: 3670, ground: 'king-floor' } };
 gates['celebration-house'] = { region: 'house' };
 gates['house-return'] = { region: 'village', footing: { x: 1920, ground: 'village-road' } };
+gates['village-home-door'] = { region: 'village-home', footing: { x: 170, ground: 'village-home-floor' } };
+gates['village-home-exit'] = { region: 'village', footing: { x: 3255, ground: 'village-road' } };
+gates['lyss-cabin-door'] = { region: 'lyss-cabin', footing: { x: 150, ground: 'lyss-cabin-floor' } };
+gates['lyss-cabin-exit'] = { region: 'camp', footing: { x: 1875, ground: 'trail' } };
 gates['hut-door'] = { region: 'hut' };
 gates['hut-exit'] = { region: 'camp', footing: { x: 2705, ground: 'trail' } };
 export const liftGates = {
@@ -106,6 +116,10 @@ export const conversations = {
   'rootdeep-guard': { name: 'Bram', role: 'SHAFT GUARD' },
   'beach-bridge-west': { name: 'Cove Bridge', role: 'BROKEN CROSSING' },
   'beach-bridge-east': { name: 'Cove Bridge', role: 'BROKEN CROSSING' },
+  'village-home-site': { name: 'Your village plot', role: 'HOME PROJECT' },
+  'lyss-tent-site': { name: 'Lyss’s tent', role: 'CAMP PROJECT' },
+  'village-home-decor': { name: 'Your home', role: 'DECORATIONS' },
+  'lyss-cabin-decor': { name: 'Lyss’s cabin', role: 'FURNISHINGS' },
   'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
   'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
   'rootdeep-lanternkeeper': { name: 'Lantern Keeper', role: 'ROOTDEEP SETTLER', greeting: 'Welcome in. The lanterns stay lit through every shift. This landing is safe, even when the roots below begin to stir.' },

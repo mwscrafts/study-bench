@@ -123,6 +123,31 @@ function tent(ctx, x, y) {
   path(ctx,[[x+66,y],[x-10,y-143],[x+83,y-130]],'#e1c090',3);
 }
 
+function lyssLogCabin(ctx,x,y) {
+  // Her former tent becomes a small, lived-in cabin beside the forge.
+  poly(ctx,[[x-158,y],[x-158,y-152],[x+152,y-152],[x+152,y]],'#68543d');
+  for(let row=0;row<7;row++){
+    const yy=y-18-row*21;
+    path(ctx,[[x-157,yy],[x+150,yy]],row%2?'#a98154':'#b18b5e',12);
+    for(const xx of [x-143,x+133]) orb(ctx,xx,yy,5,'#d7b784');
+  }
+  poly(ctx,[[x-187,y-150],[x-30,y-253],[x+171,y-150]],'#514b43');
+  poly(ctx,[[x-175,y-152],[x-28,y-241],[x+161,y-152]],'#78654b');
+  path(ctx,[[x-175,y-151],[x-30,y-251],[x+171,y-151]],'#c39e67',10);
+  for(let xx=x-128;xx<x+130;xx+=46) path(ctx,[[xx,y-183],[xx+84,y-183]],'#a6875e',4);
+  poly(ctx,[[x+90,y-217],[x+91,y-277],[x+127,y-277],[x+128,y-193]],'#5b574b');
+  path(ctx,[[x+86,y-279],[x+132,y-279]],'#ba9d73',6);
+  poly(ctx,[[x-64,y],[x-64,y-99],[x-45,y-121],[x+20,y-121],[x+40,y-99],[x+40,y]],'#34443b');
+  path(ctx,[[x-65,y-101],[x-44,y-126],[x+21,y-126],[x+43,y-100]],'#d4b681',6);
+  orb(ctx,x+26,y-48,4,'#e8c688');
+  poly(ctx,[[x+70,y-122],[x+126,y-122],[x+126,y-65],[x+70,y-65]],'#cfad74');
+  poly(ctx,[[x+76,y-116],[x+120,y-116],[x+120,y-71],[x+76,y-71]],'#91b9a5');
+  path(ctx,[[x+98,y-117],[x+98,y-69]],'#6f5b45',5);
+  path(ctx,[[x+75,y-94],[x+121,y-94]],'#6f5b45',5);
+  poly(ctx,[[x-145,y],[x-106,y-22],[x-59,y]],'#797862');
+  path(ctx,[[x-90,y-18],[x-66,y-32]],'#657c5c',5);
+}
+
 function mine(ctx) {
   const x = 4060;
   const y = groundAt(x);
@@ -144,7 +169,7 @@ function roots(ctx) {
   }
 }
 
-export function buildCampArt() {
+export function buildCampArt(lyssCabinBuilt=false) {
   const canvas = document.createElement('canvas');
   canvas.width = WORLD_WIDTH;
   canvas.height = WORLD_HEIGHT;
@@ -160,7 +185,8 @@ export function buildCampArt() {
   }
   roots(ctx);
   forge(ctx);
-  tent(ctx,1960,groundAt(1960));
+  if(lyssCabinBuilt) lyssLogCabin(ctx,1960,groundAt(1960));
+  else tent(ctx,1960,groundAt(1960));
   mine(ctx);
   const liftX = 2415;
   const liftY = groundAt(liftX);

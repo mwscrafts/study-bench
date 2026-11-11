@@ -1,22 +1,24 @@
 import { defineTerrain, surfaceAt } from './terrain.mjs';
 import { poly, path, orb } from './camp-art.mjs';
 
-const villageFloor = { id: 'village-road', points: [[0,635],[450,635],[900,620],[1500,620],[2100,635],[2760,635]] };
+const villageFloor = { id: 'village-road', points: [[0,635],[450,635],[900,620],[1500,620],[2100,635],[2760,635],[3170,630],[3600,630]] };
 const houseFloor = { id: 'house-floor', points: [[0,650],[1360,650]] };
-export const villageTerrain = defineTerrain(2760, 900, 170, [villageFloor]);
+export const villageTerrain = defineTerrain(3600, 900, 170, [villageFloor]);
 export const houseTerrain = defineTerrain(1360, 900, 140, [houseFloor]);
 const spot = (surface, id, x, label) => ({ id, x, y: surfaceAt(surface,x), radius: 100, label });
 export const villageLandmarks = [
   spot(villageFloor,'village-return',115,'Return to King’s Grounds'),
   spot(villageFloor,'restored-king',1300,'Talk to the King'),
   spot(villageFloor,'celebration-house',2020,'Enter the celebration house'),
-  spot(villageFloor,'village-beyond',2655,'Follow the path beyond the village')
+  spot(villageFloor,'village-beyond',2655,'Follow the path beyond the village'),
+  spot(villageFloor,'village-home-site',3170,'Inspect your village plot'),
+  spot(villageFloor,'village-home-door',3220,'Enter your village home')
 ];
 export const houseLandmarks = [
   spot(houseFloor,'house-return',95,'Step outside'),
   spot(houseFloor,'home-welcome',715,'Talk to the neighbors')
 ];
-export const villageLocation = player => player.x < 900 ? 'Lantern Lane' : player.x < 1800 ? 'Village Square' : player.x < 2460 ? 'Homecoming House' : 'Old East Path';
+export const villageLocation = player => player.x < 900 ? 'Lantern Lane' : player.x < 1800 ? 'Village Square' : player.x < 2460 ? 'Homecoming House' : player.x < 2900 ? 'Old East Path' : 'Your Village Plot';
 export const houseLocation = () => 'Homecoming';
 
 function person(ctx,x,y,coat) {
@@ -45,7 +47,7 @@ export function buildVillageArt() {
     ctx.fillStyle = '#473b35';
     ctx.fillRect(x+15,ground-89,55,89);
   }
-  poly(ctx,[...villageFloor.points,[2760,900],[0,900]],'#65745c');
+  poly(ctx,[...villageFloor.points,[3600,900],[0,900]],'#65745c');
   path(ctx,villageFloor.points,'#b9b18b',6);
   // The far-right path hints at a wider world; the gate has no destination yet.
   poly(ctx,[[2450,633],[2550,613],[2760,617],[2760,671],[2538,661]],'#82785e');
@@ -62,7 +64,15 @@ export function buildVillageArt() {
   // Distant hills beyond the open frame make it read as an onward route, not a closed door.
   poly(ctx,[[2604,545],[2626,522],[2643,540],[2662,514],[2680,547]],'#74846a');
   poly(ctx,[[2618,552],[2640,530],[2660,553],[2674,535],[2681,562]],'#506e5d');
-  for (const [x,color] of [[580,'#5f6654'],[760,'#926b61'],[1330,'#776793'],[1530,'#5c7765'],[1850,'#a47c5e'],[2480,'#566d81']]) {
+  // The east path reaches a clear plot beyond the old arch.
+  poly(ctx,[[2760,630],[2920,619],[3240,625],[3600,632],[3600,676],[3230,660],[2900,656]],'#8f886a');
+  path(ctx,[[2760,635],[2950,634],[3200,641],[3600,645]],'#c2aa7c',12);
+  for(const x of [2835,2960,3430,3550]){
+    path(ctx,[[x,633],[x,548]],'#776347',7);
+    poly(ctx,[[x-42,557],[x,459],[x+43,557]],'#5f7864');
+    poly(ctx,[[x-30,526],[x,467],[x+29,526]],'#7f9880');
+  }
+  for (const [x,color] of [[580,'#5f6654'],[760,'#926b61'],[1330,'#776793'],[1530,'#5c7765'],[1850,'#a47c5e'],[2480,'#566d81'],[2890,'#8b7362']]) {
     person(ctx,x,surfaceAt(villageFloor,x),color);
   }
   return canvas;

@@ -1,6 +1,6 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
-  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=15';
-import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=13';
+  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=16';
+import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=14';
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
@@ -20,10 +20,12 @@ import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
 import { paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
-import { paintRestoredKing } from './village.mjs?v=12';
+import { paintRestoredKing } from './village.mjs?v=13';
+import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, LYSS_CABIN_IRON_COST } from './home-projects.mjs?v=1';
+import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor } from './home-projects-art.mjs?v=1';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=9';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=10';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -45,7 +47,9 @@ const journalCatalog = [
   { id: 'iron-branch', title: 'The dark iron gallery', body: 'The iron gallery has an unlit lantern. A Glowcap can restore it and make a safer pocket beside this branch. Other parts of Rootdeep remain dangerous.' },
   { id: 'root-branch', title: 'The shadow-root branch', body: 'A lantern has gone dark among the tangled roots. Restore it with a Glowcap to ease the danger nearby. This light is separate from the settlement and the old tunnel.' },
   { id: 'old-tunnel', title: 'The old minecart tunnel', body: 'The collapsed tunnel may join Rootdeep to Hugh’s mine. First clear the cave goblins. Relight the passage with Glowcaps so the dwarves can assess it; then bring timber for supports. The carts will run only after excavation is finished.' },
-  { id: 'cove-bridge', title: 'The broken cove bridge', body: 'A wooden span once crossed above Driftwood Cove. Repair it with renewable wood and iron fittings to open a high route toward Lantern Dock. The lower shore path remains open.' }
+  { id: 'cove-bridge', title: 'The broken cove bridge', body: 'A wooden span once crossed above Driftwood Cove. Repair it with renewable wood and iron fittings to open a high route toward Lantern Dock. The lower shore path remains open.' },
+  { id: 'village-home', title: 'A place of your own', body: 'After the King, a village plot can become a home for you and Alvin. Gather wood and iron to build it, then return to furnish its rooms whenever you like.' },
+  { id: 'lyss-cabin', title: 'A cabin for Lyss', body: 'Lyss’s tent can become a little log cabin beside the forge. This is her home, separate from your village house. Help furnish it after the walls go up.' }
 ];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
@@ -81,6 +85,11 @@ let tunnelQuestAccepted = false;
 let pendingTunnelReunion = false;
 let hughStiltsRevealed = false;
 let beachBridgeQuest = 'unoffered';
+let villageHomeQuest = 'unoffered';
+let lyssCabinQuest = 'unoffered';
+let villageHomeDecor = new Set();
+let lyssCabinDecor = new Set();
+let lyssCabinThanksSeen = false;
 let defeatedTunnelGoblins = new Set();
 let tunnelGoblins = [];
 let rootKeyQuest = 'unoffered';
@@ -465,8 +474,13 @@ function paint() {
     if (trial?.stage === 'shadows') trial.shadows.forEach((shadow, index) =>
       paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock));
     paintFireworks(ctx, camera, fireworksElapsed);
-  } else if (region === 'village' && victory?.ending === 'free') {
-    paintRestoredKing(ctx);
+  } else if (region === 'village') {
+    if (victory?.ending === 'free') paintRestoredKing(ctx);
+    paintVillageHomeExterior(ctx,villageHomeQuest === 'complete');
+  } else if (region === 'village-home') {
+    paintVillageHomeDecor(ctx,villageHomeDecor);
+  } else if (region === 'lyss-cabin') {
+    paintLyssCabinDecor(ctx,lyssCabinDecor);
   } else if (region === 'hut') {
     paintHutWindow(ctx, phase, animationClock);
     paintHutDecor(ctx, hutDecorations);
@@ -694,7 +708,11 @@ function currentLandmarks() {
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
     (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
     (item.id !== 'restored-king' || victory?.ending === 'free') &&
-    (!item.id.startsWith('beach-bridge-') || beachBridgeQuest !== 'complete'));
+    (!item.id.startsWith('beach-bridge-') || beachBridgeQuest !== 'complete') &&
+    (item.id !== 'village-home-site' || !!victory?.ending && villageHomeQuest !== 'complete') &&
+    (item.id !== 'village-home-door' || villageHomeQuest === 'complete') &&
+    (item.id !== 'lyss-tent-site' || lyssCabinQuest !== 'complete') &&
+    (item.id !== 'lyss-cabin-door' || lyssCabinQuest === 'complete'));
 }
 
 function canSleepAtBed() {
@@ -778,12 +796,18 @@ function updateNotes() {
   const bridgeNote = region === 'beach' && beachBridgeQuest === 'accepted'
     ? 'Cove Bridge · Wood ' + Math.min(spareWood(tools),BRIDGE_WOOD_COST) + '/' + BRIDGE_WOOD_COST +
       ' · Iron ' + Math.min(ironStock,BRIDGE_IRON_COST) + '/' + BRIDGE_IRON_COST : '';
+  const villageHomeNote = region === 'village' && villageHomeQuest === 'accepted'
+    ? 'Your home · Wood ' + Math.min(spareWood(tools),VILLAGE_HOME_WOOD_COST) + '/' + VILLAGE_HOME_WOOD_COST +
+      ' · Iron ' + Math.min(ironStock,VILLAGE_HOME_IRON_COST) + '/' + VILLAGE_HOME_IRON_COST : '';
+  const lyssCabinNote = region === 'camp' && lyssCabinQuest === 'accepted'
+    ? 'Lyss’s cabin · Wood ' + Math.min(spareWood(tools),LYSS_CABIN_WOOD_COST) + '/' + LYSS_CABIN_WOOD_COST +
+      ' · Iron ' + Math.min(ironStock,LYSS_CABIN_IRON_COST) + '/' + LYSS_CABIN_IRON_COST : '';
   const tunnelNote = tunnelQuestAccepted && tunnelStage !== 'open' && (region === 'rootdeep' || region === 'mine')
     ? ({ goblins: 'Tunnel · Clear cave goblins ' + defeatedTunnelGoblins.size + ' / 2',
       light: 'Tunnel · Relight with 2 Glowcaps · ' + Math.min(glowcaps,2) + ' / 2',
       assess: 'Tunnel · Ask Dorrin to assess the lit passage',
       timber: 'Tunnel · Timber supports · ' + Math.min(spareWood(tools),4) + ' / 4' })[tunnelStage] : '';
-  el('quest-tracker').textContent = bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
+  el('quest-tracker').textContent = villageHomeNote || lyssCabinNote || bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
     ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : rootdeepQuest === 'accepted' ? 'Rootglass · ' + rootglass.size + ' / 3' : '')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
@@ -939,7 +963,8 @@ function saveCamp() {
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
       tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, pendingTunnelReunion, hughStiltsRevealed,
-      beachBridgeQuest,
+      beachBridgeQuest, villageHomeQuest, lyssCabinQuest, lyssCabinThanksSeen,
+      villageHomeDecor: [...villageHomeDecor], lyssCabinDecor: [...lyssCabinDecor],
       defeatedTunnelGoblins: [...defeatedTunnelGoblins],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
@@ -997,6 +1022,12 @@ function begin(save) {
   hughStiltsRevealed = save?.hughStiltsRevealed === true;
   beachBridgeQuest = ['accepted','complete'].includes(save?.beachBridgeQuest) ? save.beachBridgeQuest : 'unoffered';
   regions.beach.terrain = beachBridgeQuest === 'complete' ? beachBridgeTerrain : beachTerrain;
+  villageHomeQuest = ['accepted','complete'].includes(save?.villageHomeQuest) ? save.villageHomeQuest : 'unoffered';
+  lyssCabinQuest = ['accepted','complete'].includes(save?.lyssCabinQuest) ? save.lyssCabinQuest : 'unoffered';
+  villageHomeDecor = new Set(['alvin-cushion','tapestry','bookshelf'].filter(id => Array.isArray(save?.villageHomeDecor) && save.villageHomeDecor.includes(id)));
+  lyssCabinDecor = new Set(['herb-shelf','woven-rug','warm-lantern'].filter(id => Array.isArray(save?.lyssCabinDecor) && save.lyssCabinDecor.includes(id)));
+  lyssCabinThanksSeen = save?.lyssCabinThanksSeen === true;
+  if(lyssCabinQuest === 'complete') backgrounds.camp = buildCampArt(true);
   tunnelGuardSpoken = save?.tunnelGuardSpoken === true || tunnelQuestAccepted ||
     save?.region === 'rootdeep' && save?.footing?.ground === 'rootdeep-floor';
   defeatedTunnelGoblins = new Set(['goblin-west','goblin-east'].filter(id =>
@@ -1091,7 +1122,8 @@ function enterRegion(next, footing) {
       if (key !== 'camp' && key !== next) delete backgrounds[key];
     }
   }
-  backgrounds[next] ??= next === 'rootdeep' ? buildRootdeepArt(rootdeepQuest === 'complete') : area.buildArt();
+  backgrounds[next] ??= next === 'rootdeep' ? buildRootdeepArt(rootdeepQuest === 'complete')
+    : next === 'camp' ? buildCampArt(lyssCabinQuest === 'complete') : area.buildArt();
   player = createPlayer(footing, terrain);
   tunnelGoblins = next === 'rootdeep' && tunnelStage === 'goblins'
     ? [{id:'goblin-west',x:385,hp:64},{id:'goblin-east',x:495,hp:64}]
@@ -1342,6 +1374,12 @@ function petAlvin() {
 }
 
 function lyssDialogue() {
+  if (lyssCabinQuest === 'complete' && !lyssCabinThanksSeen) {
+    lyssCabinThanksSeen = true;
+    saveCamp();
+    setDialogue('You built me a real cabin. I woke up without rain tapping through canvas for the first time in ages. Thank you. The forge feels like home again. I’ll keep a light on here whenever you return.');
+    return;
+  }
   if (finishCampRequest('lyss')) return;
   const symbolOption = ['Hugh sent me about some old symbols', () => {
     rootKeyGuidance = true;
@@ -2048,10 +2086,79 @@ const interactionHandlers = {
   'alvin-bed': petAlvin,
   'hut-decor': decorateHutDialogue,
   'rootdeep-commonkeeper': glowcapKeeperDialogue,
-  'village-beyond': () => setDialogue("Don't worry... You'll get to explore here soon."),
+  'village-beyond': () => setDialogue(villageHomeQuest === 'complete'
+    ? 'Your home is just beyond the arch. There is more country east of the village, but for now it feels good to have a place here.'
+    : 'The lane beyond the arch leads to a village plot set aside for you and Alvin. Follow it east when you are ready to build.'),
   'night-altar': altarDialogue,
   'fallen-crown': endingDialogue
 };
+
+function homeBuildDialogue(kind) {
+  const village = kind === 'village';
+  if(village && !victory?.ending) return;
+  const state = village ? villageHomeQuest : lyssCabinQuest;
+  const wood = village ? VILLAGE_HOME_WOOD_COST : LYSS_CABIN_WOOD_COST;
+  const iron = village ? VILLAGE_HOME_IRON_COST : LYSS_CABIN_IRON_COST;
+  const title = village ? 'your village home' : 'Lyss’s log cabin';
+  openDialogue(village ? 'village-home-site' : 'lyss-tent-site');
+  recordJournalEntry(village ? 'village-home' : 'lyss-cabin', { quiet: true });
+  visited.add(village ? 'village-home-site' : 'lyss-tent-site');
+  if(state === 'unoffered') {
+    setDialogue(village
+      ? 'A village plot has been set aside for you and Alvin after the King’s defeat. Build a home here with eight wood and four iron, then make the rooms your own.'
+      : 'Lyss’s tent has weathered too many storms. Six wood and two iron fittings could turn it into a small log cabin beside the forge.', [
+      ['I’ll build it', () => {
+        if(village) villageHomeQuest = 'accepted'; else lyssCabinQuest = 'accepted';
+        updateNotes(); saveCamp();
+        setDialogue('Gather ' + wood + ' spare wood and ' + iron + ' iron, then return here. Marked pines regrow after three nights.');
+      }],
+      ['Not yet', closeDialogue]
+    ]);
+  } else if(spareWood(tools) < wood || ironStock < iron) {
+    setDialogue('To build ' + title + ', you need ' + wood + ' wood and ' + iron + ' iron. You have ' +
+      spareWood(tools) + ' spare wood and ' + ironStock + ' iron.');
+  } else {
+    setDialogue('The materials are ready for ' + title + '. Put up the walls and roof?', [
+      ['Build the home', () => {
+        tools.woodDonated = (tools.woodDonated ?? 0) + wood;
+        ironStock -= iron;
+        if(village) villageHomeQuest = 'complete';
+        else {
+          lyssCabinQuest = 'complete';
+          backgrounds.camp = buildCampArt(true);
+        }
+        notice = (village ? 'Your village home' : 'Lyss’s log cabin') + ' is ready';
+        noticeUntil = animationClock + 3;
+        updateNotes(); updatePrompt(); saveCamp();
+        setDialogue(village
+          ? 'The village has a place for you now. Go inside and choose what feels like home for you and Alvin.'
+          : 'The logs are fitted and the roof is solid. Lyss has a warm cabin now. Step inside to help furnish it.');
+      }],
+      ['Keep the materials', closeDialogue]
+    ]);
+  }
+  saveCamp();
+}
+
+function homeDecorDialogue(kind) {
+  const village = kind === 'village';
+  const items = village ? villageHomeDecor : lyssCabinDecor;
+  const options = village
+    ? [['alvin-cushion','Alvin’s cushion'],['tapestry','Woven tapestry'],['bookshelf','Bookshelf']]
+    : [['herb-shelf','Herb shelf'],['woven-rug','Woven rug'],['warm-lantern','Warm lantern']];
+  openDialogue(village ? 'village-home-decor' : 'lyss-cabin-decor');
+  const showChoices = () => setDialogue(village
+    ? 'Make your home comfortable for you and Alvin. Choose what to place or put away.'
+    : 'Help Lyss settle in. Choose the small comforts that belong in her cabin.',
+    [...options.map(([id,label]) => [
+      (items.has(id) ? 'Put away ' : 'Place ') + label,
+      () => {
+        if(items.has(id)) items.delete(id); else items.add(id);
+        saveCamp(); showChoices();
+      }
+    ]),['Done',closeDialogue]]);
+  showChoices();
+}
 
 function coveBridgeDialogue() {
   openDialogue('beach-bridge-west');
@@ -2292,6 +2399,14 @@ function interact() {
       ]);
     }
     saveCamp();
+    return;
+  }
+  if (id === 'village-home-site' || id === 'lyss-tent-site') {
+    homeBuildDialogue(id === 'village-home-site' ? 'village' : 'lyss');
+    return;
+  }
+  if (id === 'village-home-decor' || id === 'lyss-cabin-decor') {
+    homeDecorDialogue(id === 'village-home-decor' ? 'village' : 'lyss');
     return;
   }
   if (id.startsWith('beach-bridge-')) {
