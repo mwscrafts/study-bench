@@ -5,8 +5,8 @@ import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberT
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=1';
-import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=3';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=2';
+import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=4';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
@@ -189,7 +189,7 @@ const gates = {
   shore: { region: 'beach' },
   'camp-return': { region: 'camp', footing: { x: 3638, ground: 'crown' } },
   'mine-return': { region: 'camp', footing: { x: 4180, ground: 'trail' } },
-  'rootdeep-entrance': { region: 'rootdeep', footing: { x: 110, ground: 'rootdeep-level-1-west' } },
+  'rootdeep-entrance': { region: 'rootdeep', footing: { x: 110, ground: 'rootdeep-level-1' } },
   'rootdeep-return': { region: 'crownwood', footing: { x: 5510, ground: 'understory' } },
   'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } },
   'first-hearth': { region: 'hearth' },
@@ -1087,6 +1087,11 @@ function enterRegion(next, footing) {
   updateTrialHud();
   const area = regions[next];
   terrain = area.terrain;
+  // Migrate existing saves from the former split ledge IDs onto the new continuous floors.
+  if (next === 'rootdeep' && footing?.ground) {
+    const oldRootdeepGround = footing.ground.match(/^rootdeep-level-(\d+)(?:-(?:west|east))?$/);
+    if (oldRootdeepGround) footing = { ...footing, ground: `rootdeep-level-${oldRootdeepGround[1]}` };
+  }
   // Keep camp and the current area cached to bound memory on mobile.
   if (next !== 'camp') {
     for (const key of Object.keys(backgrounds)) {
@@ -1422,7 +1427,7 @@ function dorrinDialogue() {
       rootdeepQuest = 'accepted';
       updateNotes();
       saveCamp();
-      setDialogue('Much obliged. Three pieces should be enough. Watch your footing on the split ledges, and keep your pickaxe handy.');
+      setDialogue('Much obliged. Three pieces should be enough. The root ladders along the east wall lead back up if you need to return to Crownwood. Keep your pickaxe handy.');
     }],
     ['Not right now', () => {
       rootdeepQuest = 'declined';
@@ -1638,7 +1643,7 @@ function adminTeleportDialogue() {
     ['Alder Camp', 'camp', { x: 1800, ground: 'trail' }],
     ['Crownwood Canopy', 'crownwood', { x: 273, ground: 'understory' }],
     ['Embervein Mine', 'mine', { x: 320, ground: 'mine-floor' }],
-    ['Rootdeep Mine', 'rootdeep', { x: 110, ground: 'rootdeep-level-1-west' }],
+    ['Rootdeep Mine', 'rootdeep', { x: 110, ground: 'rootdeep-level-1' }],
     ['Driftwood Cove', 'beach', { x: 300, ground: 'shore-sand' }],
     ['Hidden First Hearth', 'hearth', { x: 300, ground: 'hearth-floor' }],
     ['King’s Grounds', 'king', { x: 2315, ground: 'king-floor' }],
@@ -1911,6 +1916,17 @@ function interact() {
     enterRegion(gate.region, gate.footing);
     return;
   }
+  if (id === 'rootdeep-climb-bottom') {
+    enterRegion('rootdeep', { x: 1780, ground: 'rootdeep-level-8' });
+    return;
+  }
+  const climb = id.match(/^rootdeep-climb-(\d+)$/);
+  if (climb) {
+    const level = Number(climb[1]);
+    if (level === 1) enterRegion('crownwood', { x: 5510, ground: 'understory' });
+    else enterRegion('rootdeep', { x: 1780, ground: `rootdeep-level-${level-1}` });
+    return;
+  }
   if (id === 'rootdeep-lift-high' || id === 'rootdeep-lift-low') {
     if (!rootdeepLiftFixed) {
       openDialogue(id);
@@ -1918,8 +1934,8 @@ function interact() {
       return;
     }
     enterRegion('rootdeep', id === 'rootdeep-lift-high'
-      ? { x: 1690, ground: 'rootdeep-level-8-east' }
-      : { x: 310, ground: 'rootdeep-level-4-west' });
+      ? { x: 1690, ground: 'rootdeep-level-8' }
+      : { x: 310, ground: 'rootdeep-level-4' });
     return;
   }
   if (id === 'dorrin') { dorrinDialogue(); return; }
