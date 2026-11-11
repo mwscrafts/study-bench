@@ -1387,45 +1387,78 @@ function ivoDialogue() {
 }
 
 function workbenchDialogue() {
+  const wood = spareWood(tools);
+  const crystalCount = crystals.size - (tools.charm ? 2 : 0);
+  const inventory = 'You have: Wood ' + wood + ' · Flint ' + Number(tools.flint) +
+    ' · Iron ' + ironStock + ' · Crystals ' + crystalCount + ' · Shadow essence ' + shadowStock + '.';
   const choices = [];
-  if (!tools.pickaxe && spareWood(tools) >= WOOD_COST && tools.flint) choices.push(['Craft pickaxe · 3 wood + 1 flint', () => {
-      tools.pickaxe = true;
-      equipped = 'pickaxe';
-      tools.flint = false;
-      updateNotes();
-      saveCamp();
-      workbenchDialogue();
+
+  function reportMissing(label, missing) {
+    if (missing.length) {
+      setDialogue('To ' + label.toLowerCase() + ', you still need ' + missing.join(' and ') +
+        '. ' + inventory, choices);
+      return true;
+    }
+    return false;
+  }
+
+  if (!tools.pickaxe) choices.push(['Craft pickaxe · 3 wood + 1 flint', () => {
+    const missing = [];
+    if (wood < WOOD_COST) missing.push((WOOD_COST - wood) + ' wood');
+    if (!tools.flint) missing.push('1 flint');
+    if (reportMissing('craft the pickaxe', missing)) return;
+    tools.pickaxe = true;
+    equipped = 'pickaxe';
+    tools.flint = false;
+    updateNotes(); saveCamp(); workbenchDialogue();
   }]);
-  if (!tools.ironSword && spareWood(tools) >= 1 && ironStock >= 2) choices.push(['Craft iron sword · 1 wood + 2 iron', () => {
+
+  if (!tools.ironSword) choices.push(['Craft iron sword · 1 wood + 2 iron', () => {
+    const missing = [];
+    if (wood < 1) missing.push('1 wood');
+    if (ironStock < 2) missing.push((2 - ironStock) + ' iron');
+    if (reportMissing('craft the iron sword', missing)) return;
     tools.ironSword = true;
     tools.woodSpent = 1;
     ironStock -= 2;
     equipped = 'ironSword';
     updateNotes(); saveCamp(); workbenchDialogue();
   }]);
-  if (tools.ironSword && !tools.shadowBlade && ironStock >= 1 && shadowStock >= 3) choices.push(['Upgrade to shadow blade · 1 iron + 3 shadows', () => {
+
+  if (!tools.shadowBlade) choices.push(['Upgrade to shadow blade · 1 iron + 3 shadows', () => {
+    const missing = [];
+    if (!tools.ironSword) missing.push('an iron sword first');
+    if (ironStock < 1) missing.push('1 iron');
+    if (shadowStock < 3) missing.push((3 - shadowStock) + ' shadow essence');
+    if (reportMissing('upgrade to the shadow blade', missing)) return;
     tools.shadowBlade = true;
     ironStock--;
     shadowStock -= 3;
     equipped = 'shadowBlade';
     updateNotes(); saveCamp(); workbenchDialogue();
   }]);
-  if (!tools.charm && crystals.size === crystalNodes.length && shadowStock >= 2) choices.push(['Craft shockwave charm · 2 crystals + 2 shadows', () => {
+
+  if (!tools.charm) choices.push(['Craft shockwave charm · 2 crystals + 2 shadows', () => {
+    const missing = [];
+    if (crystalCount < 2) missing.push((2 - crystalCount) + ' crystals');
+    if (shadowStock < 2) missing.push((2 - shadowStock) + ' shadow essence');
+    if (reportMissing('craft the shockwave charm', missing)) return;
     tools.charm = true;
     shadowStock -= 2;
     updateNotes(); saveCamp(); workbenchDialogue();
   }]);
-  if (!tools.helmet && ironStock >= 4) choices.push(['Craft helmet · 4 iron', () => {
+
+  if (!tools.helmet) choices.push(['Craft helmet · 4 iron', () => {
+    const missing = [];
+    if (ironStock < 4) missing.push((4 - ironStock) + ' iron');
+    if (reportMissing('craft the helmet', missing)) return;
     tools.helmet = true;
     ironStock -= 4;
     updateNotes(); saveCamp(); workbenchDialogue();
   }]);
-  const inventory = 'Wood ' + spareWood(tools) + ' · Iron ' + ironStock + ' · Crystals ' +
-    (crystals.size - (tools.charm ? 2 : 0)) + ' · Shadows ' + shadowStock + '. ';
-  setDialogue(inventory + 'Recipes: pickaxe 3 wood + 1 flint; iron sword 1 wood + 2 iron; shadow blade 1 iron + 3 shadows; shockwave charm 2 crystals + 2 shadows; helmet 4 iron.' +
-    (!tools.pickaxe ? ' Lyss has a hatchet. Gather wood and flint first.' : ''), choices);
-}
 
+  setDialogue(inventory + ' Choose a recipe to craft.', choices);
+}
 const bookClue = 'The water blurred most of the writing. One sketch shows a rope bridge with a gap in its railing, a ledge beneath it, and a light behind the waterfall.';
 
 function dockDialogue(result) {
