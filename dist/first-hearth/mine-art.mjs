@@ -136,6 +136,17 @@ export function paintMineTunnel(ctx, stage) {
   for(const dx of [-263,-202]) orb(ctx,x+dx,y-19,13,'#26302d');
 }
 
+export function paintDiscardedStilts(ctx,x,y) {
+  // Hugh leaves the tall wooden frames propped beside his alcove after the reunion.
+  path(ctx,[[x-28,y],[x-14,y-137],[x-4,y-154]],'#a98053',10);
+  path(ctx,[[x+28,y],[x+18,y-143],[x+7,y-155]],'#b58c5d',10);
+  path(ctx,[[x-38,y-60],[x-3,y-60]],'#c7a36b',8);
+  path(ctx,[[x+5,y-67],[x+42,y-67]],'#c7a36b',8);
+  path(ctx,[[x-19,y-117],[x-2,y-110]],'#5c4939',7);
+  path(ctx,[[x+15,y-117],[x+30,y-109]],'#5c4939',7);
+  for(const dx of [-28,28]) orb(ctx,x+dx,y-5,5,'#d7bb83');
+}
+
 export function paintMineLights(ctx, view, clock, night) {
   if (night) {
     ctx.fillStyle='rgba(16,24,45,'+night*.26+')';

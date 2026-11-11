@@ -4,7 +4,7 @@ import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, pai
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
-import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel } from './mine-art.mjs?v=05';
+import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=06';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns } from './rootdeep.mjs?v=8';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=12';
@@ -23,7 +23,7 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { paintRestoredKing } from './village.mjs?v=12';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=7';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=8';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -77,6 +77,8 @@ let tunnelStage = 'goblins';
 let tunnelSeen = false;
 let tunnelGuardSpoken = false;
 let tunnelQuestAccepted = false;
+let pendingTunnelReunion = false;
+let hughStiltsRevealed = false;
 let defeatedTunnelGoblins = new Set();
 let tunnelGoblins = [];
 let rootKeyQuest = 'unoffered';
@@ -444,7 +446,12 @@ function paint() {
     if (!tools.flint) paintFlint(ctx);
     paintRegionalLodestones();
     shadow(hugh.x, hugh.y, 26);
-    drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, 105);
+    if(tunnelStage === 'open') {
+      paintRootdeepSettler(ctx,2035,hugh.y,animationClock,1,.47);
+      paintRootdeepSettler(ctx,2290,hugh.y,animationClock,3,.44);
+    }
+    if(hughStiltsRevealed) paintDiscardedStilts(ctx,1955,hugh.y);
+    drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, hughStiltsRevealed ? 64 : 105);
   } else if (region === 'beach') {
     paintBeachDetails(ctx, camera, animationClock, night, casting);
     paintRegionalLodestones();
@@ -924,7 +931,8 @@ function saveCamp() {
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
-      tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, defeatedTunnelGoblins: [...defeatedTunnelGoblins],
+      tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, pendingTunnelReunion, hughStiltsRevealed,
+      defeatedTunnelGoblins: [...defeatedTunnelGoblins],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools,
@@ -977,6 +985,8 @@ function begin(save) {
   tunnelStage = ['goblins','light','assess','timber','open'].includes(save?.tunnelStage) ? save.tunnelStage : 'goblins';
   tunnelSeen = save?.tunnelSeen === true;
   tunnelQuestAccepted = save?.tunnelQuestAccepted === true || ['assess','timber','open'].includes(tunnelStage);
+  pendingTunnelReunion = save?.pendingTunnelReunion === true;
+  hughStiltsRevealed = save?.hughStiltsRevealed === true;
   tunnelGuardSpoken = save?.tunnelGuardSpoken === true || tunnelQuestAccepted ||
     save?.region === 'rootdeep' && save?.footing?.ground === 'rootdeep-floor';
   defeatedTunnelGoblins = new Set(['goblin-west','goblin-east'].filter(id =>
@@ -1481,8 +1491,25 @@ function dorrinDialogue() {
 }
 
 function hughDialogue() {
+  if (pendingTunnelReunion && tunnelStage === 'open') {
+    setDialogue('When they sealed Rootdeep, I was locked outside and left behind. I waited for word from my family, but the tunnel stayed silent. I thought the corruption had taken them all. Then the cart came through. I saw them step out alive. I got to hold them again. You gave us that.', [
+      ['I’m glad you’re together', () => {
+        pendingTunnelReunion = false;
+        hughStiltsRevealed = true;
+        saveCamp();
+        setDialogue('There’s one more thing I ought to come clean about. I’ve been standing on stilts this entire time. Mine keeper’s pride, I suppose. They are murder on the knees. Hugh steps down, suddenly a good deal shorter.');
+      }]
+    ]);
+    return;
+  }
   if (finishCampRequest('hugh')) return;
   if (fishing.tideglass === 'spent') {
+    if (hughStiltsRevealed && tunnelStage === 'open') {
+      setDialogue('My family is here. I still look over my shoulder to make sure it’s real. The carts run between this mine and Rootdeep now—and these days I can reach the lower shelves without the stilts.', [
+        ['Ask about the tunnel', () => setDialogue('The lights and timber are holding. We can visit each other whenever we please. I never thought I’d say that again.', [['Back', hughDialogue]])]
+      ]);
+      return;
+    }
     if (hasRootKey || rootKeyQuest === 'complete') {
       setDialogue('The lift is running. It goes straight back to Lyss’s clearing. Step aboard at the far end of the mine. The Root Key should open the sealed road at the far edge of Crownwood.', [
         ['Ask about the old signal', () => setDialogue('Good. Someone below is waiting for a way through. I only hope we’re not too late.', [['Back', hughDialogue]])]
@@ -2049,8 +2076,10 @@ function tunnelDialogue(item) {
   visited.add(item.id);
   recordJournalEntry('old-tunnel', { quiet: true });
   if(tunnelStage === 'open') {
+    if(fromRootdeep && !hughStiltsRevealed) pendingTunnelReunion = true;
     enterRegion(fromRootdeep ? 'mine' : 'rootdeep', fromRootdeep
       ? {x:4110,ground:'mine-floor'} : {x:160,ground:'rootdeep-floor'});
+    saveCamp();
     return;
   }
   openDialogue(item.id);
