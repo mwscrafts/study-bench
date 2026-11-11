@@ -5,9 +5,9 @@ import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownw
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
 import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel } from './mine-art.mjs?v=05';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns } from './rootdeep.mjs?v=7';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns } from './rootdeep.mjs?v=8';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
-  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin } from './rootdeep-art.mjs?v=11';
+  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=12';
 import { beachFlower, readFishing, castNet } from './beach.mjs?v=1';
 import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
@@ -23,7 +23,7 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { paintRestoredKing } from './village.mjs?v=12';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=6';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=7';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -75,6 +75,8 @@ let glowcapLanternLit = false;
 let branchLanternsLit = new Set();
 let tunnelStage = 'goblins';
 let tunnelSeen = false;
+let tunnelGuardSpoken = false;
+let tunnelQuestAccepted = false;
 let defeatedTunnelGoblins = new Set();
 let tunnelGoblins = [];
 let rootKeyQuest = 'unoffered';
@@ -411,6 +413,8 @@ function paint() {
     for (const node of rootglassNodes) if (!rootglass.has(node.id)) paintRootglass(ctx,node,animationClock);
     for (const node of rootdeepOreNodes) if (!iron.has(node.id)) paintOre(ctx,node,animationClock);
     for (const node of glowcapNodes) if (!gatheredGlowcaps.has(node.id)) paintGlowcap(ctx,node,animationClock);
+    const guard = rootdeepLandmarks.find(item => item.id === 'rootdeep-guard');
+    paintTunnelGuard(ctx,guard.x,guard.y,animationClock);
     const dorrin = rootdeepLandmarks.find(item => item.id === 'dorrin');
     shadow(dorrin.x,dorrin.y,15);
     paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
@@ -708,7 +712,9 @@ function updatePrompt() {
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const onLadder = nearRootdeepLadder() || rootdeepClimbing;
-  const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
+  const label = current?.id === 'rootdeep-ladder-8' && !tunnelGuardSpoken
+    ? 'Talk to the shaft guard before going down' :
+    current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
     rootdeepBranchLanterns.includes(current) && branchLanternsLit.has(current.id) ? 'Inspect the restored lantern' :
     (current?.id === 'rootdeep-tunnel' || current?.id === 'mine-tunnel') && tunnelStage === 'open' ? 'Ride the minecart' :
     current?.id === 'hut-bed' && !canSleepAtBed() ? 'Rest by the window' :
@@ -758,13 +764,13 @@ function updateNotes() {
     : rootKeyQuest === 'accepted' ? (rootKeyGuidance ? 'Old lodestones · ' + activatedLodestones.size + ' / 3'
       : 'Ask Lyss about Hugh’s old symbols') : '';
   const glowcapNote = glowcapQuest === 'accepted' ? 'Glowcaps for the lanterns · ' + Math.min(glowcaps, 3) + ' / 3' : '';
-  const tunnelNote = tunnelSeen && tunnelStage !== 'open' && (region === 'rootdeep' || region === 'mine')
+  const tunnelNote = tunnelQuestAccepted && tunnelStage !== 'open' && (region === 'rootdeep' || region === 'mine')
     ? ({ goblins: 'Tunnel · Clear cave goblins ' + defeatedTunnelGoblins.size + ' / 2',
       light: 'Tunnel · Relight with 2 Glowcaps · ' + Math.min(glowcaps,2) + ' / 2',
       assess: 'Tunnel · Ask Dorrin to assess the lit passage',
       timber: 'Tunnel · Timber supports · ' + Math.min(spareWood(tools),4) + ' / 4' })[tunnelStage] : '';
   el('quest-tracker').textContent = rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
-    ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : 'Rootglass · ' + rootglass.size + ' / 3')
+    ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : rootdeepQuest === 'accepted' ? 'Rootglass · ' + rootglass.size + ' / 3' : '')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
   el('tool-notes').textContent = region === 'beach'
@@ -781,7 +787,7 @@ function updateNotes() {
   el('healthMeter').setAttribute('aria-valuenow', String(health));
   el('health-notes').hidden = false;
   el('tool-notes').hidden = region === 'hearth';
-  el('quest-tracker').hidden = false;
+  el('quest-tracker').hidden = !el('quest-tracker').textContent;
   const destinations = ['canopy', 'mine', 'shore'].filter(id => visited.has(id)).length;
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
@@ -918,7 +924,7 @@ function saveCamp() {
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
-      tunnelStage, tunnelSeen, defeatedTunnelGoblins: [...defeatedTunnelGoblins],
+      tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, defeatedTunnelGoblins: [...defeatedTunnelGoblins],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools,
@@ -970,6 +976,9 @@ function begin(save) {
   rootdeepQuest = savedQuest(save?.rootdeepQuest);
   tunnelStage = ['goblins','light','assess','timber','open'].includes(save?.tunnelStage) ? save.tunnelStage : 'goblins';
   tunnelSeen = save?.tunnelSeen === true;
+  tunnelQuestAccepted = save?.tunnelQuestAccepted === true || ['assess','timber','open'].includes(tunnelStage);
+  tunnelGuardSpoken = save?.tunnelGuardSpoken === true || tunnelQuestAccepted ||
+    save?.region === 'rootdeep' && save?.footing?.ground === 'rootdeep-floor';
   defeatedTunnelGoblins = new Set(['goblin-west','goblin-east'].filter(id =>
     Array.isArray(save?.defeatedTunnelGoblins) && save.defeatedTunnelGoblins.includes(id)));
   if(tunnelStage === 'goblins' && defeatedTunnelGoblins.size === 2) tunnelStage = 'light';
@@ -2007,6 +2016,33 @@ const interactionHandlers = {
   'fallen-crown': endingDialogue
 };
 
+function tunnelGuardDialogue() {
+  tunnelGuardSpoken = true;
+  visited.add('rootdeep-guard');
+  openDialogue('rootdeep-guard');
+  if(tunnelQuestAccepted) {
+    setDialogue(tunnelStage === 'open'
+      ? 'The lower shaft is safe again. The minecarts run between here and Hugh’s mine.'
+      : 'The bedrock shaft remains closed to our crew. The corruption is spreading through the rock, and cave goblins hold the old tunnel. Be careful below.');
+  } else {
+    setDialogue('Stop there. The bedrock level is closed to the miners. Corruption is spreading through the old shaft, and cave goblins have taken the collapsed tunnel. The ladder leads down, but no crew can work there until they are gone. Will you help clear it?', [
+      ['I’ll help clear it', () => {
+        tunnelQuestAccepted = true;
+        tunnelSeen = true;
+        updateNotes(); saveCamp();
+        setDialogue(defeatedTunnelGoblins.size === 2
+          ? 'You already cleared the goblins. Thank you. Two Glowcaps can light the passage so Dorrin can inspect it.'
+          : 'Thank you. Clear both cave goblins first. Then we can relight the passage with two Glowcaps and see what it needs.');
+      }],
+      ['Not yet', () => {
+        saveCamp();
+        setDialogue('Fair enough. The ladder is open now that you know the risk, but the crew will wait for your help.');
+      }]
+    ]);
+  }
+  updateNotes(); saveCamp();
+}
+
 function tunnelDialogue(item) {
   const fromRootdeep = item.id === 'rootdeep-tunnel';
   if(fromRootdeep) tunnelSeen = true;
@@ -2022,6 +2058,8 @@ function tunnelDialogue(item) {
     setDialogue('An old minecart waits beside a blocked passage. The other end lies on Rootdeep’s bedrock floor. Until the dwarves reopen it, the camp and Crownwood routes remain open.');
   } else if(tunnelStage === 'goblins') {
     setDialogue('Cave goblins have claimed the collapsed tunnel. The dwarves cannot work here while they remain. Clear both before touching the old lanterns.');
+  } else if(!tunnelQuestAccepted) {
+    setDialogue('The guard has closed this shaft. Speak to him by the ladder on the eighth landing before the dwarves will begin repairs.');
   } else if(tunnelStage === 'light') {
     if(glowcaps < 2) setDialogue('The goblins are gone. Two Glowcaps will light the passage so the dwarves can see the damage. You have ' + glowcaps + ' / 2.');
     else setDialogue('The goblins are gone. Fit two Glowcaps into the tunnel lanterns?', [
@@ -2058,6 +2096,10 @@ function interact() {
   // Refresh the target at activation time; touch input can leave the previous frame's selection stale.
   updatePrompt();
   const item = selectedLandmark;
+  if (region === 'rootdeep' && item?.id === 'rootdeep-guard') {
+    tunnelGuardDialogue();
+    return;
+  }
   if (region === 'rootdeep' && item?.id === 'dorrin') {
     openDialogue('dorrin');
     dorrinDialogue();
@@ -2597,6 +2639,13 @@ function frame(time) {
         player.velocityY = 0;
         player.moving = vertical !== 0;
         if (vertical) player.y += vertical * ROOTDEEP_CLIMB_SPEED * step;
+        const gatedLanding = surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-8'), ROOTDEEP_LADDER_X);
+        if (!tunnelGuardSpoken && vertical > 0 && player.y >= gatedLanding) {
+          player.y = gatedLanding;
+          player.ground = 'rootdeep-level-8';
+          player.jumps = 0;
+          rootdeepClimbing = false;
+        }
         if (player.y <= 80 && vertical < 0) {
           enterRegion('crownwood', { x: 5510, ground: 'understory' });
           break;
@@ -2609,6 +2658,13 @@ function frame(time) {
           rootdeepClimbing = false;
         }
       } else movePlayer(player, direction, step, terrain);
+      if(region === 'rootdeep' && !tunnelGuardSpoken && player.y > 4200) {
+        player.y = surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-8'),player.x);
+        player.ground = 'rootdeep-level-8';
+        player.velocityY = 0;
+        player.jumps = 0;
+        rootdeepClimbing = false;
+      }
       remaining -= step;
     }
     if (region === 'king' && !victory) {
@@ -2877,7 +2933,7 @@ window.addEventListener('keydown', event => {
     if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
       rootdeepClimbing = true;
       heldKeys.add(key);
-    } else if (!event.repeat) dropThrough(player, terrain);
+    } else if (!event.repeat && !(region === 'rootdeep' && player.ground === 'rootdeep-level-8' && !tunnelGuardSpoken)) dropThrough(player, terrain);
     return;
   }
   if (jumpKeys.has(key) && (key !== ' ' || !event.target.closest('button'))) {
@@ -2928,8 +2984,9 @@ el('down').addEventListener('click', event => {
   if (!controlsActive()) return;
   if (event.detail === 0 && region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
     rootdeepClimbing = true;
-    player.y = Math.min(rootdeepTerrain.floor.points[0][1], player.y + 130);
-  } else if (!nearRootdeepLadder()) dropThrough(player, terrain);
+    player.y = Math.min(tunnelGuardSpoken ? rootdeepTerrain.floor.points[0][1]
+      : surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-8'),ROOTDEEP_LADDER_X), player.y + 130);
+  } else if (!nearRootdeepLadder() && !(region === 'rootdeep' && player.ground === 'rootdeep-level-8' && !tunnelGuardSpoken)) dropThrough(player, terrain);
 });
 el('jump').addEventListener('pointerdown', event => {
   event.preventDefault();

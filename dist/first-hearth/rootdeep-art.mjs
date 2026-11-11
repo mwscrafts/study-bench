@@ -1,5 +1,5 @@
 import { random, poly, path, orb, stone } from './camp-art.mjs?v=12';
-import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=7';
+import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=8';
 
 const { width, height, floor, ledges } = rootdeepTerrain;
 
@@ -350,6 +350,15 @@ export function paintRootdeepTunnel(ctx, stage, clock) {
   poly(ctx,[[x+198,y-68],[x+305,y-68],[x+286,y-20],[x+217,y-20]],'#745c48');
   path(ctx,[[x+192,y-70],[x+312,y-70]],'#c5a46d',6);
   for(const dx of [224,282]) orb(ctx,x+dx,y-17,13,'#262d2c');
+}
+
+export function paintTunnelGuard(ctx,x,y,clock) {
+  paintDorrin(ctx,x,y,clock,.52);
+  // Iron-rimmed helmet and staff distinguish the guard from Dorrin.
+  poly(ctx,[[x-24,y-46],[x-19,y-56],[x-8,y-61],[x+12,y-61],[x+23,y-54],[x+24,y-46]],'#697769');
+  path(ctx,[[x-24,y-46],[x+24,y-46]],'#c0a474',5);
+  path(ctx,[[x+26,y-2],[x+26,y-91]],'#967b52',6);
+  orb(ctx,x+26,y-93,7,'#cfb477');
 }
 
 export function paintTunnelGoblin(ctx, goblin, clock) {

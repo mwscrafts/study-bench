@@ -4,8 +4,8 @@ import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocatio
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=14';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=16';
 import { buildMineArt } from './mine-art.mjs?v=05';
-import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=7';
-import { buildRootdeepArt } from './rootdeep-art.mjs?v=11';
+import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=8';
+import { buildRootdeepArt } from './rootdeep-art.mjs?v=12';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=1';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=1';
 import { buildBeachArt } from './beach-art.mjs';
@@ -103,6 +103,7 @@ export const conversations = {
   barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
   hugh: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
   dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
+  'rootdeep-guard': { name: 'Bram', role: 'SHAFT GUARD' },
   'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
   'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
   'rootdeep-lanternkeeper': { name: 'Lantern Keeper', role: 'ROOTDEEP SETTLER', greeting: 'Welcome in. The lanterns stay lit through every shift. This landing is safe, even when the roots below begin to stir.' },

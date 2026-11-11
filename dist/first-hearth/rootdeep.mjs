@@ -33,6 +33,7 @@ export const rootdeepLandmarks = [
   spot(tiers[3][0], 'rootdeep-house-common-door', 1200, 'Enter the common house', 72),
   spot(tiers[3][0], 'dorrin', 1540, 'Talk to Dorrin', 92),
   spot(tiers[7][0], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
+  spot(tiers[7][0], 'rootdeep-guard', 1855, 'Talk to the shaft guard', 76),
   spot(tiers[7][0], 'deep-seal', 465, 'Examine the sealed door', 84),
   spot(floor, 'rootdeep-tunnel', 160, 'Inspect the collapsed tunnel', 95)
 ];
