@@ -86,6 +86,7 @@ let hughQuest = false;
 let tools = readTools();
 let pickaxeRecipeLearned = false;
 let treeHarvestDays = {};
+let glowcapHarvestDays = {};
 let fishing = readFishing();
 let casting = null;
 let nightIndex = 0;
@@ -863,10 +864,23 @@ function advanceTreeRegrowth() {
     const harvestedOn = Number.isSafeInteger(treeHarvestDays[id]) ? treeHarvestDays[id] : nightIndex;
     return nightIndex - harvestedOn >= 3;
   });
-  if (!regrown.length) return;
+  const regrownGlowcaps = [...gatheredGlowcaps].filter(id => {
+    const harvestedOn = Number.isSafeInteger(glowcapHarvestDays[id]) ? glowcapHarvestDays[id] : nightIndex;
+    return nightIndex - harvestedOn >= 3;
+  });
+  if (!regrown.length && !regrownGlowcaps.length) return;
   tools.chopped = tools.chopped.filter(id => !regrown.includes(id));
   for (const id of regrown) delete treeHarvestDays[id];
-  notice = regrown.length === 1 ? 'A marked pine has grown back.' : 'Marked pines have grown back.';
+  for (const id of regrownGlowcaps) {
+    gatheredGlowcaps.delete(id);
+    delete glowcapHarvestDays[id];
+  }
+  const regrowthNotices = [];
+  if (regrown.length) regrowthNotices.push(regrown.length === 1
+    ? 'A marked pine has grown back.' : 'Marked pines have grown back.');
+  if (regrownGlowcaps.length) regrowthNotices.push(regrownGlowcaps.length === 1
+    ? 'A Glowcap has regrown.' : 'Glowcaps have regrown.');
+  notice = regrowthNotices.join(' ');
   noticeUntil = animationClock + 2.4;
   updateNotes(); updatePrompt(); saveCamp();
 }
@@ -887,7 +901,7 @@ function saveCamp() {
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools,
-      treeHarvestDays, fishing,
+      treeHarvestDays, glowcapHarvestDays, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
       activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations]
@@ -928,7 +942,7 @@ function begin(save) {
   crystals = savedKnownIds(save?.crystals, crystalNodes);
   rootglass = savedKnownIds(save?.rootglass, rootglassNodes);
   gatheredGlowcaps = savedKnownIds(save?.gatheredGlowcaps, glowcapNodes);
-  glowcaps = savedInteger(save?.glowcaps, 0, glowcapNodes.length, gatheredGlowcaps.size);
+  glowcaps = savedInteger(save?.glowcaps, 0, 999999, gatheredGlowcaps.size);
   glowcapQuest = ['accepted','complete'].includes(save?.glowcapQuest) ? save.glowcapQuest : 'unoffered';
   glowcapLanternLit = save?.glowcapLanternLit === true;
   rootdeepQuest = savedQuest(save?.rootdeepQuest);
@@ -952,6 +966,11 @@ function begin(save) {
   for (const id of tools.chopped) {
     const savedDay = save?.treeHarvestDays?.[id];
     treeHarvestDays[id] = Number.isSafeInteger(savedDay) ? clamp(savedDay, 0, nightIndex) : nightIndex;
+  }
+  glowcapHarvestDays = {};
+  for (const id of gatheredGlowcaps) {
+    const savedDay = save?.glowcapHarvestDays?.[id];
+    glowcapHarvestDays[id] = Number.isSafeInteger(savedDay) ? clamp(savedDay, 0, nightIndex) : nightIndex;
   }
   const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
   health = Number.isInteger(save?.health) ? clamp(save.health, 1, 100) : 100 - legacyHits * 34;
@@ -1817,6 +1836,7 @@ function gather(item) {
     floater(floaters, x, y - 65, '+1 iron ore');
   } else if (glowcapNodes.includes(item)) {
     gatheredGlowcaps.add(id);
+    glowcapHarvestDays[id] = nightIndex;
     glowcaps++;
     notice = 'Glowcap gathered · ' + glowcaps + ' found';
     puff(particles, x, y - 24, '#8ee5ce', 10);
