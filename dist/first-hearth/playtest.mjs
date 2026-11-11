@@ -894,6 +894,11 @@ function currentLandmarks() {
     (item.id !== 'restored-king' || victory?.ending === 'free'));
 }
 
+function canSleepAtBed() {
+  const time = phaseClock % DAY_LENGTH;
+  return skyMode === 'night' || (skyMode === 'auto' && time >= 72 && time < 121);
+}
+
 function updatePrompt() {
   const items = currentLandmarks().filter(item => !item.ground || item.ground === player.ground);
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
@@ -912,7 +917,7 @@ function updatePrompt() {
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
   const onLadder = nearRootdeepLadder() || rootdeepClimbing;
   const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
-    current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
+    current?.id === 'hut-bed' && !canSleepAtBed() ? 'Rest by the window' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
@@ -1336,9 +1341,11 @@ function decorateHutDialogue() {
 }
 
 function bedDialogue() {
-  const phase = phaseClock%DAY_LENGTH;
-  if (phase < 72 || phase >= 121) {
-    setDialogue('The room is quiet. The bed will let you sleep through the night and restore your health when night falls.');
+  if (!canSleepAtBed()) {
+    const guidance = skyMode === 'auto'
+      ? 'The bed will let you sleep through the night and restore your health when night falls.'
+      : 'The bed is ready when Sky is set to Night, or when Sky is set to Auto and the world reaches night.';
+    setDialogue('The room is quiet. ' + guidance);
     return;
   }
   setDialogue('Sleep until morning? You will wake with full health.', [['Sleep', () => {
