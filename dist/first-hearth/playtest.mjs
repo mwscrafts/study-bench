@@ -1,10 +1,10 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
-  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=14';
+  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=15';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberTrees, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=12';
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=13';
-import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
+import { mineTerrain, mineLandmarks, mineLocation, mineShadows, hugh, netChest, oreNodes, flint } from './mine.mjs?v=14';
+import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=03';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=3';
 import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
@@ -49,7 +49,6 @@ let terrain = campTerrain;
 let crystals = new Set();
 let rootglass = new Set();
 let rootdeepQuest = 'unoffered';
-let rootdeepLiftFixed = false;
 // Rootdeep uses one continuous ladder shaft; this flag keeps gravity off while attached.
 let rootdeepClimbing = false;
 let iron = new Set();
@@ -58,7 +57,7 @@ let shadowStock = 0;
 let defeatedShadows = new Set();
 let shadowHealth = new Map();
 let hasNet = false;
-let ivoQuest = false;
+let hughQuest = false;
 let tools = readTools();
 let fishing = readFishing();
 let casting = null;
@@ -214,9 +213,9 @@ const liftGates = {
 };
 
 const conversations = {
-  mara: { name: 'Lyss', role: 'FORGE KEEPER' },
+  lyss: { name: 'Lyss', role: 'FORGE KEEPER' },
   barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
-  ivo: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
+  hugh: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
   dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
   'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
   'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
@@ -550,7 +549,7 @@ function drawFirelight(x, y, radius, strength) {
 }
 
 function paintMarker(landmark) {
-  const height = landmark.id === 'mara' || landmark.id === 'ivo' ? 125 : 103;
+  const height = landmark.id === 'lyss' || landmark.id === 'hugh' ? 125 : 103;
   const y = landmark.y - height + Math.sin(animationClock * 2) * 4;
   ctx.save();
   ctx.translate(landmark.x, y);
@@ -612,14 +611,14 @@ function paint() {
       ctx.fillStyle = 'rgba(255,204,123,' + ((1 - rise / 97) * .8) + ')';
       ctx.fillRect(2258 + Math.sin(rise * .08 + i) * 15, 594 - rise, 2.7, 2.7);
     }
-    const mara = landmarks[0];
-    shadow(mara.x, mara.y, 24);
-    drawSprite(ctx, sprites.mara, mara.x, mara.y, 98);
+    const lyss = landmarks[0];
+    shadow(lyss.x, lyss.y, 24);
+    drawSprite(ctx, sprites.lyss, lyss.x, lyss.y, 98);
     paintCraftingProps(ctx, tools);
     if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2415,groundAt(2415)-127);
     for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
     paintCampFacilities(ctx, { berryPlots, growMs:BERRY_GROW_MS, catnipUnlocked,
-      catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && ivoQuest }, animationClock);
+      catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && hughQuest }, animationClock);
   } else if (region === 'crownwood') {
     paintCrownwoodPines(ctx, tools.chopped);
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
@@ -647,8 +646,8 @@ function paint() {
     paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
     const high = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-high');
     const low = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-low');
-    paintRootdeepLift(ctx,high.x,high.y,rootdeepLiftFixed);
-    paintRootdeepLift(ctx,low.x,low.y,rootdeepLiftFixed);
+    paintRootdeepLift(ctx,high.x,high.y,rootdeepQuest === 'complete');
+    paintRootdeepLift(ctx,low.x,low.y,rootdeepQuest === 'complete');
   } else if (region === 'mine') {
     paintMineLights(ctx, camera, animationClock, night);
     paintMineChest(ctx, hasNet);
@@ -657,8 +656,8 @@ function paint() {
       if (!iron.has(node.id)) paintOre(ctx, node, animationClock);
     }
     if (!tools.flint) paintFlint(ctx);
-    shadow(ivo.x, ivo.y, 26);
-    drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
+    shadow(hugh.x, hugh.y, 26);
+    drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, 105);
   } else if (region === 'beach') {
     paintBeachDetails(ctx, camera, animationClock, night, casting);
   } else if (region === 'hearth') {
@@ -915,8 +914,7 @@ function updatePrompt() {
   const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
     current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
-    current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' :
-    current?.id === 'mara' ? 'Talk to Lyss' : current?.label;
+    current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   const jumpCaption = el('jump').querySelector('small');
@@ -978,7 +976,7 @@ function updateNotes() {
   el('trail-notes').textContent = region === 'crownwood'
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
     : region === 'mine' ? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? 'Lift running'
-      : ivoQuest ? 'Hugh Mungus needs 1 tideglass gemstone' : 'Follow the lanterns to Hugh Mungus')
+      : hughQuest ? 'Hugh Mungus needs 1 tideglass gemstone' : 'Follow the lanterns to Hugh Mungus')
     : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
     : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right'
@@ -1007,8 +1005,8 @@ function saveCamp() {
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
-      rootglass: [...rootglass], rootdeepQuest, rootdeepLiftFixed, iron: [...iron],
-      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing,
+      rootglass: [...rootglass], rootdeepQuest, iron: [...iron],
+      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
       activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations]
@@ -1044,7 +1042,6 @@ function begin(save) {
   const savedRootglass = Array.isArray(save?.rootglass) ? save.rootglass : [];
   rootglass = new Set(rootglassNodes.filter(node => savedRootglass.includes(node.id)).map(node => node.id));
   rootdeepQuest = ['accepted','declined','complete'].includes(save?.rootdeepQuest) ? save.rootdeepQuest : 'unoffered';
-  rootdeepLiftFixed = rootdeepQuest === 'complete' && save?.rootdeepLiftFixed === true;
   const savedIron = Array.isArray(save?.iron) ? save.iron : [];
   iron = new Set(oreNodes.filter(node => savedIron.includes(node.id)).map(node => node.id));
   ironStock = Number.isSafeInteger(save?.ironStock) ? Math.max(0,save.ironStock) : iron.size;
@@ -1052,7 +1049,7 @@ function begin(save) {
   defeatedShadows = new Set(Array.isArray(save?.defeatedShadows) ? save.defeatedShadows : []);
   shadowHealth = new Map();
   hasNet = save?.hasNet === true;
-  ivoQuest = save?.ivoQuest === true;
+  hughQuest = save?.hughQuest === true;
   fishing = readFishing(save?.fishing);
   nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
   const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
@@ -1072,8 +1069,9 @@ function begin(save) {
   minecartUpdatedAt = Number.isSafeInteger(save?.minecartUpdatedAt) ? save.minecartUpdatedAt : Date.now();
   minecartCapacity = save?.minecartCapacity === 12 ? 12 : 8;
   minecartOre = Number.isSafeInteger(save?.minecartOre) ? clamp(save.minecartOre,0,minecartCapacity) : 0;
-  activeRequest = ['mara','barry','ivo'].includes(save?.activeRequest) ? save.activeRequest : null;
-  completedRequests = new Set(Array.isArray(save?.completedRequests) ? save.completedRequests.filter(id => ['mara','barry','ivo'].includes(id)) : []);
+  activeRequest = Object.hasOwn(campRequests, save?.activeRequest) ? save.activeRequest : null;
+  completedRequests = new Set(Array.isArray(save?.completedRequests)
+    ? save.completedRequests.filter(id => Object.hasOwn(campRequests, id)) : []);
   campTokens = Number.isSafeInteger(save?.campTokens) ? clamp(save.campTokens,0,999) : 0;
   hutDecorations = new Set(Array.isArray(save?.hutDecorations) ? save.hutDecorations.filter(id =>
     ['canopy-banner','lake-painting','patchwork-quilt'].includes(id)) : []);
@@ -1176,10 +1174,22 @@ function setQuest(state) {
 }
 
 const campRequests = {
-  mara: { who:'Lyss', amount:5, item:'berries', reward:2 },
+  lyss: { who:'Lyss', amount:5, item:'berries', reward:2 },
   barry: { who:'Barry', amount:3, item:'wood', reward:3 },
-  ivo: { who:'Hugh Mungus', amount:4, item:'iron ore', reward:3 }
+  hugh: { who:'Hugh Mungus', amount:4, item:'iron ore', reward:3 }
 };
+
+function requestChoice(id, bonus = '') {
+  const request = campRequests[id];
+  return [request.who + ' · ' + request.amount + ' ' + request.item + ' · ' + request.reward + ' tokens' + bonus,
+    () => startCampRequest(id)];
+}
+
+function requestStock(id) {
+  if (id === 'lyss') return berries;
+  if (id === 'barry') return spareWood(tools);
+  return ironStock;
+}
 
 function requestBoardDialogue() {
   const tokens = 'You have ' + campTokens + ' Hearth tokens. ';
@@ -1189,11 +1199,8 @@ function requestBoardDialogue() {
       [['All right', () => closeDialogue()]]);
     return;
   }
-  const choices = [
-    ['Lyss · 5 berries · 2 tokens', () => startCampRequest('mara')],
-    ['Barry · 3 wood · 3 tokens' + (catnipUnlocked ? '' : ' + catnip seed'), () => startCampRequest('barry')]
-  ];
-  if (ivoQuest && fishing.tideglass === 'spent') choices.push(['Hugh Mungus · 4 iron ore · 3 tokens' + (minecartCapacity === 8 ? ' + cart upgrade' : ''), () => startCampRequest('ivo')]);
+  const choices = [requestChoice('lyss'), requestChoice('barry', catnipUnlocked ? '' : ' + catnip seed')];
+  if (hughQuest && fishing.tideglass === 'spent') choices.push(requestChoice('hugh', minecartCapacity === 8 ? ' + cart upgrade' : ''));
   setDialogue(tokens + 'Choose one request. Bring the listed supplies back to that person. The requests can be repeated, but only one can be active at a time.', choices);
 }
 
@@ -1205,39 +1212,32 @@ function startCampRequest(id) {
     [['Got it', () => closeDialogue()]]);
 }
 
-function canPayRequest(id) {
-  const r = campRequests[id];
-  if (id === 'mara') return berries >= r.amount;
-  if (id === 'barry') return spareWood(tools) >= r.amount;
-  return ironStock >= r.amount;
-}
-
 function finishCampRequest(id) {
   if (activeRequest !== id) return false;
   const r = campRequests[id];
-  if (!canPayRequest(id)) {
+  if (requestStock(id) < r.amount) {
     setDialogue(r.who + ' asked for ' + r.amount + ' ' + r.item + '. You have ' +
-      (id === 'mara' ? berries + ' berries' : id === 'barry' ? spareWood(tools) + ' wood' : ironStock + ' iron ore') + '. Come back when you have enough.',
+      requestStock(id) + ' ' + r.item + '. Come back when you have enough.',
       [['I’ll gather more', () => closeDialogue()]]);
     return true;
   }
-  if (id === 'mara') berries -= r.amount;
+  if (id === 'lyss') berries -= r.amount;
   else if (id === 'barry') tools.woodDonated = (tools.woodDonated ?? 0) + r.amount;
   else ironStock -= r.amount;
   activeRequest = null;
   campTokens += r.reward;
   const firstTime = !completedRequests.has(id);
   completedRequests.add(id);
-  if (id === 'mara' && firstTime) berrySeeds += 3;
+  if (id === 'lyss' && firstTime) berrySeeds += 3;
   if (id === 'barry' && firstTime) {
     catnipUnlocked = true;
     catnipReadyAt = Date.now() + 5000;
   }
-  if (id === 'ivo' && firstTime) minecartCapacity = 12;
+  if (id === 'hugh' && firstTime) minecartCapacity = 12;
   updateNotes(); saveCamp();
-  const bonus = id === 'mara' && firstTime ? ' She also gives you three berry seeds.'
+  const bonus = id === 'lyss' && firstTime ? ' She also gives you three berry seeds.'
     : id === 'barry' && firstTime ? ' He gives you a catnip seed for Alvin’s garden.'
-    : id === 'ivo' && firstTime ? ' He upgrades the cart so it can carry more ore.' : '';
+    : id === 'hugh' && firstTime ? ' He upgrades the cart so it can carry more ore.' : '';
   setDialogue(r.who + ' accepts the supplies and thanks you. +' + r.reward + ' Hearth tokens.' + bonus,
     [['You’re welcome', () => closeDialogue()]]);
   return true;
@@ -1264,7 +1264,7 @@ function berryPlotDialogue() {
 }
 
 function syncMinecart() {
-  if (!(ivoQuest && fishing.tideglass === 'spent')) return;
+  if (!(hughQuest && fishing.tideglass === 'spent')) return;
   const now = Date.now();
   const gained = Math.floor(Math.max(0,now-minecartUpdatedAt)/MINECART_TICK_MS);
   if (gained > 0) {
@@ -1274,7 +1274,7 @@ function syncMinecart() {
 }
 
 function minecartDialogue() {
-  if (!(ivoQuest && fishing.tideglass === 'spent')) {
+  if (!(hughQuest && fishing.tideglass === 'spent')) {
     setDialogue('The cart is empty. Once Hugh Mungus repairs the lift, it can carry ore between the mine and camp.');
     return;
   }
@@ -1353,8 +1353,8 @@ function petAlvin() {
   closeDialogue();
 }
 
-function maraDialogue() {
-  if (finishCampRequest('mara')) return;
+function lyssDialogue() {
+  if (finishCampRequest('lyss')) return;
   const tool = [tools.hatchet ? 'How do I make a pickaxe?' : 'Can I get a gathering tool?', () => {
     if (!tools.hatchet) {
       tools.hatchet = true;
@@ -1363,11 +1363,11 @@ function maraDialogue() {
       saveCamp();
     }
     setDialogue('Take my old hatchet. It cuts marked pines. Find loose flint inside Embervein Mine, then use 3 wood and 1 flint at the workbench east of the fire to make a pickaxe.',
-      [['Back', maraDialogue]]);
+      [['Back', lyssDialogue]]);
   }];
   const paths = ['Where do the trails go?', () => setDialogue(
     'At the root fork, jump up into Crownwood. Stay on the ground for the mine. The shore trail keeps going past the mine door.',
-    [['Back', maraDialogue]])];
+    [['Back', lyssDialogue]])];
   if (quest === 'complete') {
     if (tools.flowerCrown) {
       setDialogue('The crown is yours now. Please be careful. Please save our king.', [tool, paths]);
@@ -1395,7 +1395,7 @@ function maraDialogue() {
     setDialogue(greeting + 'Bring me 3 dusklilies and I’ll give you a brass key. ' + flowerHint + ' Will you help?', [
       ['Yes, I’ll find them', () => {
         setQuest('accepted');
-        maraDialogue();
+        lyssDialogue();
       }],
       ['No, maybe later', () => {
         setQuest('declined');
@@ -1423,7 +1423,6 @@ function dorrinDialogue() {
     setDialogue('You found all three rootglass pieces. They should hold the lift cable together. Will you give them to me?', [
       ['Give Dorrin the 3 rootglass', () => {
         rootdeepQuest = 'complete';
-        rootdeepLiftFixed = true;
         updateNotes();
         updatePrompt();
         saveCamp();
@@ -1452,8 +1451,8 @@ function dorrinDialogue() {
   ]);
 }
 
-function ivoDialogue() {
-  if (finishCampRequest('ivo')) return;
+function hughDialogue() {
+  if (finishCampRequest('hugh')) return;
   if (fishing.tideglass === 'spent') {
     setDialogue('The lift is running. It goes straight back to Lyss’s clearing. Step aboard at the far end of the mine.');
     return;
@@ -1462,7 +1461,7 @@ function ivoDialogue() {
     setDialogue('That’s tideglass! It’ll fit the lift bearing. I can have it running right now.', [
       ['Give Hugh Mungus the tideglass', () => {
         fishing.tideglass = 'spent';
-        ivoQuest = true;
+        hughQuest = true;
         minecartUpdatedAt = Date.now();
         openSharedDoor('mine-lift');
         updateNotes();
@@ -1480,23 +1479,23 @@ function ivoDialogue() {
   setDialogue('Mind the dark past these lamps. Take a breather here if you need one.', [
     ['What happened to the lift?', () => {
       const request = 'A bearing cracked. Bring me 1 tideglass gemstone from the beach and I can get the lift back to Lyss’s clearing. ' + net;
-      if (ivoQuest) {
-        setDialogue(request, [['Back', ivoDialogue]]);
+      if (hughQuest) {
+        setDialogue(request, [['Back', hughDialogue]]);
         return;
       }
       setDialogue(request + ' Will you bring one back?', [
         ['Yes, I’ll look for one', () => {
-          ivoQuest = true;
+          hughQuest = true;
           updateNotes();
           saveCamp();
           setDialogue('Thanks. Follow the shore path past the timber door. Cast the net off Lantern Dock.');
         }],
-        ['Maybe later', () => setDialogue('Fair enough. There’s always the timber shaft.', [['Back', ivoDialogue]])]
+        ['Maybe later', () => setDialogue('Fair enough. There’s always the timber shaft.', [['Back', hughDialogue]])]
       ]);
     }],
     ['What do you know about the King?', () => setDialogue(
       'His trail climbs above Crownwood. Lyss knows the old stories better than I do. I just know the shadows keep clear of a good lamp.',
-      [['Back', ivoDialogue]])]
+      [['Back', hughDialogue]])]
   ]);
 }
 
@@ -1631,7 +1630,7 @@ function openDialogue(id) {
   const info = conversations[id] ?? { name: 'Alder Camp', role: 'CAMP KEEPSAKE' };
   el('time-board').hidden = true;
   el('noticeboard-panel').hidden = true;
-  const portrait = id === 'mara' || id === 'ivo' ? sprites[id] : null;
+  const portrait = id === 'lyss' || id === 'hugh' ? sprites[id] : null;
   el('speaker').textContent = info.name;
   el('speaker-role').textContent = info.role;
   el('portrait').hidden = !portrait;
@@ -1947,7 +1946,7 @@ function interact() {
     return;
   }
   if (id === 'rootdeep-lift-high' || id === 'rootdeep-lift-low') {
-    if (!rootdeepLiftFixed) {
+    if (rootdeepQuest !== 'complete') {
       openDialogue(id);
       setDialogue('The old cage hangs over the shaft, but its cable is broken. Dorrin may know how to restore it.');
       return;
@@ -1971,8 +1970,8 @@ function interact() {
     return;
   }
   openDialogue(id);
-  if (id === 'mara') maraDialogue();
-  else if (id === 'ivo') ivoDialogue();
+  if (id === 'lyss') lyssDialogue();
+  else if (id === 'hugh') hughDialogue();
   else if (id === 'barry') barryDialogue();
   else if (id === 'workbench') workbenchDialogue();
   else if (id === 'dock') dockDialogue();
@@ -2705,8 +2704,8 @@ async function boot() {
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
       alvin: spriteBounds(party, 2 / 3, 1, .65),
-      mara: spriteBounds(keepers, .5, 1, .55),
-      ivo: spriteBounds(keepers, 0, .5, .52)
+      lyss: spriteBounds(keepers, .5, 1, .55),
+      hugh: spriteBounds(keepers, 0, .5, .52)
     };
     drawPortrait(el('choose-boy').querySelector('canvas'), sprites.boy);
     drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);

@@ -15,13 +15,13 @@ function at(surface, id, x, label, radius = 77) {
   return { id, x, y: surfaceAt(surface, x), label, radius };
 }
 
-export const ivo = at(floor, 'ivo', 2165, 'Talk to Hugh Mungus', 98);
+export const hugh = at(floor, 'hugh', 2165, 'Talk to Hugh Mungus', 98);
 export const netChest = at(floor, 'net-chest', 2360, 'Open Hugh Mungus’s chest', 70);
 export const flint = at(floor, 'flint', 420, 'Pick up loose flint', 64);
 
 export const mineLandmarks = [
   at(floor, 'mine-return', 167, 'Return to Alder Camp', 90),
-  ivo,
+  hugh,
   netChest,
   at(floor, 'mine-lift', 4510, 'Inspect the lift', 100)
 ];

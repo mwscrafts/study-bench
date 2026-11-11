@@ -21,11 +21,11 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 - Rootdeep artwork is rendered at half resolution and cropped to the camera. If its drawing or dimensions change, check the scaling and source crop in `playtest.mjs`.
 - Several modules use query-string versions for browser cache invalidation. When changing an imported module, bump its query in the importer; bump the `playtest.mjs` query in `index.html` for playtest changes.
 - NPC interaction branches must call `openDialogue(id)` before content helpers such as `dorrinDialogue()`; those helpers only fill the dialogue panel and do not open it.
-- Player progress is stored in local storage under `first-hearth:alder-camp:v1`. Save loading and migration happen in `begin()` and `enterRegion()`; preserve older saves when changing IDs or footing.
+- Player progress is stored in local storage under `first-hearth:alder-camp:v1`. Save loading happens in `begin()` and footing conversion in `enterRegion()`. This cleanup deliberately does not migrate old NPC request IDs; the owner accepted lost progress for those requests.
+- NPC IDs in landmarks, dialogue, sprite keys, and camp requests are `lyss`, `barry`, `hugh`, and `dorrin`. The stored `hughQuest` records accepting Hugh's gemstone request; a spent tideglass records the repaired Embervein lift. Rootdeep's lift follows `rootdeepQuest === 'complete'` without a second flag.
+- `interact()` recalculates the nearest target at activation time. Keep NPC talk handlers ahead of swing and gathering guards so a stale attack target cannot block dialogue.
 - The public site deploys from the repository's `main` branch. Do not change site access or publish through another destination without an explicit request.
 
 ## Playtest ownership
 
 The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change unless the owner explicitly authorizes that specific test. Static source review is useful, but describe clearly when the game itself has not been played through after a change.
-
-- `interact()` recalculates the nearest target at activation time. Keep NPC talk handlers ahead of swing and gathering guards so a stale attack target cannot block dialogue.

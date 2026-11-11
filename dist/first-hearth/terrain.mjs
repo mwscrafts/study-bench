@@ -26,7 +26,7 @@ export function defineTerrain(width, height, spawn, platforms) {
 export const campTerrain = defineTerrain(WORLD_WIDTH, WORLD_HEIGHT, SPAWN_X, surfaces);
 
 export const landmarks = [
-  { id: 'mara', x: 2020, y: 610, label: 'Talk to Lyss', radius: 94 },
+  { id: 'lyss', x: 2020, y: 610, label: 'Talk to Lyss', radius: 94 },
   { id: 'lift', x: 2425, y: 610, label: 'Inspect the lift', radius: 76 },
   { id: 'canopy', x: 3745, y: 260, label: 'Enter Crownwood', radius: 92 },
   { id: 'mine', x: 4050, y: 748, label: 'Enter Embervein Mine', radius: 95 },

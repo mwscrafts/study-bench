@@ -1,5 +1,5 @@
 import { random, poly, path, orb, sign, stone } from './camp-art.mjs';
-import { mineTerrain, mineLights, netChest, flint } from './mine.mjs?v=12';
+import { mineTerrain, mineLights, netChest, flint } from './mine.mjs?v=14';
 
 const { width, height, floor, ledges } = mineTerrain;
 const ceiling = [[0,212],[396,211],[640,233],[850,306],[1160,322],[1420,230],[1650,255],[1900,356],[2260,301],[2525,346],[2715,407],[2960,426],[3170,379],[3410,410],[3600,359],[3880,434],[4100,457],[4330,287],[4550,262],[4800,277]];
