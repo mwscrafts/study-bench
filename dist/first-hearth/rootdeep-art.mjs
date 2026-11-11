@@ -1,5 +1,5 @@
 import { random, poly, path, orb, stone } from './camp-art.mjs';
-import { rootdeepTerrain, rootdeepLights } from './rootdeep.mjs?v=1';
+import { rootdeepTerrain, rootdeepLights } from './rootdeep.mjs?v=2';
 
 const { width, height, floor, ledges } = rootdeepTerrain;
 
@@ -8,6 +8,14 @@ function rootLantern(ctx, x, y, scale = 1) {
   poly(ctx,[[x-10*scale,y-18*scale],[x+9*scale,y-18*scale],[x+11*scale,y+3*scale],[x-10*scale,y+3*scale]],'#433a31');
   poly(ctx,[[x-6*scale,y-14*scale],[x+6*scale,y-14*scale],[x+7*scale,y],[x-6*scale,y]],'#ffd08a');
   orb(ctx,x,y-7*scale,19*scale,'#ffcb7038');
+}
+
+function rootLadder(ctx, x, top, bottom) {
+  const width = 44;
+  path(ctx,[[x-width/2,top],[x-width/2,bottom],[x+width/2,bottom],[x+width/2,top]],'#745a3f',8);
+  path(ctx,[[x-width/2+8,top],[x-width/2+8,bottom]],'#b29368',3);
+  path(ctx,[[x+width/2-8,top],[x+width/2-8,bottom]],'#b29368',3);
+  for(let y=top+18;y<bottom-4;y+=34) path(ctx,[[x-width/2+3,y],[x+width/2-3,y]],'#c2a274',5);
 }
 
 function ledgeFace(ctx, surface, index) {
@@ -86,6 +94,13 @@ export function buildRootdeepArt() {
     path(ctx,[[mid-86,y+50],[mid+86,y+50]],'#9a7956',5);
     if(index%2===0) path(ctx,[[mid-76,y+118],[mid-18,y+53],[mid+4,y+53],[mid+74,y+118]],'#7d6549',5);
   });
+  // Lantern-marked root ladders give every landing a clear, usable route back upward.
+  ledges.forEach((surface,index)=>{
+    const y=surface.points[0][1];
+    const top=index===0 ? Math.max(0,y-190) : ledges[index-1].points[0][1]+18;
+    rootLadder(ctx,1780,top,y+8);
+  });
+  rootLadder(ctx,1780,ledges.at(-1).points[0][1]+18,floor.points[0][1]+8);
   settlement(ctx);
   // Pools and ore-vein glints on the lowest two levels.
   poly(ctx,[[1430,3070],[1530,3046],[1770,3053],[1870,3078],[1840,3100],[1510,3096]],'#41676a');
