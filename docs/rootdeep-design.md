@@ -20,6 +20,14 @@
 - Light reaches about 205 world units from the lantern. In that radius shadow hit damage is halved and nearby-threat Composure drain is reduced to 40%; enemies still attack and other Rootdeep areas remain dangerous. The regular ambient lights near these two galleries were shifted toward the main route so they do not falsely appear to light the dark branches.
 - Glowcaps regrow every three night advances. This supports restoring both branches and saving future caps for the staged tunnel.
 
+## Collapsed tunnel and minecart
+
+- The tunnel mouth is at **x=160 on the bedrock catch floor, y=4860**, below the eighth landing. The Deep Seal stays on landing 8 at x=465. Keep them visually and mechanically distinct. The other blocked portal and its cart stand at x≈4110 in Embervein's Deep Seam.
+- Both portals and carts are visible from the start. The player can inspect either blocked endpoint before finishing the project. The Rootdeep floor goblins at x≈385 and 495 are the first task. Their deaths persist, independent of the nightly shadows.
+- After both cave goblins are cleared, spend two Glowcaps to relight the tunnel. Only then can Dorrin assess the roof and request four renewable wood for support beams. Delivering wood at the Rootdeep mouth braces the passage; his crew completes excavation and unlocks both minecarts as a two-way shortcut. Existing routes via camp and Crownwood stay available.
+- Progress is saved in `tunnelStage`, `tunnelSeen`, and `defeatedTunnelGoblins`. Wood is deducted through `tools.woodDonated`, which feeds `spareWood(tools)`; do not count lifetime harvest as available stock. This is separate from the two side-branch lanterns and the Common Keeper's three-cap settlement project.
+- The static landscape remains a full-resolution 1920×4920 canvas. The tunnel, rails, rubble, lights, timber and carts are drawn as dynamic stage overlays; goblins are persistent daytime enemies with their own health and contact damage. The cart transition uses the existing `enterRegion` and explicit floor footing.
+
 ## Current content by level
 
 | Level | Name | Main content |
@@ -32,6 +40,7 @@
 | 6 | Flooded Reach | Raised boardwalk over a shallow pool and visible machinery |
 | 7 | Rootglass Vein | Shadow-tangled roots, purple root-glow, night patrol |
 | 8 | The Deep Seal | Rootglass seam, winch endpoint, and still-closed story chamber |
+| Below 8 | Bedrock Floor | Far-left collapsed tunnel, goblins, staged repairs, and minecart to Embervein |
 
 Glowcaps are a separate saved resource. Turning in three to the Common Keeper lights the hub permanently and awards four berries. Gathered patches reappear after three night advances, matching marked-pine regrowth. Their harvest-night timestamps are saved; old saves without timestamps begin regrowth timing from their current night when first loaded. Keep stored Glowcap stock valid above the original three-node count so regrowth can support future lights and tunnel work. Rootdeep iron uses the same iron stock and pickaxe rules as Embervein. The Deep Seal is intentionally not a gate to a playable later chapter yet.
 
