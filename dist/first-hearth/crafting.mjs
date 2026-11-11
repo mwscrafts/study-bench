@@ -17,6 +17,7 @@ export function readTools(save) {
   return {
     hatchet: save?.hatchet === true,
     pickaxe: save?.pickaxe === true,
+    pickaxePaid: save?.pickaxePaid === true,
     ironSword: save?.ironSword === true,
     shadowBlade: save?.shadowBlade === true,
     charm: save?.charm === true,
@@ -31,5 +32,5 @@ export function readTools(save) {
 }
 
 export function spareWood(tools) {
-  return Math.max(0, tools.chopped.length + (tools.debugWood ?? 0) - (tools.pickaxe ? WOOD_COST : 0) - tools.woodSpent - (tools.woodDonated ?? 0));
+  return Math.max(0, tools.chopped.length + (tools.debugWood ?? 0) - (tools.pickaxePaid ? WOOD_COST : 0) - tools.woodSpent - (tools.woodDonated ?? 0));
 }
