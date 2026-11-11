@@ -29,6 +29,12 @@ export const crownwoodLandmarks = [
   spot(crown, 'king-trail', 5530, 'Enter the King’s Grounds', 100)
 ];
 
+export const crownwoodTimberTrees = [
+  { ...spot(floor, 'crown-pine-west', 3180, 'Chop marked pine', 72), ground: floor.id },
+  { ...spot(floor, 'crown-pine-east', 3940, 'Chop marked pine', 72), ground: floor.id },
+  { ...spot(floor, 'crown-pine-ridge', 4380, 'Chop marked pine', 72), ground: floor.id }
+];
+
 export const crownwoodFlower = spot(three, 'crownwood', 1485, 'Pick Crownwood dusklily', 57);
 export const crystalNodes = [
   spot(crystals, 'crystal-west', 2145, 'Gather violet crystal', 57),
