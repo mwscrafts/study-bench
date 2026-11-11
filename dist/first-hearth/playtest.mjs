@@ -1,27 +1,30 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=15';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberTrees, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=12';
-import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
-import { mineTerrain, mineLandmarks, mineLocation, mineShadows, hugh, netChest, oreNodes, flint } from './mine.mjs?v=14';
-import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=03';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=3';
-import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
-import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
-import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
-import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
+import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=12';
+import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
+import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=14';
+import { paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=03';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes } from './rootdeep.mjs?v=3';
+import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
+import { beachFlower, readFishing, castNet } from './beach.mjs';
+import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
+import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
-import { hearthTerrain, hearthLandmarks, hearthLocation, hearthNote } from './hearth.mjs?v=10';
-import { buildHearthArt, paintHearthDetails } from './hearth-art.mjs';
-import { kingTerrain, kingLandmarks, kingLocation, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
+import { hearthNote } from './hearth.mjs?v=10';
+import { paintHearthDetails } from './hearth-art.mjs';
+import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
-import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
+import { paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
-import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
-import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
+import { paintRestoredKing } from './village.mjs?v=11';
+import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=3';
+import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
+  paintWave, paintOpenLift } from './canvas-art.mjs?v=1';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const el = id => document.getElementById(id);
@@ -29,7 +32,6 @@ const world = el('world');
 const ctx = world.getContext('2d');
 const SAVE_KEY = 'first-hearth:alder-camp:v1';
 const PRESENCE_KEY = 'first-hearth:solo:v1';
-const WAVE_TIME = 1.25;
 const DAY_LENGTH = 136;
 const ROOTDEEP_LADDER_X = 1780;
 const ROOTDEEP_CLIMB_SPEED = 430;
@@ -131,130 +133,6 @@ let publicName = 'Adventurer';
 let onlineEnabled = true;
 try { onlineEnabled = localStorage.getItem(PRESENCE_KEY) !== 'solo'; } catch { /* Online play still works. */ }
 
-const regions = {
-  camp: {
-    title: ['Alder', 'Camp'],
-    intro: 'Follow Reedbank Trail to camp, meet Lyss, and take Alvin up into the branches.',
-    terrain: campTerrain, landmarks: [...landmarks, workbench], flowers, buildArt: buildCampArt
-  },
-  crownwood: {
-    title: ['Crownwood', 'Canopy'],
-    intro: 'Climb Three Boughs, cross the rope bridge, and look for a way down to the falls.',
-    terrain: crownwoodTerrain, landmarks: crownwoodLandmarks, flowers: [crownwoodFlower],
-    buildArt: buildCrownwoodArt, location: crownwoodLocation, shadows: crownwoodShadows, retreat: 'Root Landing'
-  },
-  rootdeep: {
-    title: ['Rootdeep', 'Mine'],
-    intro: 'Eight old landings descend beneath Crownwood. Use the lit ladder on the far-right wall to climb the continuous shaft. Find Dorrin, gather rootglass, and help him restore the lift.',
-    terrain: rootdeepTerrain, landmarks: rootdeepLandmarks, flowers: [], buildArt: buildRootdeepArt,
-    location: rootdeepLocation, shadows: rootdeepShadows, retreat: 'Rootbound Threshold'
-  },
-  mine: {
-    title: ['Embervein', 'Mine'],
-    intro: 'Follow the lanterns down to Hugh Mungus, look for iron seams, and find the old lift.',
-    terrain: mineTerrain, landmarks: mineLandmarks, flowers: [],
-    buildArt: buildMineArt, location: mineLocation, shadows: mineShadows, retreat: 'Timber Shaft'
-  },
-  beach: {
-    title: ['The', 'Beach'],
-    intro: 'Follow the bluff to Driftwood Cove and cast Hugh Mungus’s net off Lantern Dock.',
-    terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
-    buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
-  },
-  hearth: {
-    title: ['The First', 'Hearth'],
-    intro: 'Follow the sheltered passage into the ember chamber.',
-    terrain: hearthTerrain, landmarks: hearthLandmarks, flowers: [],
-    buildArt: buildHearthArt, location: hearthLocation
-  },
-  king: {
-    title: ['King’s', 'Grounds'],
-    intro: 'Cross the ruins to the altar when you are ready to face the Hollow King.',
-    terrain: kingTerrain, landmarks: kingLandmarks, flowers: [], buildArt: buildKingArt, location: kingLocation
-  },
-  village: { title: ['Lantern', 'Village'], intro: 'The gate opens onto a village celebrating your safe return.',
-    terrain: villageTerrain, landmarks: villageLandmarks, flowers: [], buildArt: buildVillageArt, location: villageLocation },
-  house: { title: ['Homecoming', 'House'], intro: 'The village has been waiting for you and Alvin.',
-    terrain: houseTerrain, landmarks: houseLandmarks, flowers: [], buildArt: buildHouseArt, location: houseLocation },
-  hut: { title: ['Alder Camp', 'Hut'], intro: 'A warm little room, a place to rest, and a bed for Alvin.',
-    terrain: hutTerrain, landmarks: hutLandmarks, flowers: [], buildArt: buildHutArt, location: hutLocation }
-};
-const knownLandmarks = Object.values(regions).flatMap(area => area.landmarks);
-const knownFlowers = Object.values(regions).flatMap(area => area.flowers);
-const gates = {
-  canopy: { region: 'crownwood' },
-  mine: { region: 'mine' },
-  shore: { region: 'beach' },
-  'camp-return': { region: 'camp', footing: { x: 3638, ground: 'crown' } },
-  'mine-return': { region: 'camp', footing: { x: 4180, ground: 'trail' } },
-  'rootdeep-entrance': { region: 'rootdeep', footing: { x: 110, ground: 'rootdeep-level-1' } },
-  'rootdeep-return': { region: 'crownwood', footing: { x: 5510, ground: 'understory' } },
-  'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } },
-  'first-hearth': { region: 'hearth' },
-  'hearth-return': { region: 'crownwood', footing: { x: 3445, ground: 'mist-shelf' } },
-  'hearth-notch': { region: 'crownwood', footing: { x: 3975, ground: 'mist-shelf' } },
-  'king-trail': { region: 'king' },
-  'king-return': { region: 'crownwood', footing: { x: 5375, ground: 'overlook' } }
-};
-gates['village-gate'] = { region: 'village' };
-gates['village-return'] = { region: 'king', footing: { x: 3670, ground: 'king-floor' } };
-gates['celebration-house'] = { region: 'house' };
-gates['house-return'] = { region: 'village', footing: { x: 1920, ground: 'village-road' } };
-gates['hut-door'] = { region: 'hut' };
-gates['hut-exit'] = { region: 'camp', footing: { x: 2705, ground: 'trail' } };
-const liftGates = {
-  lift: { region: 'mine', footing: { x: 4340, ground: 'mine-floor' } },
-  'mine-lift': { region: 'camp', footing: { x: 2300, ground: 'trail' } }
-};
-
-const conversations = {
-  lyss: { name: 'Lyss', role: 'FORGE KEEPER' },
-  barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
-  hugh: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
-  dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
-  'rootdeep-lift-high': { name: 'Old lift', role: 'ROOTDEEP' },
-  'rootdeep-lift-low': { name: 'Deep lift', role: 'ROOTDEEP' },
-  'deep-seal': { name: 'The Deep Seal', role: 'ROOTDEEP' },
-  workbench: { name: 'Camp workbench', role: 'CRAFTING' },
-  dock: { name: 'Lantern Dock', role: 'CASTING NET' },
-  'tool-needed': { name: 'Tool needed', role: 'GATHERING' },
-  'admin-ring': { name: 'Admin Ring', role: 'TEST TOOLS' },
-  'admin-tools': { name: 'Admin Panel', role: 'TEST TOOLS' },
-  lift: {
-    name: 'The old lift',
-    role: 'LYSS’S CLEARING',
-    greeting: 'The lift goes down to Hugh Mungus’s mine, but its cable hangs slack. You can still reach the mine door on foot.'
-  },
-  'mine-lift': {
-    name: 'The lift base',
-    role: 'EMBERVEIN MINE',
-    greeting: 'The old lift reaches Lyss’s clearing. One of the bearings is cracked. Hugh Mungus needs a tideglass gemstone from the beach before he can repair it. The timber shaft leads back to camp.'
-  },
-  'ember-box': { name: 'The ember box', role: 'EMBER CHAMBER' },
-  'home-welcome': { name: 'The neighbors', role: 'HOMECOMING',
-    greeting: 'You made it home! We lit every window hoping you and Alvin would come back. Come in and celebrate with us.' },
-  'restored-king': { name: 'The King', role: 'LANTERN VILLAGE',
-    greeting: 'I remember Lyss’s flowers. Thank you for bringing me back to my people. Tell her I’m coming home.' },
-  'request-board': { name: 'Camp requests', role: 'HELP THE CAMP' },
-  'player-board': { name: 'A note for the next visitor', role: 'THE PLAYER NOTICEBOARD' },
-  'berry-plot': { name: 'Berry garden', role: 'ALDER CAMP' },
-  'catnip-garden': { name: 'Alvin’s catnip patch', role: 'ALDER CAMP' },
-  minecart: { name: 'Hugh Mungus’s minecart', role: 'EMBER VEIN EXPRESS' },
-  'hut-bed': { name: 'The little bed', role: 'A SAFE PLACE' },
-  'hut-decor': { name: 'Hut decorations', role: 'A SAFE PLACE' },
-  'alvin-bed': { name: 'Alvin', role: 'HIS COZY BED' },
-  'lantern-rest': {
-    name: 'Lantern Rest', role: 'KING’S GROUNDS',
-    greeting: 'Rest here or return through Crownwood. Lighting the altar starts the final night. Use the Action button to strike, and jump over the King’s charges and shockwaves.'
-  },
-  'night-altar': { name: 'The night altar', role: 'ALTAR TERRACE' },
-  'fallen-crown': { name: 'The fallen crown', role: 'CROWN ARENA' },
-  'tide-arch': {
-    name: 'Tide Arch', role: 'COASTAL OVERLOOK',
-    greeting: 'Through the arch you can see the lights of the dock. The trail back to Alder Camp follows the shore and climbs through the pines.'
-  }
-};
-
 const presence = createPresence({
   getRegion: () => region,
   getPose: () => ({
@@ -274,105 +152,6 @@ const presence = createPresence({
 });
 const peers = presence.peers;
 const sharedDoors = presence.sharedDoors;
-
-function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = url;
-  });
-}
-
-function surfaceCanvas(width, height) {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
-}
-
-function spriteBounds(image, start, end, anchor) {
-  const canvas = surfaceCanvas(image.width, image.height);
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  context.drawImage(image, 0, 0);
-  const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
-  let left = image.width;
-  let right = 0;
-  let top = image.height;
-  let bottom = 0;
-  for (let y = 0; y < image.height; y++) {
-    for (let x = Math.floor(image.width * start); x < Math.floor(image.width * end); x++) {
-      if (data[(y * image.width + x) * 4 + 3] < 95) continue;
-      left = Math.min(left, x);
-      top = Math.min(top, y);
-      right = Math.max(right, x);
-      bottom = Math.max(bottom, y);
-    }
-  }
-  if (left > right || top > bottom) throw new Error('Missing sprite silhouette');
-  return { image, left, top, width: right - left + 1, height: bottom - top + 1, anchor };
-}
-
-function drawSprite(context, sprite, x, y, height, direction = 1, bob = 0, tilt = 0) {
-  const width = sprite.width / sprite.height * height;
-  context.save();
-  context.translate(x, y + bob);
-  context.scale(direction, 1);
-  context.rotate(tilt);
-  context.drawImage(sprite.image, sprite.left, sprite.top, sprite.width, sprite.height,
-    -width * sprite.anchor, -height, width, height);
-  context.restore();
-}
-
-function drawPortrait(canvas, sprite) {
-  const context = canvas.getContext('2d');
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  drawSprite(context, sprite, canvas.width * .55, canvas.height - 4, canvas.height - 8);
-}
-
-function paintComposureWraith(context, x, y, clock) {
-  const sway = Math.sin(clock * 1.7) * 7;
-  const pulse = .48 + Math.sin(clock * 2.2) * .08;
-  context.save();
-  context.translate(x + sway, y - 5);
-  context.globalAlpha = pulse;
-  context.shadowColor = '#bd8aff'; context.shadowBlur = 24;
-  context.fillStyle = '#8f62bd';
-  context.beginPath();
-  context.moveTo(-39,0); context.quadraticCurveTo(-52,-44,-31,-87);
-  context.quadraticCurveTo(-20,-109,0,-111); context.quadraticCurveTo(29,-104,38,-72);
-  context.quadraticCurveTo(48,-37,35,-2); context.lineTo(21,-16); context.lineTo(8,-2);
-  context.lineTo(-5,-16); context.lineTo(-20,-1); context.closePath(); context.fill();
-  context.shadowBlur = 0; context.fillStyle = '#f0d6ff';
-  context.beginPath(); context.ellipse(-13,-72,4,8,-.2,0,Math.PI*2); context.fill();
-  context.beginPath(); context.ellipse(13,-72,4,8,.2,0,Math.PI*2); context.fill();
-  context.restore();
-}
-
-function paintWave(context, x, y, direction, remaining, bob = 0) {
-  if (remaining <= 0) return;
-  const sway = Math.sin((WAVE_TIME - remaining) * 19) * 9;
-  context.save();
-  context.translate(x, y + bob);
-  context.scale(direction, 1);
-  context.lineCap = 'round';
-  context.strokeStyle = '#697a5b';
-  context.lineWidth = 9;
-  context.beginPath(); context.moveTo(18,-48); context.lineTo(28+sway*.35,-70); context.lineTo(37+sway,-84); context.stroke();
-  context.fillStyle = '#d7ae8d';
-  context.beginPath(); context.ellipse(39+sway,-89,7,10,-.3,0,Math.PI*2); context.fill();
-  context.restore();
-}
-
-function paintOpenLift(context, x, y) {
-  const glow = context.createRadialGradient(x,y,2,x,y,65);
-  glow.addColorStop(0,'#f8d78d99');
-  glow.addColorStop(1,'#f8d78d00');
-  context.fillStyle = glow;
-  context.fillRect(x-65,y-65,130,130);
-  context.fillStyle = '#f8d78d';
-  context.beginPath(); context.arc(x,y,7,0,Math.PI*2); context.fill();
-}
 
 function startWave() {
   if (!controlsActive()) return;
@@ -811,7 +590,7 @@ function currentLandmarks() {
   if (region === 'king' && trial && !victory) return [];
   const candidates = [...regions[region].landmarks,
     ...(region === 'camp' ? campFacilities : []),
-    ...(region === 'hut' ? hutLandmarks : [])];
+  ];
   return candidates.filter(item =>
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
     (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
