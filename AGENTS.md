@@ -27,3 +27,5 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 ## Playtest ownership
 
 The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change unless the owner explicitly authorizes that specific test. Static source review is useful, but describe clearly when the game itself has not been played through after a change.
+
+- `interact()` recalculates the nearest target at activation time. Keep NPC talk handlers ahead of swing and gathering guards so a stale attack target cannot block dialogue.
