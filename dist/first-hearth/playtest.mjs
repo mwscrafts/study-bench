@@ -6,7 +6,7 @@ import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodSha
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=1';
-import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=1';
+import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=2';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
