@@ -21,6 +21,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 | Embervein Mine | `mine.mjs`, `mine-art.mjs` |
 | Hollow King and endings | `king.mjs`, `king-art.mjs`, `time-board.mjs`, `village.mjs` |
 | Hut and idle features | `camp-idle.mjs` |
+| Special request-board rewards | `special-rewards.mjs`, with acceptance, saves, and drawing in `playtest.mjs` |
 | Public presence and shared doors | `presence.mjs`, with pose drawing in `playtest.mjs` |
 | Static regions, gates, and dialogue labels | `world-data.mjs` |
 | Shared sprite and canvas primitives | `canvas-art.mjs` |
@@ -50,6 +51,10 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 - `presence.mjs` owns the public socket, reconnect timer, peer poses (including Alvin), player ID, and shared-door set. `playtest.mjs` supplies current game state and draws peer sprites and cats; keep callbacks from presence focused on UI refreshes.
 - `canvas-art.mjs` owns state-independent image loading, sprite bounds, sprite drawing, portraits, and small shared effects. Keep game-state decisions and scene composition in `playtest.mjs`.
 - The public site deploys from the repository's `main` branch. Do not change site access or publish through another destination without an explicit request.
+
+## Special request-board rewards
+
+Two one-time board commissions (`camp-festival`, `rootdeep-welcome`) are defined in `special-rewards.mjs`; the latter appears after the Root Key. Both require renewable supplies and allow one choice among a player scarf, Alvin's bell, a hanging star mobile, or an optional Glowcap garland recipe. `playtest.mjs` saves `activeRequest`, `pendingSpecialReward`, `specialRewards`, and `completedRequests`; consuming supplies creates a pending choice before it marks the commission complete. Keep the pending choice save-safe and never expose an unaccepted tracker. The recipe crafts a house decoration at the camp workbench and is not needed for story progression. Existing repeatable token requests and their first-time bonuses remain available. See `docs/request-board-rewards.md` for exact flows and owner checks.
 
 ## Rootdeep resident schedules
 
