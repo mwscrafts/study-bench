@@ -23,6 +23,7 @@ function spot(surface, id, x, label, radius = 75) {
 
 export const crownwoodLandmarks = [
   spot(floor, 'camp-return', 180, 'Return to Alder Camp', 92),
+  spot(floor, 'rootdeep-entrance', 5555, 'Enter Rootdeep Mine', 100),
   spot(bridge, 'barry', 1900, 'Talk to Barry', 94),
   { ...spot(bridge, 'mist-drop', 3380, 'Drop to the ledge below', 84), ground: bridge.id },
   { ...spot(mist, 'first-hearth', 3690, 'Enter behind the falls'), ground: mist.id },
