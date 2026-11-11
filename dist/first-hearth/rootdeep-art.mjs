@@ -11,16 +11,11 @@ function rootLantern(ctx, x, y, scale = 1) {
 }
 
 function rootLadder(ctx, x, top, bottom) {
-  const width = 52;
-  // Dark outline plus pale timber keeps the climb visible against the mine at night.
-  path(ctx,[[x-width/2,top],[x-width/2,bottom]],'#172124',24);
-  path(ctx,[[x+width/2,top],[x+width/2,bottom]],'#172124',24);
-  path(ctx,[[x-width/2,top],[x-width/2,bottom]],'#d0a66b',12);
-  path(ctx,[[x+width/2,top],[x+width/2,bottom]],'#d0a66b',12);
-  for(let y=top+18;y<bottom-4;y+=42) {
-    path(ctx,[[x-width/2-4,y+3],[x+width/2+4,y+3]],'#172124',16);
-    path(ctx,[[x-width/2+2,y],[x+width/2-2,y]],'#f1d29a',10);
-  }
+  const width = 44;
+  path(ctx,[[x-width/2,top],[x-width/2,bottom],[x+width/2,bottom],[x+width/2,top]],'#745a3f',8);
+  path(ctx,[[x-width/2+8,top],[x-width/2+8,bottom]],'#b29368',3);
+  path(ctx,[[x+width/2-8,top],[x+width/2-8,bottom]],'#b29368',3);
+  for(let y=top+18;y<bottom-4;y+=34) path(ctx,[[x-width/2+3,y],[x+width/2-3,y]],'#c2a274',5);
 }
 
 function ledgeFace(ctx, surface, index) {
@@ -99,14 +94,13 @@ export function buildRootdeepArt() {
     path(ctx,[[mid-86,y+50],[mid+86,y+50]],'#9a7956',5);
     if(index%2===0) path(ctx,[[mid-76,y+118],[mid-18,y+53],[mid+4,y+53],[mid+74,y+118]],'#7d6549',5);
   });
-  // One continuous ladder runs from the bottom floor to an exit above the first landing.
-  // It is intentionally drawn as bright timber with a lantern at every landing.
-  rootLadder(ctx,1780,30,floor.points[0][1]+8);
-  ledges.forEach(surface=>{
+  // Short wooden ladders join the landings into the continuous climbable shaft.
+  ledges.forEach((surface,index)=>{
     const y=surface.points[0][1];
-    path(ctx,[[1746,y+4],[1814,y+4]],'#d3b078',9);
-    rootLantern(ctx,1724,y-28,.72);
+    const top=index===0 ? Math.max(0,y-190) : ledges[index-1].points[0][1]+18;
+    rootLadder(ctx,1780,top,y+8);
   });
+  rootLadder(ctx,1780,ledges.at(-1).points[0][1]+18,floor.points[0][1]+8);
   settlement(ctx);
   // Pools and ore-vein glints on the lowest two levels.
   poly(ctx,[[1430,3070],[1530,3046],[1770,3053],[1870,3078],[1840,3100],[1510,3096]],'#41676a');
