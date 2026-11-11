@@ -1894,8 +1894,16 @@ function updateSwing(dt) {
 }
 
 function interact() {
-  if (!controlsActive() || swingTarget) return;
+  if (!controlsActive()) return;
+  // Refresh the target at activation time; touch input can leave the previous frame's selection stale.
+  updatePrompt();
   const item = selectedLandmark;
+  if (region === 'rootdeep' && item?.id === 'dorrin') {
+    openDialogue('dorrin');
+    dorrinDialogue();
+    return;
+  }
+  if (swingTarget) return;
   if (!item) {
     if (isStrikeTool(equipped)) startSwing();
     return;
@@ -1949,7 +1957,6 @@ function interact() {
       : { x: 310, ground: 'rootdeep-level-4' });
     return;
   }
-  if (id === 'dorrin') { openDialogue('dorrin'); dorrinDialogue(); return; }
   if (id === 'deep-seal') {
     openDialogue(id);
     setDialogue('An ancient stone seal blocks the lowest passage. Its markings are too worn to read. Dorrin might recognize the old work.');
