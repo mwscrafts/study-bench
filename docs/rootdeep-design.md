@@ -13,6 +13,13 @@
 - The Rootdeep background canvas uses the full native `1920 × 4920` map resolution. Earlier artwork was reduced to `960 × 2460`; this was a visual-quality regression and was not the cause of the entry freeze. The current composition uses layered cave faces, wall texture, and distinct landmarks while retaining the same world dimensions.
 - The Deep Seal doorway is centered on the level-8 `deep-seal` interaction landmark, at y≈4170. Keep its art and interaction radius aligned. The bedrock catch floor at y=4860 is a fall recovery floor below level 8, not a ninth landing or the Deep Seal chamber.
 
+## Dark side branches
+
+- Two unlit lanterns sit on the optional west iron-gallery ledge (level 5) and east shadow-root ledge (level 7). Their dark pockets and old stone passage lips are visible from the nearby main landings. The prompt requires reaching the corresponding ledge, so it cannot be activated from a lower floor.
+- Each lantern is a separate journal discovery and consumes one Glowcap once. The lit state is saved per lantern under `branchLanternsLit` and reloads without re-spending Glowcaps. The Common Keeper's three-Glowcap settlement quest uses its own state and resource spend.
+- Light reaches about 205 world units from the lantern. In that radius shadow hit damage is halved and nearby-threat Composure drain is reduced to 40%; enemies still attack and other Rootdeep areas remain dangerous. The regular ambient lights near these two galleries were shifted toward the main route so they do not falsely appear to light the dark branches.
+- Glowcaps regrow every three night advances. This supports restoring both branches and saving future caps for the staged tunnel.
+
 ## Current content by level
 
 | Level | Name | Main content |
