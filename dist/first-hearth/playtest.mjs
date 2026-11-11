@@ -6,7 +6,7 @@ import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodSha
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=3';
-import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=6';
+import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=7';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
@@ -643,7 +643,7 @@ function paint() {
     paintRootdeepLights(ctx, camera, animationClock, night);
     for (const node of rootglassNodes) if (!rootglass.has(node.id)) paintRootglass(ctx,node,animationClock);
     const dorrin = rootdeepLandmarks.find(item => item.id === 'dorrin');
-    shadow(dorrin.x,dorrin.y,30);
+    shadow(dorrin.x,dorrin.y,15);
     paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
     const high = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-high');
     const low = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-low');
@@ -1949,7 +1949,7 @@ function interact() {
       : { x: 310, ground: 'rootdeep-level-4' });
     return;
   }
-  if (id === 'dorrin') { dorrinDialogue(); return; }
+  if (id === 'dorrin') { openDialogue('dorrin'); dorrinDialogue(); return; }
   if (id === 'deep-seal') {
     openDialogue(id);
     setDialogue('An ancient stone seal blocks the lowest passage. Its markings are too worn to read. Dorrin might recognize the old work.');
