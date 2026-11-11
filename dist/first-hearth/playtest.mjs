@@ -994,6 +994,19 @@ function getSavedCamp() {
   return null;
 }
 
+function savedKnownIds(value, known, resolveId = id => id) {
+  const ids = new Set(Array.isArray(value) ? value.map(resolveId) : []);
+  return new Set(known.filter(item => ids.has(item.id)).map(item => item.id));
+}
+
+function savedQuest(value) {
+  return ['accepted', 'declined', 'complete'].includes(value) ? value : 'unoffered';
+}
+
+function savedInteger(value, min, max, fallback) {
+  return Number.isSafeInteger(value) ? clamp(value, min, max) : fallback;
+}
+
 function saveCamp() {
   if (!playing) return;
   try {
@@ -1027,23 +1040,18 @@ function begin(save) {
   for (const choice of document.querySelectorAll('[data-difficulty]')) {
     choice.setAttribute('aria-pressed', String(choice.dataset.difficulty === difficulty));
   }
-  fishFed = Number.isSafeInteger(save?.fishFed) ? clamp(save.fishFed, 0, 8) : 0;
+  fishFed = savedInteger(save?.fishFed, 0, 8, 0);
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
-  visited = new Set(knownLandmarks.filter(landmark => Array.isArray(save?.visited) && save.visited.includes(landmark.id)).map(landmark => landmark.id));
-  const savedFlowers = Array.isArray(save?.flowers)
-    ? save.flowers.map(id => id === 'timber' ? beachFlower.id : id) : [];
-  collected = new Set(knownFlowers.filter(flower => savedFlowers.includes(flower.id)).map(flower => flower.id));
-  quest = ['accepted', 'declined', 'complete'].includes(save?.quest) ? save.quest : 'unoffered';
+  visited = savedKnownIds(save?.visited, knownLandmarks);
+  collected = savedKnownIds(save?.flowers, knownFlowers, id => id === 'timber' ? beachFlower.id : id);
+  quest = savedQuest(save?.quest);
   hearthLearned = quest === 'complete' && save?.hearthLearned === true;
   tools = readTools(save?.tools);
   victory = readVictory(save?.victory, hearthLearned || tools.flowerCrown);
-  const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
-  crystals = new Set(crystalNodes.filter(node => savedCrystals.includes(node.id)).map(node => node.id));
-  const savedRootglass = Array.isArray(save?.rootglass) ? save.rootglass : [];
-  rootglass = new Set(rootglassNodes.filter(node => savedRootglass.includes(node.id)).map(node => node.id));
-  rootdeepQuest = ['accepted','declined','complete'].includes(save?.rootdeepQuest) ? save.rootdeepQuest : 'unoffered';
-  const savedIron = Array.isArray(save?.iron) ? save.iron : [];
-  iron = new Set(oreNodes.filter(node => savedIron.includes(node.id)).map(node => node.id));
+  crystals = savedKnownIds(save?.crystals, crystalNodes);
+  rootglass = savedKnownIds(save?.rootglass, rootglassNodes);
+  rootdeepQuest = savedQuest(save?.rootdeepQuest);
+  iron = savedKnownIds(save?.iron, oreNodes);
   ironStock = Number.isSafeInteger(save?.ironStock) ? Math.max(0,save.ironStock) : iron.size;
   shadowStock = Number.isSafeInteger(save?.shadowStock) ? Math.max(0,save.shadowStock) : 0;
   defeatedShadows = new Set(Array.isArray(save?.defeatedShadows) ? save.defeatedShadows : []);
@@ -1051,28 +1059,27 @@ function begin(save) {
   hasNet = save?.hasNet === true;
   hughQuest = save?.hughQuest === true;
   fishing = readFishing(save?.fishing);
-  nightIndex = Number.isSafeInteger(save?.nightIndex) ? clamp(save.nightIndex, 0, 1000000) : 0;
+  nightIndex = savedInteger(save?.nightIndex, 0, 1000000, 0);
   const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
   health = Number.isInteger(save?.health) ? clamp(save.health, 1, 100) : 100 - legacyHits * 34;
   composure = Number.isFinite(save?.composure) ? clamp(save.composure, 0, 100) : 100;
   composureDamageClock = 0;
   berries = Number.isSafeInteger(save?.berries) ? Math.max(0, save.berries) : 3;
-  const savedBushes = Array.isArray(save?.pickedBushes) ? save.pickedBushes : [];
-  pickedBushes = new Set(berryBushes.filter(bush => savedBushes.includes(bush.id)).map(bush => bush.id));
-  berrySeeds = Number.isSafeInteger(save?.berrySeeds) ? clamp(save.berrySeeds, 0, 99) : 3;
+  pickedBushes = savedKnownIds(save?.pickedBushes, berryBushes);
+  berrySeeds = savedInteger(save?.berrySeeds, 0, 99, 3);
   berryPlots = Array.isArray(save?.berryPlots) ? Array.from({length:3}, (_,i) =>
     Number.isSafeInteger(save.berryPlots[i]) && save.berryPlots[i] > 0 ? save.berryPlots[i] : null) : [null,null,null];
   catnipUnlocked = save?.catnipUnlocked === true;
-  alvinCatnipVisits = Number.isSafeInteger(save?.alvinCatnipVisits) ? clamp(save.alvinCatnipVisits, 0, 3) : 0;
+  alvinCatnipVisits = savedInteger(save?.alvinCatnipVisits, 0, 3, 0);
   catCombat = null; catCombatReadyAt = 0;
   catnipReadyAt = Number.isSafeInteger(save?.catnipReadyAt) ? save.catnipReadyAt : 0;
   minecartUpdatedAt = Number.isSafeInteger(save?.minecartUpdatedAt) ? save.minecartUpdatedAt : Date.now();
   minecartCapacity = save?.minecartCapacity === 12 ? 12 : 8;
-  minecartOre = Number.isSafeInteger(save?.minecartOre) ? clamp(save.minecartOre,0,minecartCapacity) : 0;
+  minecartOre = savedInteger(save?.minecartOre, 0, minecartCapacity, 0);
   activeRequest = Object.hasOwn(campRequests, save?.activeRequest) ? save.activeRequest : null;
   completedRequests = new Set(Array.isArray(save?.completedRequests)
     ? save.completedRequests.filter(id => Object.hasOwn(campRequests, id)) : []);
-  campTokens = Number.isSafeInteger(save?.campTokens) ? clamp(save.campTokens,0,999) : 0;
+  campTokens = savedInteger(save?.campTokens, 0, 999, 0);
   hutDecorations = new Set(Array.isArray(save?.hutDecorations) ? save.hutDecorations.filter(id =>
     ['canopy-banner','lake-painting','patchwork-quilt'].includes(id)) : []);
   equipped = ownsGear(save?.equipped) ? save.equipped
