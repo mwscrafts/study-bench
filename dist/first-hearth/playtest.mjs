@@ -78,6 +78,8 @@ let hutDecorations = new Set();
 let equipped = null;
 let inventoryOpen = false;
 let testRun = false;
+let adminRing = false;
+let adminPanelFromRing = false;
 let swing = 0;
 let wave = 0;
 let cooldown = 0;
@@ -200,6 +202,8 @@ const conversations = {
   workbench: { name: 'Camp workbench', role: 'CRAFTING' },
   dock: { name: 'Lantern Dock', role: 'CASTING NET' },
   'tool-needed': { name: 'Tool needed', role: 'GATHERING' },
+  'admin-ring': { name: 'Admin Ring', role: 'TEST TOOLS' },
+  'admin-tools': { name: 'Admin Panel', role: 'TEST TOOLS' },
   lift: {
     name: 'The old lift',
     role: 'LYSS’S CLEARING',
@@ -939,9 +943,9 @@ function saveCamp() {
   if (!playing) return;
   try {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
-    const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending;
+    const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 15, testRun, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
+      version: 15, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
@@ -957,6 +961,8 @@ function saveCamp() {
 function begin(save) {
   if (!sprites) return;
   testRun = save?.testRun === true;
+  adminRing = save?.adminRing === true;
+  adminPanelFromRing = false;
   avatar = save?.avatar ?? avatar;
   const chosenName = el('player-name').value.trim() || save?.publicName || 'Adventurer';
   publicName = typeof chosenName === 'string' && chosenName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(chosenName)
@@ -1529,6 +1535,50 @@ function openDialogue(id) {
   saveCamp();
 }
 
+function openAdminRing() {
+  if (!adminRing || !playing) return;
+  openDialogue('admin-ring');
+  setDialogue('The ring hums softly. Choose where to go or open the test tools.', [
+    ['Admin tools', () => openAdminPanel(true)],
+    ['Teleport to a region', adminTeleportDialogue]
+  ]);
+}
+
+function adminTeleportDialogue() {
+  const destinations = [
+    ['Alder Camp', 'camp', { x: 1800, ground: 'trail' }],
+    ['Crownwood Canopy', 'crownwood', { x: 273, ground: 'understory' }],
+    ['Embervein Mine', 'mine', { x: 320, ground: 'mine-floor' }],
+    ['Driftwood Cove', 'beach', { x: 300, ground: 'shore-sand' }],
+    ['Hidden First Hearth', 'hearth', { x: 300, ground: 'hearth-floor' }],
+    ['King’s Grounds', 'king', { x: 2315, ground: 'king-floor' }],
+    ['Lantern Village', 'village', { x: 170, ground: 'village-road' }],
+    ['Alder Camp Hut', 'hut', { x: 480, ground: 'hut-floor' }]
+  ];
+  openDialogue('admin-ring');
+  setDialogue('Choose a safe arrival point. Teleporting leaves your supplies and quest progress as they are.',
+    destinations.map(([label, destination, footing]) => [label, () => {
+      closeDialogue();
+      enterRegion(destination, footing);
+    }]));
+}
+
+function openAdminPanel(fromRing = false) {
+  adminPanelFromRing = fromRing;
+  openDialogue('admin-tools');
+  el('line').textContent = fromRing
+    ? 'Use the test tools here, or return to your ring to teleport.'
+    : 'Test mode is on. This adventure will not submit a high score.';
+  el('noticeboard-panel').hidden = false;
+  el('notice-form').hidden = true;
+  el('notice-list').hidden = true;
+  el('admin-panel').hidden = false;
+  el('admin-claim-ring').hidden = adminRing;
+  el('notice-status').textContent = testRun
+    ? 'This adventure is marked as a test run.'
+    : 'Claiming the ring and teleporting do not alter your game progress.';
+}
+
 function isStrikeTool(id) {
   return id === 'hatchet' || id === 'pickaxe' || id === 'ironSword' || id === 'shadowBlade' || id === 'godslayer';
 }
@@ -1560,11 +1610,13 @@ function inventoryItems() {
   if (fishing.tideglass === 'caught') items.push(['◇', 'Tideglass gemstone', 1, 'Take it to Perry to repair the lift.']);
   if (fishing.fish) items.push(['◈', 'Fish', fishing.fish, 'Caught at Lantern Dock.']);
   if (fishing.driftwood) items.push(['≋', 'Driftwood', fishing.driftwood, 'Pulled from the tide.']);
+  if (adminRing) items.push(['◉', 'Admin Ring', 1, 'Open test tools and regional teleports from your backpack.']);
   return items;
 }
 
 function refreshInventory() {
   renderInventory(el, inventoryItems(), ownsGear, equipped, equipTool, berries, health);
+  el('bagAdminRing').hidden = !adminRing;
   el('bagFeed').disabled = !fishing.fish || fishFed >= 8;
   el('bagFeed').textContent = 'Feed Alvin a fish · ' + fishing.fish + ' fish · ' + Math.round((1 + fishFed / 4) * 100) + '% size';
 }
@@ -2211,11 +2263,8 @@ el('notice-form').addEventListener('submit', async event => {
   if (text.toLowerCase() === 'alabaster') {
     testRun = true;
     el('notice-text').value = '';
-    el('notice-form').hidden = true;
-    el('notice-list').hidden = true;
-    el('admin-panel').hidden = false;
-    el('notice-status').textContent = 'Test mode is on. This adventure will not submit a high score.';
     saveCamp();
+    openAdminPanel(false);
     el('admin-item').focus({ preventScroll: true });
     return;
   }
@@ -2289,6 +2338,13 @@ function giveBossTestKit() {
   fishing.godslayer = true; equipped = 'godslayer';
 }
 
+el('admin-claim-ring').addEventListener('click', () => {
+  if (adminRing) return;
+  adminRing = true;
+  saveCamp();
+  el('admin-claim-ring').hidden = true;
+  el('notice-status').textContent = 'Admin Ring added to your backpack. Use it anywhere to open tools or teleport.';
+});
 el('admin-grant').addEventListener('click', () => {
   grantTestItem(el('admin-item').value, el('admin-amount').value);
 });
@@ -2307,6 +2363,11 @@ el('admin-restore').addEventListener('click', () => {
 });
 el('admin-close').addEventListener('click', () => {
   el('admin-panel').hidden = true;
+  if (adminPanelFromRing) {
+    adminPanelFromRing = false;
+    openAdminRing();
+    return;
+  }
   el('notice-form').hidden = false;
   el('notice-list').hidden = false;
   el('notice-status').textContent = 'This adventure remains marked as a test run.';
@@ -2329,6 +2390,11 @@ el('inventoryButton').addEventListener('click', () => inventoryOpen ? closeInven
 el('closeInventory').addEventListener('click', closeInventory);
 el('bagEat').addEventListener('click', eatBerry);
 el('bagFeed').addEventListener('click', feedAlvin);
+el('bagAdminRing').addEventListener('click', () => {
+  if (!adminRing || !inventoryOpen) return;
+  closeInventory();
+  openAdminRing();
+});
 el('quickBerry').addEventListener('click', eatBerry);
 el('wave').addEventListener('click', startWave);
 
