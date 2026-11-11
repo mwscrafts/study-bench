@@ -8,6 +8,11 @@
 - The restored winch connects level 2 to level 8. Dorrin’s existing three-rootglass quest repairs it; its two interaction landmarks and both art endpoints must move together if its location changes.
 - The upper and lower ends of the ladder, winch, landmarks, and platform IDs must remain aligned. `rootdeepClimbing` suppresses gravity only while attached to the right-wall ladder.
 
+## Visual placement and quality
+
+- The Rootdeep background canvas uses the full native `1920 × 4920` map resolution. Earlier artwork was reduced to `960 × 2460`; this was a visual-quality regression and was not the cause of the entry freeze. The current composition uses layered cave faces, wall texture, and distinct landmarks while retaining the same world dimensions.
+- The Deep Seal doorway is centered on the level-8 `deep-seal` interaction landmark, at y≈4170. Keep its art and interaction radius aligned. The bedrock catch floor at y=4860 is a fall recovery floor below level 8, not a ninth landing or the Deep Seal chamber.
+
 ## Current content by level
 
 | Level | Name | Main content |

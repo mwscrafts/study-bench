@@ -9,7 +9,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
-The latest code commit is `3f85e8c452702bc705e5c669d9f737fe2bae9baa` (“Regrow Glowcap patches after three nights”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
+The latest code commit is `97af1e746d26e5b9ea9fe7d1729c28d0c3e28f43` (“Restore Rootdeep art quality and align Deep Seal”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
@@ -23,9 +23,17 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=64` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=65` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
+
+### Rootdeep checkpoint
+
+- Restored the Rootdeep background canvas from `960 × 2460` to its native `1920 × 4920` resolution. The reduced canvas had one quarter of the pixels, making the entire region look soft when enlarged in the camera viewport. Git history identifies this as a prior memory-footprint change; it was unrelated to the entry freeze, so do not reduce the art again without diagnosing a demonstrated memory problem.
+- The `deep-seal` interaction point was already on landing 8 at y≈4170. The drawn sealed door was incorrectly placed at y=4860 on the lower catch floor. The door art now anchors to the landmark; the catch floor is labelled **Bedrock Floor** so a fall below level 8 does not read as the chamber.
+- Added cave-wall stone/crack detail and a built-up sealed doorway while keeping the chamber closed for the later story chapter. The eight landings and their feature plan remain as listed in `docs/rootdeep-design.md`.
+- Cache versions for Rootdeep modules are `rootdeep.mjs?v=5` and `rootdeep-art.mjs?v=9`; their importers in `playtest.mjs` and `world-data.mjs` are aligned. Main entry uses `playtest.mjs?v=65`.
+- Source review only; no live gameplay or browser visual check was performed by Codex. The owner/Ash should inspect the eighth landing and the overall visual sharpness after deployment. If the earlier freeze returns, investigate the code path separately instead of degrading scene assets.
 
 ### Suggested owner check for this checkpoint
 
