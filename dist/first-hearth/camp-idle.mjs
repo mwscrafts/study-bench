@@ -4,7 +4,7 @@ import { poly, path, orb } from './camp-art.mjs';
 export const campFacilities = [
   { id: 'request-board', x: 2140, label: 'Read the request board', radius: 72 },
   { id: 'player-board', x: 2230, label: 'Read the player noticeboard', radius: 72 },
-  { id: 'minecart', x: 2310, label: 'Check Perry’s ore cart', radius: 70 },
+  { id: 'minecart', x: 2310, label: 'Check Hugh Mungus’s ore cart', radius: 70 },
   { id: 'berry-plot', x: 2890, label: 'Tend the berry plot', radius: 74 },
   { id: 'catnip-garden', x: 3040, label: 'Check Alvin’s catnip garden', radius: 70 },
   { id: 'hut-door', x: 2705, label: 'Enter the hut', radius: 84 }
