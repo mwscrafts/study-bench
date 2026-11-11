@@ -27,6 +27,7 @@ import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } fr
 import { createPresence } from './presence.mjs?v=2';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=11';
+import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=1';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -143,6 +144,9 @@ let pendingSpecialReward = null;
 let equipped = null;
 let inventoryOpen = false;
 let journalOpen = false;
+let mapOpen = false;
+let discoveredRegions = new Set(['camp']);
+let alvinResting = false;
 let journalEntries = new Set();
 let testRun = false;
 let adminRing = false;
@@ -197,7 +201,7 @@ const presence = createPresence({
     gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100,
     avatar, tool: equipped, helmet: tools.helmet, name: publicName,
     scarf: specialRewards.has('scarf'),
-    alvin: { x: cat.x, y: cat.y, direction: cat.direction, gait: cat.gait,
+    alvin: alvinResting && region !== 'hut' ? null : { x: cat.x, y: cat.y, direction: cat.direction, gait: cat.gait,
       size: 1 + fishFed / 4, indoors: region === 'hut', bell: specialRewards.has('bell') }
   }),
   isOnline: () => onlineEnabled,
@@ -523,7 +527,7 @@ function paint() {
   if (playing && composure < 10 && region !== 'hut' && !region.startsWith('rootdeep-home-')) {
     paintComposureWraith(ctx, clamp(player.x - player.direction * 92, 45, terrain.width - 45), player.y, animationClock);
   }
-  if (playing) {
+  if (playing && (!alvinResting || region === 'hut')) {
     const indoor = region === 'hut';
     const catX = indoor ? 665 : cat.x;
     const catY = indoor ? 596 : cat.y;
@@ -566,7 +570,7 @@ function paint() {
 }
 
 function updateAlvinCombat() {
-  if (alvinCatnipVisits < 3 || region === 'hut' || victory || trial?.stage === 'alvin') return false;
+  if (alvinResting || alvinCatnipVisits < 3 || region === 'hut' || victory || trial?.stage === 'alvin') return false;
   if (!catCombat) {
     if (animationClock < catCombatReadyAt) return false;
     let kind = null, target = null;
@@ -653,7 +657,7 @@ function updateCat(dt) {
   const follow = 1 - Math.exp(-dt * 14);
   cat.x += (targetX - cat.x) * follow;
   cat.y += (targetY - cat.y) * follow;
-  if (animationClock < alvinSignalUntil) {
+  if (!alvinResting && animationClock < alvinSignalUntil) {
     const t = 1 - (alvinSignalUntil - animationClock) / .95;
     cat.y -= Math.max(0, Math.sin(Math.PI * t)) * 43;
   }
@@ -675,7 +679,7 @@ function updateCatnipLeap() {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting && !inventoryOpen && !journalOpen &&
+  return playing && !paused && !talking && !casting && !inventoryOpen && !journalOpen && !mapOpen &&
     trial?.stage !== 'alvin' && finaleDelay <= 0 && !endingScene;
 }
 
@@ -966,6 +970,28 @@ function closeJournal() {
   world.focus({ preventScroll: true });
 }
 
+function openMap() {
+  if (!controlsActive()) return;
+  mapOpen = true;
+  clearControls();
+  renderFieldMap({
+    discovered: discoveredRegions, region, player, terrain, tunnelOpen: tunnelStage === 'open',
+    location: el('location-name').textContent,
+    drawing: el('fieldMap'), here: el('mapHere'), routes: el('mapRoutes')
+  });
+  el('mapOverlay').hidden = false;
+  updatePrompt();
+  el('closeMap').focus({ preventScroll: true });
+}
+
+function closeMap() {
+  mapOpen = false;
+  el('mapOverlay').hidden = true;
+  clearControls();
+  updatePrompt();
+  world.focus({ preventScroll: true });
+}
+
 function treeStage(id) {
   if (!tools.chopped.includes(id)) return 'mature';
   const harvestedOn = Number.isSafeInteger(treeHarvestDays[id]) ? treeHarvestDays[id] : nightIndex;
@@ -1004,10 +1030,11 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 20, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 21, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
-      phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
+      phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned,
+      discoveredRegions: [...discoveredRegions], alvinResting, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
@@ -1050,6 +1077,18 @@ function begin(save) {
   }
   phaseClock = Number.isFinite(save?.phaseClock) ? clamp(save.phaseClock, 0, DAY_LENGTH) : 0;
   visited = savedKnownIds(save?.visited, knownLandmarks);
+  discoveredRegions = new Set(['camp']);
+  if (Array.isArray(save?.discoveredRegions)) {
+    for (const id of save.discoveredRegions) if (mapRegionIds.includes(id)) discoveredRegions.add(id);
+  } else {
+    // Earlier saves recorded crossed gates but had no map. Recover only places
+    // backed by a visited gate or by the saved current region.
+    for (const id of visited) {
+      const destination = (gates[id] ?? liftGates[id])?.region;
+      if (mapRegionIds.includes(destination)) discoveredRegions.add(destination);
+    }
+  }
+  alvinResting = save?.alvinResting === true;
   journalEntries = savedKnownIds(save?.journalEntries, journalCatalog);
   collected = savedKnownIds(save?.flowers, knownFlowers, id => id === 'timber' ? beachFlower.id : id);
   quest = savedQuest(save?.quest);
@@ -1137,9 +1176,10 @@ function begin(save) {
     : tools.pickaxe ? 'pickaxe' : tools.hatchet ? 'hatchet' : hasNet ? 'net' : null;
   el('inventoryButton').disabled = false;
   el('journalButton').disabled = false;
+  el('mapButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1158,6 +1198,7 @@ function begin(save) {
 
 function enterRegion(next, footing) {
   region = next;
+  discoveredRegions.add(next);
   trial = null;
   fireworksElapsed = Infinity;
   updateTrialHud();
@@ -1421,6 +1462,7 @@ function minecartDialogue() {
 }
 
 function catnipDialogue() {
+  if (alvinResting) { setDialogue('Alvin is resting in his hut bed. Bring him along before visiting the catnip garden.'); return; }
   if (!catnipUnlocked) {
     setDialogue('The little garden is waiting for a catnip seed. Barry might know where to find one.');
     return;
@@ -1478,13 +1520,34 @@ function bedDialogue() {
 
 function petAlvin() {
   if (region !== 'hut') return;
-  petHeartsUntil = animationClock+2.2;
-  const restored = Math.min(25, 100 - composure);
-  composure = Math.min(100, composure + 25);
-  notice = restored > 0 ? 'Alvin purrs and restores ' + restored + ' Composure.' : 'Alvin leans into your hand and purrs.';
-  noticeUntil = animationClock+2.2;
-  recordJournalEntry('alvin');
-  closeDialogue();
+  setDialogue(alvinResting
+    ? 'Alvin is curled up in his bed. He can stay safe here or join you on the trail again.'
+    : 'Alvin is tucked into his bed for a moment. Would you like him to stay home while you explore?', [
+    ['Pet Alvin', () => {
+      petHeartsUntil = animationClock+2.2;
+      const restored = Math.min(25, 100 - composure);
+      composure = Math.min(100, composure + 25);
+      notice = restored > 0 ? 'Alvin purrs and restores ' + restored + ' Composure.' : 'Alvin leans into your hand and purrs.';
+      noticeUntil = animationClock+2.2;
+      recordJournalEntry('alvin');
+      saveCamp();
+      closeDialogue();
+    }],
+    [alvinResting ? 'Bring Alvin along' : 'Let Alvin stay in bed', () => {
+      alvinResting = !alvinResting;
+      catCombat = null;
+      catnipLeap = null;
+      cat.x = 665; cat.y = 596;
+      tracker.length = 0;
+      saveCamp(); sendPose(true);
+      setDialogue(alvinResting
+        ? 'Alvin settles into the blankets. He will stay here until you pick him up. You can return to this bed whenever you want him along again.'
+        : 'Alvin stretches, hops down, and is ready to follow you again.', [
+        ['All right', closeDialogue]
+      ]);
+    }],
+    ['Not now', closeDialogue]
+  ]);
 }
 
 function lyssDialogue() {
@@ -2044,13 +2107,13 @@ function inventoryItems() {
 function refreshInventory() {
   renderInventory(el, inventoryItems(), ownsGear, equipped, equipTool, berries, health);
   el('bagAdminRing').hidden = !adminRing;
-  el('bagFeed').disabled = !fishing.fish || fishFed >= 8;
+  el('bagFeed').disabled = !fishing.fish || fishFed >= 8 || alvinResting && region !== 'hut';
   const growthTimer = fishFed ? ' · ' + Math.ceil(alvinGrowthRemaining / 60) + ' active min left' : '';
-  el('bagFeed').textContent = 'Feed Alvin a fish · ' + fishing.fish + ' fish · ' + Math.round((1 + fishFed / 4) * 100) + '% size' + growthTimer;
+  el('bagFeed').textContent = alvinResting && region !== 'hut' ? 'Alvin is resting at home' : 'Feed Alvin a fish · ' + fishing.fish + ' fish · ' + Math.round((1 + fishFed / 4) * 100) + '% size' + growthTimer;
 }
 
 function feedAlvin() {
-  if (!playing || !inventoryOpen || fishing.fish < 1 || fishFed >= 8) return;
+  if (!playing || !inventoryOpen || fishing.fish < 1 || fishFed >= 8 || alvinResting && region !== 'hut') return;
   fishing.fish--;
   fishFed++;
   alvinGrowthRemaining = ALVIN_GROWTH_SECONDS;
@@ -2486,7 +2549,7 @@ function interact() {
       return;
     }
     activatedLodestones.add(id);
-    alvinSignalUntil = animationClock + .95;
+    if (!alvinResting) alvinSignalUntil = animationClock + .95;
     if (activatedLodestones.size === 3) {
       rootKeyQuest = 'ready';
       notice = 'All three stones answer. A deep sound answers from below. Return to Hugh.';
@@ -2494,7 +2557,7 @@ function interact() {
       const next = ['lodestone-canopy','lodestone-shore','lodestone-mine'].find(stoneId => !activatedLodestones.has(stoneId));
       const direction = next === 'lodestone-canopy' ? 'the canopy above the falls'
         : next === 'lodestone-shore' ? 'the salt wind' : 'the mine’s deep iron hum';
-      notice = 'Alvin’s ears flick toward ' + direction + '. The stone gives a faint answering hum.';
+      notice = (alvinResting ? 'The stone hums toward ' : 'Alvin’s ears flick toward ') + direction + '. The stone gives a faint answering hum.';
     }
     noticeUntil = animationClock + 3.4;
     updateNotes(); updatePrompt(); saveCamp(); sendPose(true);
@@ -2663,7 +2726,7 @@ async function openPlayerNoticeboard() {
 }
 
 function setPause(value) {
-  if (!playing || talking || inventoryOpen) return;
+  if (!playing || talking || inventoryOpen || mapOpen) return;
   paused = value;
   el('paused').hidden = !value;
   el('leave-trial').hidden = !trial || !!victory;
@@ -2681,6 +2744,10 @@ function setPause(value) {
 function altarDialogue() {
   if (victory) {
     setDialogue('The final night is over. You can return to the crown to see your result.');
+    return;
+  }
+  if (alvinResting) {
+    setDialogue('Alvin is resting at home. Bring him from his bed in the Alder Camp hut before starting the final night. He has a part to play.');
     return;
   }
   const tool = ['shadowBlade','ironSword','pickaxe','hatchet','godslayer'].find(ownsGear);
@@ -2949,7 +3016,7 @@ function frame(time) {
   if (playing && onlineEnabled) syncPublicClock();
   else if (!onlineEnabled) publicClockCycle = null;
   if (wave > 0) wave = Math.max(0, wave - dt);
-  if (!paused && !talking && !inventoryOpen) animationClock += dt;
+  if (!paused && !talking && !inventoryOpen && !mapOpen) animationClock += dt;
   if (casting && animationClock - casting.start >= .92) finishCast();
   if (fireworksElapsed < 8) fireworksElapsed += dt;
   if (trial?.stage === 'alvin' && !paused) updateKingTrial(dt);
@@ -3046,7 +3113,7 @@ function frame(time) {
     if (player.moving) gait += dt * 15;
     updateSwing(dt);
     [particles, floaters] = advanceGatheringEffects(particles, floaters, dt);
-    if (fishFed > 0) {
+    if (fishFed > 0 && !alvinResting) {
       alvinGrowthRemaining = Math.max(0, alvinGrowthRemaining - dt);
       if (alvinGrowthRemaining === 0) {
         fishFed = 0;
@@ -3070,7 +3137,7 @@ function frame(time) {
     updateTunnelGoblins(dt);
     updateComposure(dt);
     updateKingTrial(dt);
-    if (trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) {
+    if (!alvinResting && trial?.stage !== 'alvin' && region !== 'hut' && !updateCatnipLeap()) {
       if (!updateAlvinCombat()) updateCat(dt);
     }
     updateCamera(false, dt);
@@ -3254,6 +3321,8 @@ el('fullscreen').addEventListener('click', async () => {
 el('inventoryButton').addEventListener('click', () => inventoryOpen ? closeInventory() : openInventory());
 el('closeInventory').addEventListener('click', closeInventory);
 el('journalButton').addEventListener('click', () => journalOpen ? closeJournal() : openJournal());
+el('mapButton').addEventListener('click', () => mapOpen ? closeMap() : openMap());
+el('closeMap').addEventListener('click', closeMap);
 el('closeJournal').addEventListener('click', closeJournal);
 el('bagEat').addEventListener('click', eatBerry);
 el('bagFeed').addEventListener('click', feedAlvin);
@@ -3270,6 +3339,14 @@ const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (mapOpen) {
+    if (key === 'escape' || key === 'm') closeMap();
+    return;
+  }
+  if (key === 'm' && !event.repeat) {
+    openMap();
+    return;
+  }
   if (key === 'j' && !event.repeat) {
     if (journalOpen) closeJournal();
     else openJournal();
