@@ -1,10 +1,12 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=14';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberTrees, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=11';
-import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=11';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberTrees, crystalNodes, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=12';
+import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=1';
+import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=1';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
@@ -43,6 +45,9 @@ const backgrounds = {};
 let region = 'camp';
 let terrain = campTerrain;
 let crystals = new Set();
+let rootglass = new Set();
+let rootdeepQuest = 'unoffered';
+let rootdeepLiftFixed = false;
 let iron = new Set();
 let ironStock = 0;
 let shadowStock = 0;
@@ -140,6 +145,12 @@ const regions = {
     terrain: crownwoodTerrain, landmarks: crownwoodLandmarks, flowers: [crownwoodFlower],
     buildArt: buildCrownwoodArt, location: crownwoodLocation, shadows: crownwoodShadows, retreat: 'Root Landing'
   },
+  rootdeep: {
+    title: ['Rootdeep', 'Mine'],
+    intro: 'Eight old landings descend beneath Crownwood. Find Dorrin, gather rootglass, and help him bring the lift back to life.',
+    terrain: rootdeepTerrain, landmarks: rootdeepLandmarks, flowers: [], buildArt: buildRootdeepArt,
+    location: rootdeepLocation, shadows: rootdeepShadows, retreat: 'Rootbound Threshold'
+  },
   mine: {
     title: ['Embervein', 'Mine'],
     intro: 'Follow the lanterns down to Perry, look for iron seams, and find the old lift.',
@@ -178,6 +189,8 @@ const gates = {
   shore: { region: 'beach' },
   'camp-return': { region: 'camp', footing: { x: 3638, ground: 'crown' } },
   'mine-return': { region: 'camp', footing: { x: 4180, ground: 'trail' } },
+  'rootdeep-entrance': { region: 'rootdeep', footing: { x: 110, ground: 'rootdeep-level-1-west' } },
+  'rootdeep-return': { region: 'crownwood', footing: { x: 5510, ground: 'understory' } },
   'shore-return': { region: 'camp', footing: { x: 4510, ground: 'trail' } },
   'first-hearth': { region: 'hearth' },
   'hearth-return': { region: 'crownwood', footing: { x: 3445, ground: 'mist-shelf' } },
@@ -200,6 +213,7 @@ const conversations = {
   mara: { name: 'Lyss', role: 'FORGE KEEPER' },
   barry: { name: 'Barry', role: 'CROWNWOOD SURVIVOR' },
   ivo: { name: 'Perry', role: 'KEEPER OF EMBERVEIN' },
+  dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
   workbench: { name: 'Camp workbench', role: 'CRAFTING' },
   dock: { name: 'Lantern Dock', role: 'CASTING NET' },
   'tool-needed': { name: 'Tool needed', role: 'GATHERING' },
@@ -559,7 +573,7 @@ function paint() {
   const { density, zoom, x, y } = camera;
   ctx.setTransform(density * zoom, 0, 0, density * zoom, -x * density * zoom, -y * density * zoom);
   const sky = skyState();
-  const outdoors = region !== 'mine' && region !== 'hearth' && region !== 'house' && region !== 'hut';
+  const outdoors = region !== 'mine' && region !== 'rootdeep' && region !== 'hearth' && region !== 'house' && region !== 'hut';
   if (outdoors) {
     const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
     paintSky(ctx, camera, sky.from, 1, animationClock);
@@ -609,6 +623,16 @@ function paint() {
     crystalNodes.forEach(node => {
       if (!crystals.has(node.id)) paintCrystal(ctx, node, animationClock);
     });
+  } else if (region === 'rootdeep') {
+    paintRootdeepLights(ctx, camera, animationClock, night);
+    for (const node of rootglassNodes) if (!rootglass.has(node.id)) paintRootglass(ctx,node,animationClock);
+    const dorrin = rootdeepLandmarks.find(item => item.id === 'dorrin');
+    shadow(dorrin.x,dorrin.y,30);
+    paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
+    const high = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-high');
+    const low = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-low');
+    paintRootdeepLift(ctx,high.x,high.y,rootdeepLiftFixed);
+    paintRootdeepLift(ctx,low.x,low.y,rootdeepLiftFixed);
   } else if (region === 'mine') {
     paintMineLights(ctx, camera, animationClock, night);
     paintMineChest(ctx, hasNet);
@@ -855,6 +879,7 @@ function updatePrompt() {
   const items = currentLandmarks().filter(item => !item.ground || item.ground === player.ground);
   items.push(...currentFlowers().filter(flower => !collected.has(flower.id)));
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
+  if (region === 'rootdeep') items.push(...rootglassNodes.filter(node => !rootglass.has(node.id)));
   if (region === 'mine') {
     items.push(...oreNodes.filter(node => !iron.has(node.id)));
     if (!tools.flint) items.push(flint);
@@ -904,7 +929,9 @@ function updateNotes() {
   const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet ? 'Hatchet · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : 'Ask Lyss for a hatchet';
-  el('quest-tracker').textContent = region === 'mine' ? mineLoot
+  el('quest-tracker').textContent = region === 'rootdeep'
+    ? (rootdeepQuest === 'complete' ? 'Rootglass lift repaired' : 'Rootglass · ' + rootglass.size + ' / 3')
+    : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue;
   el('tool-notes').textContent = region === 'beach'
     ? [hasNet ? 'Casting net' : 'Find Perry’s casting net', fishing.book && 'Soaked book',
@@ -949,11 +976,12 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 15, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
+      version: 16, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
-      visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals], iron: [...iron],
+      visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
+      rootglass: [...rootglass], rootdeepQuest, rootdeepLiftFixed, iron: [...iron],
       ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, ivoQuest, tools, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
@@ -987,6 +1015,10 @@ function begin(save) {
   victory = readVictory(save?.victory, hearthLearned || tools.flowerCrown);
   const savedCrystals = Array.isArray(save?.crystals) ? save.crystals : [];
   crystals = new Set(crystalNodes.filter(node => savedCrystals.includes(node.id)).map(node => node.id));
+  const savedRootglass = Array.isArray(save?.rootglass) ? save.rootglass : [];
+  rootglass = new Set(rootglassNodes.filter(node => savedRootglass.includes(node.id)).map(node => node.id));
+  rootdeepQuest = ['accepted','declined','complete'].includes(save?.rootdeepQuest) ? save.rootdeepQuest : 'unoffered';
+  rootdeepLiftFixed = rootdeepQuest === 'complete' && save?.rootdeepLiftFixed === true;
   const savedIron = Array.isArray(save?.iron) ? save.iron : [];
   iron = new Set(oreNodes.filter(node => savedIron.includes(node.id)).map(node => node.id));
   ironStock = Number.isSafeInteger(save?.ironStock) ? Math.max(0,save.ironStock) : iron.size;
@@ -1024,7 +1056,7 @@ function begin(save) {
   el('inventoryButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1348,6 +1380,46 @@ function barryDialogue() {
   ]);
 }
 
+function dorrinDialogue() {
+  if (rootdeepQuest === 'complete') {
+    setDialogue('The lift is steady again. You can ride between the Lanternstead landing and the deep shaft. That seal below us is older than the mine.', [
+      ['What is behind the seal?', () => setDialogue('The old records speak of a road beneath the roots, built before the King’s forest had a name.', [['Back', dorrinDialogue]])]
+    ]);
+    return;
+  }
+  if (rootdeepQuest === 'accepted' && rootglass.size >= 3) {
+    setDialogue('You found all three rootglass pieces. They should hold the lift cable together. Will you give them to me?', [
+      ['Give Dorrin the 3 rootglass', () => {
+        rootdeepQuest = 'complete';
+        rootdeepLiftFixed = true;
+        updateNotes();
+        updatePrompt();
+        saveCamp();
+        setDialogue('That’s it! The lift is moving again. You’ve made these old levels a lot safer to travel. Thank you, friend.');
+      }],
+      ['Keep them for now', () => setDialogue('No rush. I’ll be right here when you’re ready.', [['Back', dorrinDialogue]])]
+    ]);
+    return;
+  }
+  if (rootdeepQuest === 'accepted') {
+    setDialogue('The lift needs three pieces of rootglass to brace its cable. You have ' + rootglass.size + ' / 3. The green seams are scattered through the deeper landings. Bring them back when you have all three.');
+    return;
+  }
+  setDialogue('Name’s Dorrin. I kept the old lift running for the King, back before the shadows reached this deep. The cable snapped, and now the lower levels are a long climb.', [
+    ['I’ll find the rootglass', () => {
+      rootdeepQuest = 'accepted';
+      updateNotes();
+      saveCamp();
+      setDialogue('Much obliged. Three pieces should be enough. Watch your footing on the split ledges, and keep your pickaxe handy.');
+    }],
+    ['Not right now', () => {
+      rootdeepQuest = 'declined';
+      saveCamp();
+      setDialogue('Fair enough. The path down is open if you still want to explore.');
+    }]
+  ]);
+}
+
 function ivoDialogue() {
   if (finishCampRequest('ivo')) return;
   if (fishing.tideglass === 'spent') {
@@ -1554,6 +1626,7 @@ function adminTeleportDialogue() {
     ['Alder Camp', 'camp', { x: 1800, ground: 'trail' }],
     ['Crownwood Canopy', 'crownwood', { x: 273, ground: 'understory' }],
     ['Embervein Mine', 'mine', { x: 320, ground: 'mine-floor' }],
+    ['Rootdeep Mine', 'rootdeep', { x: 110, ground: 'rootdeep-level-1-west' }],
     ['Driftwood Cove', 'beach', { x: 300, ground: 'shore-sand' }],
     ['Hidden First Hearth', 'hearth', { x: 300, ground: 'hearth-floor' }],
     ['King’s Grounds', 'king', { x: 2315, ground: 'king-floor' }],
@@ -1694,7 +1767,12 @@ function eatBerry() {
 
 function gather(item) {
   const { id, x, y } = item;
-  if (crystalNodes.includes(item)) {
+  if (rootglassNodes.includes(item)) {
+    rootglass.add(id);
+    notice = 'Rootglass mined · ' + rootglass.size + ' / 3';
+    puff(particles, x, y - 24, '#8edacb', 12);
+    floater(floaters, x, y - 65, '+1 rootglass');
+  } else if (crystalNodes.includes(item)) {
     crystals.add(id);
     notice = 'Crystal gathered · ' + crystals.size + ' / ' + crystalNodes.length;
     puff(particles, x, y - 24, '#a3e4cf');
@@ -1791,7 +1869,7 @@ function interact() {
     return;
   }
   const id = item.id;
-  const mineral = crystalNodes.includes(item) || oreNodes.includes(item);
+  const mineral = crystalNodes.includes(item) || oreNodes.includes(item) || rootglassNodes.includes(item);
   const tree = allTimberTrees.includes(item);
   if (mineral || tree) {
     const required = mineral ? 'pickaxe' : 'hatchet';
@@ -1819,6 +1897,23 @@ function interact() {
     if (id === 'village-gate' && victory?.ending) openSharedDoor('village-gate');
     if (liftGates[id] && fishing.tideglass === 'spent') openSharedDoor('mine-lift');
     enterRegion(gate.region, gate.footing);
+    return;
+  }
+  if (id === 'rootdeep-lift-high' || id === 'rootdeep-lift-low') {
+    if (!rootdeepLiftFixed) {
+      openDialogue(id);
+      setDialogue('The old cage hangs over the shaft, but its cable is broken. Dorrin may know how to restore it.');
+      return;
+    }
+    enterRegion('rootdeep', id === 'rootdeep-lift-high'
+      ? { x: 1690, ground: 'rootdeep-level-8-east' }
+      : { x: 310, ground: 'rootdeep-level-4-west' });
+    return;
+  }
+  if (id === 'dorrin') { dorrinDialogue(); return; }
+  if (id === 'deep-seal') {
+    openDialogue(id);
+    setDialogue('An ancient stone seal blocks the lowest passage. Its markings are too worn to read. Dorrin might recognize the old work.');
     return;
   }
   if (id === 'mist-drop') {
