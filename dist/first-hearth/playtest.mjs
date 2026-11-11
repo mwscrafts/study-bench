@@ -7,7 +7,7 @@ import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, o
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
-import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=15';
+import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
@@ -614,7 +614,7 @@ function paint() {
     for (const node of oreNodes) {
       if (!iron.has(node.id)) paintOre(ctx, node, animationClock);
     }
-    if (!tools.flint && !tools.pickaxe) paintFlint(ctx);
+    if (!tools.flint) paintFlint(ctx);
     shadow(ivo.x, ivo.y, 26);
     drawSprite(ctx, sprites.ivo, ivo.x, ivo.y, 105);
   } else if (region === 'beach') {
@@ -855,7 +855,7 @@ function updatePrompt() {
   if (region === 'crownwood') items.push(...crystalNodes.filter(node => !crystals.has(node.id)));
   if (region === 'mine') {
     items.push(...oreNodes.filter(node => !iron.has(node.id)));
-    if (!tools.flint && !tools.pickaxe) items.push(flint);
+    if (!tools.flint) items.push(flint);
   }
   if (region === 'camp') {
     items.push(...timberTrees.filter(tree => !tools.chopped.includes(tree.id)));
@@ -1414,6 +1414,7 @@ function workbenchDialogue() {
     if (!tools.flint) missing.push('1 flint');
     if (reportMissing('craft the pickaxe', missing)) return;
     tools.pickaxe = true;
+    tools.pickaxePaid = true;
     equipped = 'pickaxe';
     tools.flint = false;
     updateNotes(); saveCamp(); workbenchDialogue();
@@ -2318,7 +2319,7 @@ function grantTestItem(kind, amount = 1) {
     case 'tideglass': fishing.tideglass = 'caught'; break;
     case 'godslayer': fishing.godslayer = true; equipped = 'godslayer'; break;
     case 'hatchet': tools.hatchet = true; equipped = 'hatchet'; break;
-    case 'pickaxe': tools.pickaxe = true; tools.flint = false; equipped = 'pickaxe'; break;
+    case 'pickaxe': tools.pickaxe = true; tools.pickaxePaid = false; equipped = 'pickaxe'; break;
     case 'ironSword': tools.ironSword = true; equipped = 'ironSword'; break;
     case 'shadowBlade': tools.shadowBlade = true; equipped = 'shadowBlade'; break;
     case 'helmet': tools.helmet = true; break;
@@ -2336,7 +2337,7 @@ function giveBossTestKit() {
   health = 100; composure = 100; berries = Math.max(berries, 12);
   ironStock += 12; shadowStock += 12;
   crystals = new Set(crystalNodes.map(node => node.id));
-  tools.hatchet = true; tools.pickaxe = true; tools.ironSword = true;
+  tools.hatchet = true; tools.pickaxe = true; tools.pickaxePaid = false; tools.ironSword = true;
   tools.shadowBlade = true; tools.helmet = true; tools.charm = true;
   tools.flowerCrown = true; hearthLearned = true; quest = 'complete';
   fishing.godslayer = true; equipped = 'godslayer';
