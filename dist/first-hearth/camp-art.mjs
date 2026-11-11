@@ -295,12 +295,17 @@ export function paintFlower(ctx, flower, nearby, clock) {
   orb(ctx,x+tip,y-22,3,'#ffe8a7');
 }
 
-export function paintCraftingProps(ctx, tools) {
+export function paintCraftingProps(ctx, tools, treeStage = () => 'mature') {
   for (const tree of timberTrees) {
     const {x,y}=tree;
     if (tools.chopped.includes(tree.id)) {
-      poly(ctx,[[x-19,y],[x-13,y-17],[x+11,y-18],[x+20,y]],'#776044');
-      path(ctx,[[x-13,y-17],[x+11,y-18]],'#c6a873',4);
+      if (treeStage(tree.id) === 'sapling') {
+        pine(ctx,x,y,58,'#324f41','#789264');
+        ctx.fillStyle='#84694a'; ctx.fillRect(x-4,y-14,8,14);
+      } else {
+        poly(ctx,[[x-19,y],[x-13,y-17],[x+11,y-18],[x+20,y]],'#776044');
+        path(ctx,[[x-13,y-17],[x+11,y-18]],'#c6a873',4);
+      }
     } else {
       pine(ctx,x,y,167,'#324f41','#617a59');
       ctx.fillStyle='#84694a';

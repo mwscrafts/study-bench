@@ -23,6 +23,8 @@ export function readTools(save) {
     charm: save?.charm === true,
     helmet: save?.helmet === true,
     flowerCrown: save?.flowerCrown === true,
+    // Keep lifetime wood separate from chopped: harvested pines will regrow.
+    woodHarvested: Number.isSafeInteger(save?.woodHarvested) ? Math.max(0, Math.min(999999, save.woodHarvested)) : chopped.length,
     woodSpent: save?.woodSpent === 1 ? 1 : 0,
     woodDonated: Number.isSafeInteger(save?.woodDonated) ? Math.max(0, Math.min(99, save.woodDonated)) : 0,
     flint: save?.flint === true,
@@ -33,5 +35,6 @@ export function readTools(save) {
 }
 
 export function spareWood(tools) {
-  return Math.max(0, tools.chopped.length + (tools.debugWood ?? 0) - (tools.pickaxePaid ? WOOD_COST : 0) - tools.woodSpent - (tools.woodDonated ?? 0));
+  // Old saves have no lifetime count, so readTools initializes it from their harvested pines.
+  return Math.max(0, (tools.woodHarvested ?? tools.chopped.length) + (tools.debugWood ?? 0) - (tools.pickaxePaid ? WOOD_COST : 0) - tools.woodSpent - (tools.woodDonated ?? 0));
 }

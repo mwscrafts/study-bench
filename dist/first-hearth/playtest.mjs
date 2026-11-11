@@ -1,8 +1,8 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=15';
-import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=12';
+import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=13';
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
-import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=13';
+import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=15';
 import { paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=04';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes } from './rootdeep.mjs?v=4';
@@ -10,7 +10,7 @@ import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt } from './rootdeep-art.mjs?v=8';
 import { beachFlower, readFishing, castNet } from './beach.mjs?v=1';
 import { paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
-import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
+import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
@@ -23,7 +23,7 @@ import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { paintRestoredKing } from './village.mjs?v=12';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=2';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=5';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=6';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
 
@@ -74,6 +74,7 @@ let shadowHealth = new Map();
 let hasNet = false;
 let hughQuest = false;
 let tools = readTools();
+let treeHarvestDays = {};
 let fishing = readFishing();
 let casting = null;
 let nightIndex = 0;
@@ -354,13 +355,13 @@ function paint() {
     const lyss = landmarks[0];
     shadow(lyss.x, lyss.y, 24);
     drawSprite(ctx, sprites.lyss, lyss.x, lyss.y, 98);
-    paintCraftingProps(ctx, tools);
+    paintCraftingProps(ctx, tools, treeStage);
     if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2415,groundAt(2415)-127);
     for (const bush of berryBushes) paintBerryBush(ctx, bush, pickedBushes.has(bush.id));
     paintCampFacilities(ctx, { berryPlots, growMs:BERRY_GROW_MS, catnipUnlocked,
       catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && hughQuest }, animationClock);
   } else if (region === 'crownwood') {
-    paintCrownwoodPines(ctx, tools.chopped);
+    paintCrownwoodPines(ctx, tools.chopped, treeStage);
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
     shadow(barry.x, barry.y, 29);
     ctx.save();
@@ -782,13 +783,32 @@ function savedInteger(value, min, max, fallback) {
   return Number.isSafeInteger(value) ? clamp(value, min, max) : fallback;
 }
 
+function treeStage(id) {
+  if (!tools.chopped.includes(id)) return 'mature';
+  const harvestedOn = Number.isSafeInteger(treeHarvestDays[id]) ? treeHarvestDays[id] : nightIndex;
+  return nightIndex - harvestedOn >= 1 ? 'sapling' : 'stump';
+}
+
+function advanceTreeRegrowth() {
+  const regrown = tools.chopped.filter(id => {
+    const harvestedOn = Number.isSafeInteger(treeHarvestDays[id]) ? treeHarvestDays[id] : nightIndex;
+    return nightIndex - harvestedOn >= 3;
+  });
+  if (!regrown.length) return;
+  tools.chopped = tools.chopped.filter(id => !regrown.includes(id));
+  for (const id of regrown) delete treeHarvestDays[id];
+  notice = regrown.length === 1 ? 'A marked pine has grown back.' : 'Marked pines have grown back.';
+  noticeUntil = animationClock + 2.4;
+  updateNotes(); updatePrompt(); saveCamp();
+}
+
 function saveCamp() {
   if (!playing) return;
   try {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 18, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 19, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickedBushes: [...pickedBushes],
@@ -797,7 +817,8 @@ function saveCamp() {
       glowcapQuest, glowcapLanternLit,
       rootKeyQuest, rootKeyGuidance, hasRootKey,
       activatedLodestones: [...activatedLodestones], iron: [...iron],
-      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools, fishing,
+      ironStock, shadowStock, defeatedShadows: [...defeatedShadows], hasNet, hughQuest, tools,
+      treeHarvestDays, fishing,
       berrySeeds, berryPlots, catnipUnlocked, alvinCatnipVisits, catnipReadyAt, minecartOre, minecartUpdatedAt,
       minecartCapacity,
       activeRequest, completedRequests: [...completedRequests], campTokens, hutDecorations: [...hutDecorations]
@@ -856,6 +877,11 @@ function begin(save) {
   hughQuest = save?.hughQuest === true;
   fishing = readFishing(save?.fishing);
   nightIndex = savedInteger(save?.nightIndex, 0, 1000000, 0);
+  treeHarvestDays = {};
+  for (const id of tools.chopped) {
+    const savedDay = save?.treeHarvestDays?.[id];
+    treeHarvestDays[id] = Number.isSafeInteger(savedDay) ? clamp(savedDay, 0, nightIndex) : nightIndex;
+  }
   const legacyHits = Number.isInteger(save?.shadowHits) ? clamp(save.shadowHits, 0, 2) : 0;
   health = Number.isInteger(save?.health) ? clamp(save.health, 1, 100) : 100 - legacyHits * 34;
   composure = Number.isFinite(save?.composure) ? clamp(save.composure, 0, 100) : 100;
@@ -883,7 +909,7 @@ function begin(save) {
   el('inventoryButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1140,7 +1166,7 @@ function bedDialogue() {
     return;
   }
   setDialogue('Sleep until morning? You will wake with full health.', [['Sleep', () => {
-    phaseClock = 0; nightIndex++; health = 100; skyMode = 'auto';
+    phaseClock = 0; nightIndex++; advanceTreeRegrowth(); health = 100; skyMode = 'auto';
     el('sky-toggle').textContent = 'Sky: Auto';
     iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
     updateShadows(); updateNotes(); saveCamp();
@@ -1588,7 +1614,7 @@ function ownsGear(id) {
 
 function inventoryItems() {
   const items = [
-    ['▰', 'Wood', spareWood(tools), 'Chopped from marked pines.'],
+    ['▰', 'Wood', spareWood(tools), 'Harvested from marked pines. Trees regrow after three day/night cycles.'],
     ['⬟', 'Flint', Number(tools.flint), 'Mine stone used at the camp workbench.'],
     ['◆', 'Crystal', crystals.size - (tools.charm ? 2 : 0), 'Gathered with a pickaxe in Crownwood.'],
     ['▧', 'Iron ore', ironStock, 'Mined with a pickaxe in Embervein and the Rootdeep branch galleries.'],
@@ -1718,6 +1744,8 @@ function gather(item) {
     notice = 'Flint picked up';
   } else if (allTimberTrees.includes(item)) {
     tools.chopped.push(id);
+    tools.woodHarvested = Math.min(999999, (tools.woodHarvested ?? 0) + 1);
+    treeHarvestDays[id] = nightIndex;
     notice = 'Wood gathered';
     puff(particles, x, y - 32, '#c4b98b');
     floater(floaters, x, y - 65, '+1 wood');
@@ -2330,6 +2358,7 @@ function frame(time) {
     if (phaseClock >= DAY_LENGTH) {
       phaseClock -= DAY_LENGTH;
       nightIndex++;
+      advanceTreeRegrowth();
       iron.clear();
       defeatedShadows.clear();
       shadowHealth.clear();

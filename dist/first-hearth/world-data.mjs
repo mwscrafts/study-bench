@@ -1,7 +1,7 @@
 import { campTerrain, landmarks, flowers } from './terrain.mjs?v=15';
-import { buildCampArt } from './camp-art.mjs?v=12';
+import { buildCampArt } from './camp-art.mjs?v=13';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=13';
-import { buildCrownwoodArt } from './crownwood-art.mjs?v=13';
+import { buildCrownwoodArt } from './crownwood-art.mjs?v=14';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=15';
 import { buildMineArt } from './mine-art.mjs?v=04';
 import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=4';
@@ -9,7 +9,7 @@ import { buildRootdeepArt } from './rootdeep-art.mjs?v=8';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=1';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=1';
 import { buildBeachArt } from './beach-art.mjs';
-import { workbench } from './crafting.mjs?v=16';
+import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=10';
 import { buildHearthArt } from './hearth-art.mjs';
 import { kingTerrain, kingLandmarks, kingLocation } from './king.mjs?v=12';

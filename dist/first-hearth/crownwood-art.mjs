@@ -153,12 +153,17 @@ export function buildCrownwoodArt() {
   return canvas;
 }
 
-export function paintCrownwoodPines(ctx, chopped = []) {
+export function paintCrownwoodPines(ctx, chopped = [], treeStage = () => 'mature') {
   for (const tree of crownwoodTimberTrees) {
     const { x, y, id } = tree;
     if (chopped.includes(id)) {
-      poly(ctx, [[x-19,y],[x-14,y-16],[x+12,y-17],[x+20,y]], '#776044');
-      path(ctx, [[x-14,y-16],[x+12,y-17]], '#c6a873', 4);
+      if (treeStage(id) === 'sapling') {
+        pine(ctx,x,y,58,'#324f41','#789264');
+        ctx.fillStyle='#84694a'; ctx.fillRect(x-4,y-14,8,14);
+      } else {
+        poly(ctx, [[x-19,y],[x-14,y-16],[x+12,y-17],[x+20,y]], '#776044');
+        path(ctx, [[x-14,y-16],[x+12,y-17]], '#c6a873', 4);
+      }
       continue;
     }
     pine(ctx, x, y, 142, '#324f41', '#617a59');
