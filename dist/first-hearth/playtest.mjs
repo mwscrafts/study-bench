@@ -5,8 +5,8 @@ import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodTimberT
 import { buildCrownwoodArt, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=12';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows, ivo, netChest, oreNodes, flint } from './mine.mjs?v=12';
 import { buildMineArt, paintMineLights, paintMineChest, paintOre, paintFlint } from './mine-art.mjs?v=02';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=2';
-import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=4';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=3';
+import { buildRootdeepArt, paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift } from './rootdeep-art.mjs?v=5';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows, readFishing, castNet } from './beach.mjs';
 import { buildBeachArt, paintBeachHorizon, paintBeachDetails } from './beach-art.mjs';
 import { workbench, timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=16';
@@ -30,6 +30,8 @@ const SAVE_KEY = 'first-hearth:alder-camp:v1';
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const WAVE_TIME = 1.25;
 const DAY_LENGTH = 136;
+const ROOTDEEP_LADDER_X = 1780;
+const ROOTDEEP_CLIMB_SPEED = 430;
 const BERRY_GROW_MS = 3 * 60 * 1000;
 const CATNIP_GROW_MS = 10 * 60 * 1000;
 const MINECART_TICK_MS = 4 * 60 * 1000;
@@ -48,6 +50,8 @@ let crystals = new Set();
 let rootglass = new Set();
 let rootdeepQuest = 'unoffered';
 let rootdeepLiftFixed = false;
+// Rootdeep uses one continuous ladder shaft; this flag keeps gravity off while attached.
+let rootdeepClimbing = false;
 let iron = new Set();
 let ironStock = 0;
 let shadowStock = 0;
@@ -147,7 +151,7 @@ const regions = {
   },
   rootdeep: {
     title: ['Rootdeep', 'Mine'],
-    intro: 'Eight old landings descend beneath Crownwood. Find Dorrin, gather rootglass, and help him bring the lift back to life.',
+    intro: 'Eight old landings descend beneath Crownwood. Use the lit ladder on the far-right wall to climb the continuous shaft. Find Dorrin, gather rootglass, and help him restore the lift.',
     terrain: rootdeepTerrain, landmarks: rootdeepLandmarks, flowers: [], buildArt: buildRootdeepArt,
     location: rootdeepLocation, shadows: rootdeepShadows, retreat: 'Rootbound Threshold'
   },
@@ -828,6 +832,10 @@ function controlsActive() {
     trial?.stage !== 'alvin' && finaleDelay <= 0 && !endingScene;
 }
 
+function nearRootdeepLadder() {
+  return region === 'rootdeep' && Math.abs(player.x - ROOTDEEP_LADDER_X) <= 68;
+}
+
 function atFallsRail() {
   return region === 'crownwood' && player.ground === 'rope-bridge' &&
     Math.abs(player.x - crownwoodLandmarks.find(item => item.id === 'mist-drop').x) < 188;
@@ -903,12 +911,18 @@ function updatePrompt() {
     items.push(...crownwoodTimberTrees.filter(tree => !tools.chopped.includes(tree.id)));
   }
   const current = controlsActive() ? nearbyLandmark(player, items) : undefined;
-  const label = current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
+  const onLadder = nearRootdeepLadder() || rootdeepClimbing;
+  const label = current?.id.startsWith('rootdeep-ladder-') ? 'Climb the root ladder · hold ↑ / ↓' :
+    current?.id === 'hut-bed' && (phaseClock%DAY_LENGTH < 72 || phaseClock%DAY_LENGTH >= 121) ? 'Rest by the window' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' :
     current?.id === 'mara' ? 'Talk to Lyss' : current?.label;
-  const message = casting ? 'Casting the net…' : label ? label + ' · E / Interact'
+  const message = casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
     : controlsActive() && animationClock < noticeUntil ? notice : '';
+  const jumpCaption = el('jump').querySelector('small');
+  if (jumpCaption && jumpCaption.textContent !== (onLadder ? 'Climb' : 'Jump')) jumpCaption.textContent = onLadder ? 'Climb' : 'Jump';
+  el('jump').setAttribute('aria-label', onLadder ? 'Hold to climb up the root ladder' : 'Jump');
+  el('down').setAttribute('aria-label', onLadder ? 'Hold to climb down the root ladder' : 'Drop down through a ledge');
   selectedLandmark = current;
   if (el('status').textContent !== message) el('status').textContent = message;
   el('status').hidden = !message;
@@ -1087,6 +1101,7 @@ function enterRegion(next, footing) {
   updateTrialHud();
   const area = regions[next];
   terrain = area.terrain;
+  rootdeepClimbing = false;
   // Migrate existing saves from the former split ledge IDs onto the new continuous floors.
   if (next === 'rootdeep' && footing?.ground) {
     const oldRootdeepGround = footing.ground.match(/^rootdeep-level-(\d+)(?:-(?:west|east))?$/);
@@ -1916,15 +1931,11 @@ function interact() {
     enterRegion(gate.region, gate.footing);
     return;
   }
-  if (id === 'rootdeep-climb-bottom') {
-    enterRegion('rootdeep', { x: 1780, ground: 'rootdeep-level-8' });
-    return;
-  }
-  const climb = id.match(/^rootdeep-climb-(\d+)$/);
-  if (climb) {
-    const level = Number(climb[1]);
-    if (level === 1) enterRegion('crownwood', { x: 5510, ground: 'understory' });
-    else enterRegion('rootdeep', { x: 1780, ground: `rootdeep-level-${level-1}` });
+  if (id.startsWith('rootdeep-ladder-')) {
+    // Interact grabs the ladder; hold up/down to travel through the same continuous shaft.
+    rootdeepClimbing = true;
+    player.ground = null;
+    player.velocityY = 0;
     return;
   }
   if (id === 'rootdeep-lift-high' || id === 'rootdeep-lift-low') {
@@ -2322,9 +2333,35 @@ function frame(time) {
     const right = heldKeys.has('d') || heldKeys.has('arrowright') || [...heldPointers.values()].includes(1);
     const left = heldKeys.has('a') || heldKeys.has('arrowleft') || [...heldPointers.values()].includes(-1);
     const direction = Number(right) - Number(left);
+    const climbingUp = heldKeys.has('arrowup') || heldKeys.has('w') || [...heldPointers.values()].includes('up');
+    const climbingDown = heldKeys.has('arrowdown') || heldKeys.has('s') || [...heldPointers.values()].includes('down');
+    const vertical = Number(climbingDown) - Number(climbingUp);
+    if (nearRootdeepLadder() && vertical) rootdeepClimbing = true;
     for (let remaining = dt; remaining > 0;) {
       const step = Math.min(remaining, 1 / 120);
-      movePlayer(player, direction, step, terrain);
+      if (region === 'rootdeep' && rootdeepClimbing && direction) {
+        rootdeepClimbing = false;
+        player.ground = null;
+        player.velocityY = Math.max(player.velocityY, 80);
+        movePlayer(player, direction, step, terrain);
+      } else if (region === 'rootdeep' && rootdeepClimbing) {
+        player.x = ROOTDEEP_LADDER_X;
+        player.ground = null;
+        player.velocityY = 0;
+        player.moving = vertical !== 0;
+        if (vertical) player.y += vertical * ROOTDEEP_CLIMB_SPEED * step;
+        if (player.y <= 80 && vertical < 0) {
+          enterRegion('crownwood', { x: 5510, ground: 'understory' });
+          break;
+        }
+        const bottomY = rootdeepTerrain.floor.points[0][1];
+        if (player.y >= bottomY) {
+          player.y = bottomY;
+          player.ground = 'rootdeep-floor';
+          player.jumps = 0;
+          rootdeepClimbing = false;
+        }
+      } else movePlayer(player, direction, step, terrain);
       remaining -= step;
     }
     if (region === 'king' && !victory) {
@@ -2562,12 +2599,18 @@ window.addEventListener('keydown', event => {
   }
   if (key === 'arrowdown' || key === 's') {
     event.preventDefault();
-    if (!event.repeat) dropThrough(player, terrain);
+    if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+      rootdeepClimbing = true;
+      heldKeys.add(key);
+    } else if (!event.repeat) dropThrough(player, terrain);
     return;
   }
   if (jumpKeys.has(key) && (key !== ' ' || !event.target.closest('button'))) {
     event.preventDefault();
-    if (!event.repeat) jump(player);
+    if (region === 'rootdeep' && key !== ' ' && (rootdeepClimbing || nearRootdeepLadder())) {
+      rootdeepClimbing = true;
+      heldKeys.add(key);
+    } else if (!event.repeat) jump(player);
   }
   if (event.repeat) return;
   if (key === 'e') interact();
@@ -2597,13 +2640,40 @@ for (const [id, direction] of [['left', -1], ['right', 1]]) {
   };
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, release));
 }
-el('down').addEventListener('click', () => { if (controlsActive()) dropThrough(player, terrain); });
+el('down').addEventListener('pointerdown', event => {
+  if (!controlsActive() || region !== 'rootdeep' || !(rootdeepClimbing || nearRootdeepLadder())) return;
+  event.preventDefault();
+  rootdeepClimbing = true;
+  heldPointers.set(event.pointerId, 'down');
+  el('down').setPointerCapture(event.pointerId);
+});
+el('down').addEventListener('pointerup', event => heldPointers.delete(event.pointerId));
+el('down').addEventListener('pointercancel', event => heldPointers.delete(event.pointerId));
+el('down').addEventListener('click', event => {
+  if (!controlsActive()) return;
+  if (event.detail === 0 && region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+    rootdeepClimbing = true;
+    player.y = Math.min(rootdeepTerrain.floor.points[0][1], player.y + 130);
+  } else if (!nearRootdeepLadder()) dropThrough(player, terrain);
+});
 el('jump').addEventListener('pointerdown', event => {
   event.preventDefault();
-  if (controlsActive()) jump(player);
+  if (!controlsActive()) return;
+  if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+    rootdeepClimbing = true;
+    heldPointers.set(event.pointerId, 'up');
+    el('jump').setPointerCapture(event.pointerId);
+  } else jump(player);
 });
+el('jump').addEventListener('pointerup', event => heldPointers.delete(event.pointerId));
+el('jump').addEventListener('pointercancel', event => heldPointers.delete(event.pointerId));
 el('jump').addEventListener('click', event => {
-  if (event.detail === 0 && controlsActive()) jump(player);
+  if (event.detail === 0 && controlsActive()) {
+    if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+      rootdeepClimbing = true;
+      player.y = Math.max(80, player.y - 130);
+    } else jump(player);
+  }
 });
 el('interact').addEventListener('click', interact);
 window.addEventListener('blur', clearControls);
