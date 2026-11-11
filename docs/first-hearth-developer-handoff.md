@@ -9,7 +9,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
-The latest code commit is `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”). It follows `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”) and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
+The latest code commit is `3f85e8c452702bc705e5c669d9f737fe2bae9baa` (“Regrow Glowcap patches after three nights”). It follows `c4807e57c6e4f90102bfe3e62c9d308271061135` (“Gate quest and crafting HUD guidance”), `185a654217abcc95d98f21daca0cf63d5c167091` (“Show Composure guidance from the start”), and `288d9cc1298a8cf6f19e402e22f5b7170706a2ba` (“Add an encounter-based field journal”).
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
@@ -20,15 +20,16 @@ The field journal now:
 - The HUD now tracks dusklilies only after the player accepts Lyss's quest. Flowers collected earlier still count when the quest is accepted.
 - The crafting hint now shows the pickaxe recipe only after the player explicitly asks Lyss how to make a pickaxe. Receiving the hatchet no longer exposes the recipe; the pre-recipe HUD says the hatchet cuts marked pines, and the recipe label says **Pickaxe**.
 - The learned-recipe flag is saved alongside the existing player save, so this progression survives reloads.
+- Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=63` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=64` and `playtest.css?v=16`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
-**Gameplay verification status:** the journal code was statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
+**Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
 ### Suggested owner check for this checkpoint
 
-After the Cloudflare build updates, reload the game and open **Journal**. Confirm **Keeping your composure** is present on an existing save as well as a new save, and that it says nearby threats drain Composure, fighting nearby drains it faster, zero Composure costs 1 health per second, and petting Alvin in the hut restores up to 25 Composure. Then check that newly encountered entries persist after reloading.
+After the Cloudflare build updates, reload the game and open **Journal**. Confirm **Keeping your composure** is present on an existing save as well as a new save, and that it says nearby threats drain Composure, fighting nearby drains it faster, zero Composure costs 1 health per second, and petting Alvin in the hut restores up to 25 Composure. Check Glowcap regrowth by gathering a patch, advancing three nights (sleep or the normal cycle), and confirming the patch reappears and can be gathered again; verify the stock survives a reload. Also check that newly encountered journal entries persist.
 
 ## Project layout and ownership
 
@@ -69,7 +70,7 @@ The game is a static browser experience in `dist/first-hearth/`. There is no sep
 - The saved `visited` set uses known landmark IDs; flowers and other resources have their own state. Avoid adding duplicate progression flags when an existing quest/resource already represents the state.
 - Shared doors opened through `presence.mjs` are for the current public session. Do not persist a shared door into a player's save.
 - Rootdeep entrance needs `hasRootKey`; Hugh's second request is `rootKeyQuest`, Lyss's clue is `rootKeyGuidance`, and the three stones are in Embervein, Crownwood, and the beach. Rootdeep's winch follows `rootdeepQuest === 'complete'`; the spent tideglass records the Embervein lift repair.
-- Rootdeep Glowcaps are a separate saved resource. Turning in three to the Common Keeper permanently lights the hub and rewards four berries. Rootdeep iron shares the Embervein iron stock and pickaxe rules.
+- Rootdeep Glowcaps are a separate saved resource. Turning in three to the Common Keeper permanently lights the hub and rewards four berries. Gathered Glowcap patches regrow after three night advances; stored stock can accumulate beyond the original three-node count for future restoration projects. Rootdeep iron shares the Embervein iron stock and pickaxe rules.
 
 ## Composure and journal mechanics
 

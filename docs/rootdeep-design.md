@@ -14,14 +14,14 @@
 | --- | --- | --- |
 | 1 | Rootbound Threshold | Visible entrance arch and clear return to Crownwood |
 | 2 | Winding Galleries | Broken winch; repaired winch becomes the shortcut |
-| 3 | Glowcap Hollows | Three harvestable Glowcaps and the lantern request |
+| 3 | Glowcap Hollows | Three harvestable Glowcap patches that regrow; Common Keeper's lantern request |
 | 4 | Lanternstead | Safe hub, Dorrin, two settlers, central fire, and three enterable homes |
 | 5 | Iron Choir | Branching iron galleries and ore |
 | 6 | Flooded Reach | Raised boardwalk over a shallow pool and visible machinery |
 | 7 | Rootglass Vein | Shadow-tangled roots, purple root-glow, night patrol |
 | 8 | The Deep Seal | Rootglass seam, winch endpoint, and still-closed story chamber |
 
-Glowcaps are a separate saved resource. Turning in all three to the Common Keeper lights the hub permanently and awards four berries. Rootdeep iron uses the same iron stock and pickaxe rules as Embervein. The Deep Seal is intentionally not a gate to a playable later chapter yet.
+Glowcaps are a separate saved resource. Turning in three to the Common Keeper lights the hub permanently and awards four berries. Gathered patches reappear after three night advances, matching marked-pine regrowth. Their harvest-night timestamps are saved; old saves without timestamps begin regrowth timing from their current night when first loaded. Keep stored Glowcap stock valid above the original three-node count so regrowth can support future lights and tunnel work. Rootdeep iron uses the same iron stock and pickaxe rules as Embervein. The Deep Seal is intentionally not a gate to a playable later chapter yet.
 
 ## House and multiplayer structure
 
