@@ -72,6 +72,17 @@ export function jump(player) {
   return true;
 }
 
+export function dropThrough(player, terrain = campTerrain) {
+  if (!player.ground || player.ground === terrain.floor.id) return false;
+  if (!terrain.ledges.some(surface => surface.id === player.ground)) return false;
+  player.ground = null;
+  player.y += 10;
+  player.velocityY = Math.max(player.velocityY, 60);
+  player.jumps = 1;
+  player.moving = false;
+  return true;
+}
+
 export function movePlayer(player, direction, dt, terrain = campTerrain) {
   const previousX = player.x;
   const previousY = player.y;
