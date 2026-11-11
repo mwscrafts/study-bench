@@ -15,8 +15,8 @@ function at(surface, id, x, label, radius = 77) {
   return { id, x, y: surfaceAt(surface, x), label, radius };
 }
 
-export const ivo = at(floor, 'ivo', 2165, 'Talk to Perry', 98);
-export const netChest = at(floor, 'net-chest', 2360, 'Open Perry’s chest', 70);
+export const ivo = at(floor, 'ivo', 2165, 'Talk to Hugh Mungus', 98);
+export const netChest = at(floor, 'net-chest', 2360, 'Open Hugh Mungus’s chest', 70);
 export const flint = at(floor, 'flint', 420, 'Pick up loose flint', 64);
 
 export const mineLandmarks = [
@@ -53,7 +53,7 @@ export function mineLocation(player) {
   if (player.x < 635) return 'Timber Shaft';
   if (player.ground === upperShelf.id) return 'Upper Ore Shelf';
   if (player.x < 1910) return 'Lantern Switchbacks';
-  if (player.x < 2675) return 'Perry’s Alcove';
+  if (player.x < 2675) return 'Hugh Mungus’s Alcove';
   if (player.x < 4180) return 'Deep Seam';
   return 'Lift Base';
 }
