@@ -1,4 +1,4 @@
-import { formatTime } from './king.mjs?v=10';
+import { formatTime } from './king.mjs?v=12';
 
 const BOARD = '/first-hearth/api/times';
 export const MAX_TIME_MS = 60 * 60 * 1000;

@@ -1,5 +1,5 @@
 import { poly, path, orb, random, stone } from './camp-art.mjs';
-import { kingTerrain, kingLandmarks, ARENA, MAX_BOSS_HP } from './king.mjs?v=10';
+import { kingTerrain, kingLandmarks, ARENA, MAX_BOSS_HP } from './king.mjs?v=12';
 
 const { width, height, floor, ledges } = kingTerrain;
 const stoneLight = '#909587';
