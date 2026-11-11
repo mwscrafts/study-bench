@@ -16,9 +16,9 @@ function spot(surface, id, x, label, radius = 72) {
 
 export const rootdeepLandmarks = [
   spot(tiers[0][0], 'rootdeep-return', 105, 'Return to Crownwood', 94),
-  ...tiers.map((tier,index) => spot(tier[0], `rootdeep-climb-${index+1}`, 1780,
-    index === 0 ? 'Climb the root ladder to Crownwood' : `Climb the root ladder to level ${index}`, 84)),
-  spot(floor, 'rootdeep-climb-bottom', 1780, 'Climb the root ladder to level 8', 84),
+  ...tiers.map((tier,index) => spot(tier[0], `rootdeep-ladder-${index+1}`, 1780,
+    'Climb the root ladder · hold ↑ / ↓', 84)),
+  spot(floor, 'rootdeep-ladder-bottom', 1780, 'Climb the root ladder · hold ↑ / ↓', 84),
   spot(tiers[3][0], 'dorrin', 1450, 'Talk to Dorrin', 96),
   spot(tiers[3][0], 'rootdeep-lift-high', 310, 'Inspect the old lift', 80),
   spot(tiers[7][0], 'rootdeep-lift-low', 1690, 'Inspect the old lift', 80),
