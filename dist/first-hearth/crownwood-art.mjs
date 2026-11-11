@@ -10,6 +10,7 @@ const campGate = landmark('camp-return');
 const drop = landmark('mist-drop');
 const hearth = landmark('first-hearth');
 const king = landmark('king-trail');
+const rootdeep = landmark('rootdeep-entrance');
 
 function canopy(ctx, x, y, size, tone, tip) {
   const edge = [[-.95,.34],[-1,-.1],[-.73,-.41],[-.43,-.46],[-.22,-.62],[.23,-.69],[.49,-.53],[.79,-.44],[1,-.08],[.82,.32],[.36,.34],[.17,.52],[-.3,.5]];
@@ -136,6 +137,19 @@ export function buildCrownwoodArt() {
   const gateY=king.y+1;
   path(ctx,[[gateX-33,gateY],[gateX-33,gateY-63],[gateX-17,gateY-85],[gateX+26,gateY-83],[gateX+41,gateY-59],[gateX+41,gateY]],'#53655b',14);
   path(ctx,[[gateX-41,gateY-54],[gateX-21,gateY-84],[gateX+27,gateY-85]],'#a6b39b',3);
+  // A separate root-bound tunnel sits at understory height, far below the King’s path.
+  const tx=rootdeep.x, ty=rootdeep.y;
+  poly(ctx,[[tx-132,ty],[tx-118,ty-75],[tx-88,ty-135],[tx-42,ty-165],[tx+36,ty-160],[tx+92,ty-118],[tx+137,ty-43],[tx+150,ty]],'#36473f');
+  poly(ctx,[[tx-91,ty],[tx-81,ty-61],[tx-49,ty-104],[tx-2,ty-122],[tx+49,ty-100],[tx+82,ty-53],[tx+92,ty]],'#172b31');
+  path(ctx,[[tx-134,ty-2],[tx-119,ty-77],[tx-89,ty-136],[tx-42,ty-165],[tx+38,ty-160],[tx+93,ty-118],[tx+139,ty-44]],'#829879',7);
+  path(ctx,[[tx-119,ty-40],[tx-86,ty-32],[tx-68,ty-6]],'#526f58',9);
+  path(ctx,[[tx+118,ty-47],[tx+78,ty-35],[tx+62,ty-3]],'#526f58',9);
+  for(const [lx,ly] of [[tx-104,ty-85],[tx+105,ty-79]]) {
+    path(ctx,[[lx,ly+24],[lx,ly-14]],'#6d523e',4);
+    poly(ctx,[[lx-8,ly-13],[lx+8,ly-13],[lx+9,ly+4],[lx-8,ly+4]],'#51443a');
+    orb(ctx,lx,ly-4,18,'#f2bd6c39');
+    poly(ctx,[[lx-4,ly-8],[lx+4,ly-8],[lx+4,ly+1],[lx-4,ly+1]],'#ffd18a');
+  }
   return canvas;
 }
 
