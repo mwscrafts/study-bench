@@ -21,7 +21,7 @@ import { buildKingArt, paintKingGrounds, paintFireworks } from './king-art.mjs?v
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
 import { villageTerrain, houseTerrain, villageLandmarks, houseLandmarks, villageLocation, houseLocation, buildVillageArt, buildHouseArt, paintRestoredKing } from './village.mjs?v=11';
 import { campFacilities, hutTerrain, hutLandmarks, hutLocation, buildHutArt, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
-import { createPresence } from './presence.mjs?v=1';
+import { createPresence } from './presence.mjs?v=2';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const el = id => document.getElementById(id);
@@ -261,7 +261,9 @@ const presence = createPresence({
     region, x: Math.round(player.x * 10) / 10, y: Math.round(player.y * 10) / 10,
     direction: player.direction, moving: controlsActive() && player.moving,
     gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100,
-    avatar, tool: equipped, helmet: tools.helmet, name: publicName
+    avatar, tool: equipped, helmet: tools.helmet, name: publicName,
+    alvin: { x: cat.x, y: cat.y, direction: cat.direction, gait: cat.gait,
+      size: 1 + fishFed / 4, indoors: region === 'hut' }
   }),
   isOnline: () => onlineEnabled,
   isPlaying: () => playing,
@@ -406,6 +408,22 @@ function paintPeers() {
       if (faded >= 1) { peers.delete(id); updatePresenceButton(); continue; }
     }
     if (pose.region !== region || !sprites?.[pose.avatar]) continue;
+    const alvin = pose.alvin;
+    if (alvin && Number.isFinite(alvin.x) && Number.isFinite(alvin.y)) {
+      peer.alvinX ??= alvin.x;
+      peer.alvinY ??= alvin.y;
+      peer.alvinX += (alvin.x - peer.alvinX) * .38;
+      peer.alvinY += (alvin.y - peer.alvinY) * .38;
+      const indoor = alvin.indoors === true;
+      const size = Number.isFinite(alvin.size) ? clamp(alvin.size, 1, 3) : 1;
+      ctx.save();
+      if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
+      shadow(peer.alvinX, peer.alvinY, 17);
+      drawSprite(ctx, sprites.alvin, peer.alvinX, peer.alvinY, (indoor ? 37 : 44) * size,
+        indoor ? 1 : alvin.direction, indoor ? 0 : -Math.abs(Math.sin(alvin.gait || 0)) * 2.2,
+        indoor ? -Math.PI / 2 : Math.sin(alvin.gait || 0) * .035);
+      ctx.restore();
+    }
     peer.x += (pose.x - peer.x) * .38;
     peer.y += (pose.y - peer.y) * .38;
     const bob = pose.moving ? -Math.abs(Math.sin(pose.gait)) * 4 : 0;

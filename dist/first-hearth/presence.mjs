@@ -27,7 +27,8 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
   function addPeer(id, pose) {
     if (typeof id !== 'string' || id === playerId() || !pose || pose.region !== getRegion()) return;
     const existing = peers.get(id);
-    peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y, leftAt: null });
+    peers.set(id, { pose, x: existing?.x ?? pose.x, y: existing?.y ?? pose.y,
+      alvinX: existing?.alvinX ?? pose.alvin?.x, alvinY: existing?.alvinY ?? pose.alvin?.y, leftAt: null });
     onChange();
   }
 
