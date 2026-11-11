@@ -5,7 +5,11 @@ import { crownwoodTerrain, crownwoodLandmarks, crystalNodes } from './crownwood.
 const { width, height, surfaces, floor } = crownwoodTerrain;
 const bridge = crownwoodTerrain.byId.get('rope-bridge');
 const mist = crownwoodTerrain.byId.get('mist-shelf');
-const [campGate, drop, hearth, king] = crownwoodLandmarks;
+const landmark = id => crownwoodLandmarks.find(item => item.id === id);
+const campGate = landmark('camp-return');
+const drop = landmark('mist-drop');
+const hearth = landmark('first-hearth');
+const king = landmark('king-trail');
 
 function canopy(ctx, x, y, size, tone, tip) {
   const edge = [[-.95,.34],[-1,-.1],[-.73,-.41],[-.43,-.46],[-.22,-.62],[.23,-.69],[.49,-.53],[.79,-.44],[1,-.08],[.82,.32],[.36,.34],[.17,.52],[-.3,.5]];
