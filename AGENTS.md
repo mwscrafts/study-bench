@@ -1,5 +1,11 @@
 # First Hearth maintainer notes
 
+## Start here and keep this current
+
+Read [the First Hearth developer handoff](docs/first-hearth-developer-handoff.md) before making game changes. It records the active implementation state, subsystem ownership, deployment path, and the last handoff checkpoint.
+
+Update that handoff when a meaningful feature or fix lands, and before an interrupted task or conversation handoff. Include what changed, the commit, what was actually checked, what remains, and the next useful step. Do not write “tested,” “deployed,” “fixed,” or “disconnected” unless that state was verified.
+
 ## Project layout
 
 The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest and CSS. `playtest.mjs` owns the main loop, controls, player save, dialogue, region transitions, combat, multiplayer presence, and the UI. Region and feature modules keep their terrain, landmark data, state helpers, and artwork in separate files.
@@ -9,7 +15,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 | Player movement and collision | `terrain.mjs`, coordinated by `playtest.mjs` |
 | Starting camp and world props | `camp-art.mjs`, `camp-idle.mjs`, `crafting.mjs` |
 | Crownwood | `crownwood.mjs`, `crownwood-art.mjs` |
-| Rootdeep | `rootdeep.mjs`, `rootdeep-art.mjs`, with traversal in `playtest.mjs` |
+| Rootdeep | `rootdeep.mjs`, `rootdeep-art.mjs`, `rootdeep-home.mjs`, `rootdeep-home-art.mjs`, with traversal in `playtest.mjs` |
 | Embervein Mine and beach | `mine.mjs`, `mine-art.mjs`, `beach.mjs`, `beach-art.mjs` |
 | Hollow King and endings | `king.mjs`, `king-art.mjs`, `time-board.mjs`, `village.mjs` |
 | Hut and idle features | `camp-idle.mjs` |
