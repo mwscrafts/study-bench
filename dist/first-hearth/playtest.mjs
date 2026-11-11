@@ -2437,9 +2437,9 @@ window.addEventListener('keydown', event => {
     event.preventDefault();
     heldKeys.add(key);
   }
-  if ((key === 'arrowdown' || key === 's') && !event.repeat) {
+  if (key === 'arrowdown' || key === 's') {
     event.preventDefault();
-    dropThrough(player, terrain);
+    if (!event.repeat) dropThrough(player, terrain);
     return;
   }
   if (jumpKeys.has(key) && (key !== ' ' || !event.target.closest('button'))) {
