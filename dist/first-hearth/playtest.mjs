@@ -582,7 +582,16 @@ function paint() {
     paintSky(ctx, camera, sky.from, 1, animationClock);
     if (sky.from !== sky.to) paintSky(ctx, camera, sky.to, sky.mix, animationClock);
   }
-  ctx.drawImage(backgrounds[region], 0, 0);
+  if (region === 'rootdeep') {
+    const image = backgrounds[region];
+    const scaleX = image.width / terrain.width;
+    const scaleY = image.height / terrain.height;
+    const sx = Math.max(0, Math.floor(camera.x * scaleX));
+    const sy = Math.max(0, Math.floor(camera.y * scaleY));
+    const sw = Math.min(image.width - sx, Math.ceil(camera.width * scaleX));
+    const sh = Math.min(image.height - sy, Math.ceil(camera.height * scaleY));
+    ctx.drawImage(image, sx, sy, sw, sh, camera.x, camera.y, sw / scaleX, sh / scaleY);
+  } else ctx.drawImage(backgrounds[region], 0, 0);
   const phase = sky.mix > .35 ? sky.to : sky.from;
   const clockText = region === 'king' && trial && !victory ? 'Final night'
     : phase === 'night' && skyMode === 'auto' ? 'Night ' + (nightIndex + 1) : skyLabels[phase];
