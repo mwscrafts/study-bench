@@ -1,7 +1,7 @@
 const SHARED_DOORS = new Set(['mine-lift', 'village-gate']);
 
 export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidden,
-  onChange, onDoorsChange, onNotesChange }) {
+  onChange, onDoorsChange, onNotesChange, onShadowState }) {
   const peers = new Map();
   const sharedDoors = new Set();
   let socket = null;
@@ -70,6 +70,11 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
       } else if (message.type === 'door-open' && SHARED_DOORS.has(message.door)) {
         sharedDoors.add(message.door);
         onDoorsChange();
+      } else if (message.type === 'shadow-state') {
+        onShadowState({ ...message, rewarded: message.winnerId === playerId() });
+      } else if (message.type === 'shadow-snapshot' && Array.isArray(message.states)) {
+        for (const state of message.states) onShadowState({ ...state, type: 'shadow-state',
+          region: message.region, cycle: message.cycle, rewarded: state.winnerId === playerId() });
       } else if (message.type === 'snapshot' && Array.isArray(message.peers)) {
         peers.clear();
         for (const peer of message.peers) addPeer(peer.id, peer.pose);
@@ -118,8 +123,14 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     return true;
   }
 
+  function hitShadow(index, damage, x, y, source = 'player') {
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify({ type: 'shadow-hit', index, damage, x, y, source }));
+    return true;
+  }
+
   return {
-    peers, sharedDoors, connect, disconnect, sendPose, openDoor,
+    peers, sharedDoors, connect, disconnect, sendPose, openDoor, hitShadow,
     clearPeers: () => peers.clear(),
     isConnected: () => socket?.readyState === WebSocket.OPEN
   };
