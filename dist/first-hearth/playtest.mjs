@@ -24,7 +24,7 @@ import { paintRestoredKing } from './village.mjs?v=13';
 import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, LYSS_CABIN_IRON_COST } from './home-projects.mjs?v=1';
 import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor } from './home-projects-art.mjs?v=1';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
-import { createPresence } from './presence.mjs?v=3';
+import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=11';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=1';
@@ -168,6 +168,9 @@ let paused = false;
 let talking = false;
 let phaseClock = 0;
 let publicClockCycle = null;
+let publicClockOffsetMs = 0;
+let hasReceivedPublicClock = false;
+let sleepVotePending = false;
 let animationClock = 0;
 let skyMode = 'auto';
 let gait = 0;
@@ -210,7 +213,10 @@ const presence = createPresence({
   onChange: updatePresenceButton,
   onDoorsChange: () => { updatePrompt(); updateNotes(); },
   onNotesChange: () => { if (playing) updateNotes(); },
-  onShadowState: applySharedShadowState
+  onShadowState: applySharedShadowState,
+  onSleepStatus: updateSleepVoteStatus,
+  onSleepComplete: applySharedSleep,
+  onClockOffset: applyClockOffset
 });
 const peers = presence.peers;
 const sharedDoors = presence.sharedDoors;
@@ -296,7 +302,7 @@ function paintPeers() {
 // counts nights for resource regrowth; it does not raise shadow combat stats.
 function syncPublicClock() {
   if (!onlineEnabled) { publicClockCycle = null; return; }
-  const now = Date.now();
+  const now = Date.now() + publicClockOffsetMs;
   const cycle = Math.floor(now / WORLD_CYCLE_MS);
   if (publicClockCycle !== null && cycle > publicClockCycle) {
     nightIndex = Math.min(1000000, nightIndex + cycle - publicClockCycle);
@@ -307,6 +313,49 @@ function syncPublicClock() {
   }
   publicClockCycle = cycle;
   phaseClock = (now - cycle * WORLD_CYCLE_MS) / 1000;
+}
+
+function applyClockOffset(offset) {
+  if (!Number.isFinite(offset)) return;
+  publicClockOffsetMs = offset;
+  if (!hasReceivedPublicClock) {
+    const now = Date.now() + publicClockOffsetMs;
+    publicClockCycle = Math.floor(now / WORLD_CYCLE_MS);
+    phaseClock = (now - publicClockCycle * WORLD_CYCLE_MS) / 1000;
+    hasReceivedPublicClock = true;
+  } else {
+    syncPublicClock();
+  }
+  updateShadows(); updateNotes();
+}
+
+function updateSleepVoteStatus(message) {
+  if (!sleepVotePending || region !== 'hut' || el('dialogue').hidden) return;
+  const votes = Number.isInteger(message.votes) ? message.votes : 0;
+  const total = Number.isInteger(message.total) ? message.total : 0;
+  setDialogue(votes >= total && total > 0
+    ? 'Everyone is settling in. The shared sky will turn to morning.'
+    : votes + ' of ' + total + ' connected travelers are ready to sleep. Everyone needs to agree at the hut bed.');
+}
+
+function applySharedSleep(offset, rested = false) {
+  if (!Number.isFinite(offset)) return;
+  publicClockOffsetMs = offset;
+  syncPublicClock();
+  iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
+  if (rested) {
+    health = 100;
+    skyMode = 'auto';
+    el('sky-toggle').textContent = 'Sky: Auto';
+    saveCamp();
+  }
+  updateShadows(); updateNotes();
+  if (sleepVotePending && region === 'hut' && !el('dialogue').hidden) {
+    sleepVotePending = false;
+    setDialogue(rested
+      ? 'You wake rested at dawn. The public sky has changed for everyone, and Alvin is still tucked into his little bed.'
+      : 'The group rested together, and the shared sky has reached morning.');
+  }
 }
 
 function applySharedShadowState(message) {
@@ -1530,15 +1579,27 @@ function bedDialogue() {
     setDialogue('The room is quiet. ' + guidance);
     return;
   }
-  setDialogue(onlineEnabled ? 'Rest and restore your health? The public sky will keep its shared time.' : 'Sleep until morning? You will wake with full health.', [['Sleep', () => {
-    if (onlineEnabled) syncPublicClock();
-    else { phaseClock = 0; nightIndex++; advanceTreeRegrowth(); }
+  setDialogue(onlineEnabled
+    ? 'Rest and restore your health? In Public, everyone must agree at the hut bed before the shared sky advances.'
+    : 'Sleep until morning? You will wake with full health.', [['Sleep', () => {
+    if (onlineEnabled) {
+      if (!presence.voteForSleep()) {
+        sleepVotePending = false;
+        setDialogue('The public connection is unavailable. Try again once you are connected.');
+        return;
+      }
+      sleepVotePending = true;
+      setDialogue('Your vote is in. Waiting for every connected traveler to choose sleep at the hut bed.');
+      return;
+    }
+    sleepVotePending = false;
+    phaseClock = 0; nightIndex++; advanceTreeRegrowth();
     health = 100; skyMode = 'auto';
     el('sky-toggle').textContent = 'Sky: Auto';
     iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
     updateShadows(); updateNotes(); saveCamp();
-    setDialogue(onlineEnabled ? 'You feel rested. The shared sky continues outside, and Alvin is still tucked into his little bed.' : 'Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
-  }], ['Not yet', () => closeDialogue()]]);
+    setDialogue('Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
+  }], ['Not yet', () => { sleepVotePending = false; closeDialogue(); }]]);
 }
 
 function petAlvin() {
