@@ -53,7 +53,8 @@ h2 em { color: #f0cb8d; }
 .primary, .secondary, .choices button { min-height: 38px; border: 1px solid transparent; border-radius: 7px; padding: 7px 13px; }
 .primary { color: #25362c; background: var(--gold); font-weight: 650; }
 .secondary { background: transparent; color: #ead6ae; display: inline-block; font-size: 12px; }
-#continue { display: block; margin: 3px auto 0; }
+#continue { display: block; width: min(100%, 320px); min-height: 50px; margin: 10px auto 0; padding: 11px 18px; border: 1px solid #edc88999; border-radius: 9px; background: #405744; color: #fff1d3; font-size: 15px; font-weight: 650; }
+#continue:hover { background: #526e4e; }
 .error { color: #ffd4bd; }
 .dialogue { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; width: min(510px, 100%); }
 #portrait { width: 80px; height: 102px; }
@@ -88,7 +89,8 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .status { white-space: normal; width: max-content; text-align: center; }
   .key-guide { display: none; }
   .control-deck { min-height: 62px; gap: 6px; padding-inline: 7px; }
-  .move-controls, .act-controls { gap: 5px; }
+  .move-controls { gap: clamp(10px, 3vw, 16px); }
+  .act-controls { gap: 5px; }
   .pad { width: clamp(42px, 12vw, 52px); }
   .pad.wave { width: clamp(38px, 10vw, 48px); }
   .dialogue { padding: 14px; gap: 8px; }
@@ -110,7 +112,7 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .player-name input { padding: 4px 7px; margin-top: 2px; }
   .start-card .eyebrow { margin: 0 0 3px; }
   .primary, .secondary, .choices button { min-height: 32px; padding: 4px 10px; }
-  #continue { margin-top: 0; }
+  #continue { min-height: 48px; margin-top: 4px; padding: 9px 14px; font-size: 14px; }
 }
 /* Emberwild's on-scene health meter and below-scene backpack strip. */
 .hud { pointer-events: none; position: absolute; inset: 20px 23px auto; display: flex; justify-content: space-between; align-items: start; gap: 10px; }
@@ -169,7 +171,7 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
     padding: 4px max(13px, env(safe-area-inset-right)) 4px max(13px, env(safe-area-inset-left));
   }
   .control-deck { display: contents; }
-  .move-controls { grid-area: 1 / 1; justify-self: start; }
+  .move-controls { grid-area: 1 / 1; justify-self: start; gap: 12px; }
   .act-controls { grid-area: 1 / 3; justify-self: end; }
   .key-guide { display: none; }
   .inventory { grid-area: 1 / 2; min-height: 0; padding: 0; background: transparent; border: 0; }
