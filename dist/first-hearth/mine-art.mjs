@@ -131,9 +131,11 @@ export function paintMineTunnel(ctx, stage) {
     path(ctx,[[x-103,y-156],[x+102,y-156]],'#c49b63',12);
   }
   for(const dx of [-123,124]) orb(ctx,x+dx,y-132,lit?13:7,lit?'#eac480':'#687579');
-  poly(ctx,[[x-286,y-66],[x-181,y-66],[x-196,y-22],[x-269,y-22]],'#735c45');
-  path(ctx,[[x-292,y-69],[x-175,y-69]],'#c5a16b',6);
-  for(const dx of [-263,-202]) orb(ctx,x+dx,y-19,13,'#26302d');
+  if(open) {
+    poly(ctx,[[x-286,y-66],[x-181,y-66],[x-196,y-22],[x-269,y-22]],'#735c45');
+    path(ctx,[[x-292,y-69],[x-175,y-69]],'#c5a16b',6);
+    for(const dx of [-263,-202]) orb(ctx,x+dx,y-19,13,'#26302d');
+  }
 }
 
 export function paintDiscardedStilts(ctx,x,y) {
