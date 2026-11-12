@@ -3539,3 +3539,90 @@ for (const [id, direction] of [['left', -1], ['right', 1]]) {
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, release));
 }
 el('down').addEventListener('pointerdown', event => {
+  if (!controlsActive() || region !== 'rootdeep' || !(rootdeepClimbing || nearRootdeepLadder())) return;
+  event.preventDefault();
+  rootdeepClimbing = true;
+  heldPointers.set(event.pointerId, 'down');
+  el('down').setPointerCapture(event.pointerId);
+});
+el('down').addEventListener('pointerup', event => heldPointers.delete(event.pointerId));
+el('down').addEventListener('pointercancel', event => heldPointers.delete(event.pointerId));
+el('down').addEventListener('click', event => {
+  if (!controlsActive()) return;
+  if (event.detail === 0 && region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+    rootdeepClimbing = true;
+    player.y = Math.min(tunnelGuardSpoken ? rootdeepTerrain.floor.points[0][1]
+      : surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-8'),ROOTDEEP_LADDER_X), player.y + 130);
+  } else if (!nearRootdeepLadder() && !(region === 'rootdeep' && player.ground === 'rootdeep-level-8' && !tunnelGuardSpoken)) dropThrough(player, terrain);
+});
+el('jump').addEventListener('pointerdown', event => {
+  event.preventDefault();
+  if (!controlsActive()) return;
+  if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+    rootdeepClimbing = true;
+    heldPointers.set(event.pointerId, 'up');
+    el('jump').setPointerCapture(event.pointerId);
+  } else jump(player);
+});
+el('jump').addEventListener('pointerup', event => heldPointers.delete(event.pointerId));
+el('jump').addEventListener('pointercancel', event => heldPointers.delete(event.pointerId));
+el('jump').addEventListener('click', event => {
+  if (event.detail === 0 && controlsActive()) {
+    if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
+      rootdeepClimbing = true;
+      player.y = Math.max(80, player.y - 130);
+    } else jump(player);
+  }
+});
+// Fire on press so touch players can keep a movement button held while tapping action.
+el('interact').addEventListener('pointerdown', event => {
+  if (!controlsActive()) return;
+  event.preventDefault();
+  interact();
+});
+// Keyboard and assistive-technology activation can dispatch click without pointerdown.
+el('interact').addEventListener('click', event => {
+  if (event.detail === 0) interact();
+});
+window.addEventListener('blur', clearControls);
+window.addEventListener('pagehide', () => { saveCamp(); disconnectPresence(); });
+window.addEventListener('pageshow', connectPresence);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearControls();
+    saveCamp();
+    disconnectPresence('Away');
+  } else connectPresence();
+});
+new ResizeObserver(resize).observe(world);
+
+async function boot() {
+  try {
+    const [party, keepers] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp')
+    ]);
+    backgrounds.camp = buildCampArt();
+    sprites = {
+      boy: spriteBounds(party, 0, 1 / 3, .64),
+      girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
+      alvin: spriteBounds(party, 2 / 3, 1, .65),
+      lyss: spriteBounds(keepers, .5, 1, .55),
+      hugh: spriteBounds(keepers, 0, .5, .52)
+    };
+    drawPortrait(el('choose-boy').querySelector('canvas'), sprites.boy);
+    drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);
+    el('begin').disabled = false;
+    el('begin').textContent = 'Enter Alder Camp →';
+    const saved = getSavedCamp();
+    el('continue').hidden = !saved;
+    if (saved?.publicName) el('player-name').value = saved.publicName;
+    updatePresenceButton();
+    resize();
+    requestAnimationFrame(frame);
+  } catch (error) {
+    console.error('Camp load failed', error);
+    el('load-error').hidden = false;
+  }
+}
+
+boot();
