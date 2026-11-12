@@ -15,7 +15,7 @@ The owner's 10-item review remains the roadmap: larger Continue Journey; wider m
 
 **Follow-up list:** The larger Continue Journey and wider mobile movement arrows are complete. Public Alvin cosmetic relay is fixed. Night count no longer scales shadow HP, patrol tempo, jump height, or chase speed. Cooperative shadow health is now shared by region and public cycle; each player keeps personal Easy/Hard damage intake and only the defeating player receives the shadow drop. Next: coordinate shared sleep, then continue the remaining list.
 
-**Mobile UI follow-up:** Continue saved playtest is now a larger, high-contrast touch target, and the mobile movement buttons have more spacing. `playtest.css` cache query is v18. `git diff --check` passed before the GitHub write. No live visual playtest was run.
+**Mobile UI follow-up:** Continue saved playtest is a larger high-contrast target, mobile movement buttons have wider spacing, and the in-dialogue **Keep exploring** action is now full-width, high-contrast, and at least 52 px tall. CSS cache query is v19. No live visual playtest was run.
 
 **Shared sleep attempt:** The first attempt was rolled back after the client script was truncated. It is not currently implemented. Resume this after the co-op shadow work.
 
@@ -31,7 +31,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=79` and `playtest.css?v=18`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=79` and `playtest.css?v=19`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
