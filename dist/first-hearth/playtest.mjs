@@ -2563,7 +2563,7 @@ function tunnelDialogue(item) {
   }
   openDialogue(item.id);
   if(!fromRootdeep) {
-    setDialogue('An old minecart waits beside a blocked passage. The other end lies on Rootdeep’s bedrock floor. Until the dwarves reopen it, the camp and Crownwood routes remain open.');
+    setDialogue('An old minecart waits beside a blocked passage. The other end lies on Rootdeep’s bedrock floor. The tunnel is sealed for now; the camp and Crownwood routes remain open.');
   } else if(tunnelStage === 'goblins') {
     setDialogue('Cave goblins have claimed the collapsed tunnel. The dwarves cannot work here while they remain. Clear both before touching the old lanterns.');
   } else if(!tunnelQuestAccepted) {
