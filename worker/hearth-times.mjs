@@ -86,6 +86,7 @@ export class HearthTimes extends DurableObject {
 
 const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut',
   'rootdeep','rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common']);
+const SHADOW_REGIONS = new Set(['crownwood','rootdeep','mine','beach']);
 const TOOLS = new Set(['hatchet','pickaxe','ironSword','shadowBlade','godslayer','net']);
 const DOORS = {
   'mine-lift': [{ region: 'mine', x: 2165 }, { region: 'mine', x: 4510 }, { region: 'camp', x: 2425 }],
@@ -127,9 +128,11 @@ export class HearthPresence extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.doors = new Set();
+    this.shadowCycleState = { cycle: null, states: {} };
     ctx.blockConcurrencyWhile(async () => {
       if (ctx.getWebSockets().length) this.doors = new Set(await ctx.storage.get('opened-doors') ?? []);
       else await ctx.storage.delete('opened-doors');
+      this.shadowCycleState = await ctx.storage.get('shared-shadow-state') ?? { cycle: null, states: {} };
     });
   }
 
@@ -159,6 +162,49 @@ export class HearthPresence extends DurableObject {
     }
     server.send(JSON.stringify({ type: 'ready', doors: [...this.doors] }));
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async ensureShadowCycle() {
+    const cycle = Math.floor(Date.now() / 136000);
+    if (this.shadowCycleState?.cycle !== cycle) {
+      this.shadowCycleState = { cycle, states: {} };
+      await this.ctx.storage.put('shared-shadow-state', this.shadowCycleState);
+    }
+    return this.shadowCycleState;
+  }
+
+  async sendShadowSnapshot(socket, region) {
+    const state = await this.ensureShadowCycle();
+    socket.send(JSON.stringify({ type: 'shadow-snapshot', region, cycle: state.cycle,
+      states: Object.values(state.states).filter(item => item.region === region) }));
+  }
+
+  async applyShadowHit(socket, data) {
+    const peer = socket.deserializeAttachment();
+    const pose = peer?.pose;
+    const source = data.source;
+    const actor = source === 'alvin' ? pose?.alvin : source === 'player' ? pose : null;
+    if (!pose || !SHADOW_REGIONS.has(pose.region) || Date.now() - peer.lastAt > 3000 || !actor
+      || !Number.isInteger(data.index) || data.index < 0 || data.index > 9
+      || !Number.isSafeInteger(data.damage) || data.damage < 1 || data.damage > 999
+      || !numberBetween(data.x, 0, 7000) || !numberBetween(data.y, -500, 6000)) return;
+    const reachX = source === 'alvin' ? 340 : 145;
+    const reachY = source === 'alvin' ? 260 : 110;
+    if (Math.abs(data.x - actor.x) > reachX || Math.abs(data.y - actor.y) > reachY) return;
+    const state = await this.ensureShadowCycle();
+    const key = pose.region + ':' + data.index;
+    const prior = state.states[key] ?? { region: pose.region, index: data.index, hp: 60, defeated: false, winnerId: null };
+    if (prior.defeated) {
+      socket.send(JSON.stringify({ type: 'shadow-state', ...prior, cycle: state.cycle, rewarded: prior.winnerId === peer.id }));
+      return;
+    }
+    const updated = { ...prior, x: data.x, y: data.y, hp: Math.max(0, prior.hp - data.damage) };
+    updated.defeated = updated.hp <= 0;
+    updated.winnerId = updated.defeated ? peer.id : null;
+    state.states[key] = updated;
+    await this.ctx.storage.put('shared-shadow-state', state);
+    this.broadcast(this.ctx.getWebSockets(), pose.region,
+      { type: 'shadow-state', ...updated, cycle: state.cycle });
   }
 
   expireStalePeers(now = Date.now(), except = null) {
@@ -195,6 +241,10 @@ export class HearthPresence extends DurableObject {
       }
       return;
     }
+    if (data?.type === 'shadow-hit') {
+      await this.applyShadowHit(socket, data);
+      return;
+    }
     if (data?.type !== 'pose') return;
     const pose = readPose(data.pose);
     if (!pose) return;
@@ -210,6 +260,8 @@ export class HearthPresence extends DurableObject {
         .map(peer => ({ id: peer.id, pose: peer.pose })) }));
     }
     this.broadcast(others, pose.region, { type: 'pose', id: prior.id, pose });
+    if (prior.pose?.region !== pose.region && SHADOW_REGIONS.has(pose.region))
+      await this.sendShadowSnapshot(socket, pose.region);
   }
 
   broadcast(sockets, region, message) {
