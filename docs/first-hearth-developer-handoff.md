@@ -17,7 +17,7 @@ The owner's 10-item review remains the roadmap: larger Continue Journey; wider m
 
 **Mobile UI follow-up:** Continue saved playtest is a larger high-contrast target, mobile movement buttons have wider spacing, and the in-dialogue **Keep exploring** action is now full-width, high-contrast, and at least 52 px tall. CSS cache query is v19. No live visual playtest was run.
 
-**Shared sleep:** In Public, the Worker validates each vote against the hut bed, counts active connections, and advances the shared clock only when all active players have voted. The clock offset survives Worker hibernation; votes are removed when a player disconnects and cleared when the room empties. Client shadow cycles use the same adjusted clock. Solo sleep remains unchanged. Cache versions are `playtest.mjs?v=80` and `presence.mjs?v=4`. Static syntax/source checks are next; no live two-player gameplay or deployment has been verified.
+**Shared sleep:** In Public, the Worker validates each vote against the hut bed, counts active connections, and advances the shared clock only when all active players have voted. The clock offset survives Worker hibernation; votes are removed when a player disconnects and cleared when the room empties. Client shadow cycles use the same adjusted clock. Solo sleep remains unchanged. Cache versions are `playtest.mjs?v=80` and `presence.mjs?v=4`. Static syntax checks passed for `playtest.mjs`, `presence.mjs`, and `hearth-times.mjs`; source anchors and cache versions were reviewed. No live two-player gameplay or deployment has been verified.
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
