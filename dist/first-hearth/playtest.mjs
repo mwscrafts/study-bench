@@ -1,5 +1,5 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
-  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=16';
+  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
 import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=14';
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
 import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
@@ -291,8 +291,8 @@ function paintPeers() {
   }
 }
 
-// Public Auto uses the same UTC-based phase for every browser. The personal
-// nightIndex still counts nights played for regrowth and difficulty.
+// Public Auto uses the same UTC-based phase for every browser. nightIndex
+// counts nights for resource regrowth; it does not raise shadow combat stats.
 function syncPublicClock() {
   if (!onlineEnabled) { publicClockCycle = null; return; }
   const now = Date.now();
@@ -618,7 +618,7 @@ function updateAlvinCombat() {
       const target = creatures.find(item => item.index === attack.index);
       if (target) {
         const id = region + ':' + nightIndex + ':' + target.index;
-        const remaining = (shadowHealth.get(id) ?? 60 + Math.min(nightIndex,8)*18) - power;
+        const remaining = (shadowHealth.get(id) ?? 60) - power;
         shadowHealth.set(id,remaining);
         puff(particles,target.x,target.y-44,'#d9b8ea',8);
         floater(floaters,target.x,target.y-90,'Alvin −'+power);
@@ -2282,7 +2282,7 @@ function updateSwing(dt) {
           const basePower = equipped === 'godslayer' ? 999 : equipped === 'shadowBlade' ? 100
             : equipped === 'ironSword' ? 70 : equipped === 'pickaxe' ? 45 : 32;
           const power = equipped === 'godslayer' ? basePower : Math.max(1, Math.floor(basePower * composureDamageFactor()));
-          const remaining = (shadowHealth.get(id) ?? 60 + Math.min(nightIndex, 8) * 18) - power;
+          const remaining = (shadowHealth.get(id) ?? 60) - power;
           result = { x: target.x, y: target.y, damage: power };
           shadowHealth.set(id, remaining);
           if (remaining <= 0) {
@@ -2966,7 +2966,7 @@ function updateShadows(dt = 0) {
       const targetX = creature.aggro ? player.x : spawn.x;
       const targetY = creature.aggro ? player.y : spawn.y;
       const gap = Math.hypot(targetX - creature.x, targetY - creature.y);
-      const speed = creature.aggro ? 104 + Math.min(nightIndex, 8) * 7 : 76;
+      const speed = creature.aggro ? 104 : 76;
       if (gap > 0.5) {
         const step = Math.min(gap, speed * dt);
         creature.x += (targetX - creature.x) / gap * step;
@@ -2981,7 +2981,7 @@ function updateShadows(dt = 0) {
       if (!creature.aggro && distance < 760) creature.aggro = true;
       if (creature.aggro && distance > 1080) creature.aggro = false;
       if (creature.aggro && distance > 0.5) {
-        const step = Math.min(distance, (104 + Math.min(nightIndex, 8) * 7) * dt);
+        const step = Math.min(distance, 104 * dt);
         creature.x += dx / distance * step;
         creature.y += dy / distance * step;
       }
