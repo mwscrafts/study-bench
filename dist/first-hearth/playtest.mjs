@@ -41,6 +41,7 @@ const journalCatalog = [
   { id: 'first-steps', title: 'A field journal', body: 'The trail will teach you as you explore. New notes are added here when you encounter useful things, so you can keep moving and read them whenever you like.' },
   { id: 'controls', title: 'Finding your way', body: 'Move with A and D or the arrow keys. Space jumps; E interacts with nearby people and objects, or swings your equipped tool. On touch screens, use the controls below the world.' },
   { id: 'composure', title: 'Keeping your composure', body: 'Nearby threats wear down Composure, and fighting while one is close drains it faster. At zero Composure, you lose 1 health each second. In the hut, pet Alvin to restore up to 25 Composure.' },
+  { id: 'trail-tallies', title: 'Trail tallies', body: 'Your adventure keeps a count of completed fishing casts at Lantern Dock and pets given to Alvin in the hut.' },
   { id: 'gathering', title: 'Gathering along the trail', body: 'Get close to a plant, ore vein, or other resource and use E (or the action button). Some things need the right tool. Supplies save with your adventure; useful notes appear here as you discover them.' },
   { id: 'berries', title: 'Berries and health', body: 'Berry bushes add berries to your backpack. Eat one with the Berry button or from your backpack to restore health.' },
   { id: 'gear', title: 'Tools and gear', body: 'Open your backpack with I to review supplies and equipment. Tap a piece of gear you own to equip it; E uses your equipped tool when you act.' },
@@ -56,6 +57,12 @@ const journalCatalog = [
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
 const WORLD_CYCLE_MS = DAY_LENGTH * 1000;
+const DAY_DUSK_START = 48;
+const DUSK_NIGHT_START = 60;
+const NIGHT_START = 70;
+const NIGHT_FADE_START = 96;
+const NIGHT_END = 106;
+const DAY_START = 121;
 const ROOTDEEP_LADDER_X = 1780;
 const ROOTDEEP_CLIMB_SPEED = 430;
 const BERRY_GROW_MS = 3 * 60 * 1000;
@@ -114,6 +121,8 @@ let pickaxeRecipeLearned = false;
 let treeHarvestDays = {};
 let glowcapHarvestDays = {};
 let fishing = readFishing();
+let fishingCastCount = 0;
+let alvinPetCount = 0;
 let casting = null;
 let nightIndex = 0;
 let health = 100;
@@ -383,12 +392,13 @@ function skyState() {
   }
   if (skyMode !== 'auto') return { from: skyMode, to: skyMode, mix: 0 };
   const time = phaseClock % DAY_LENGTH;
-  if (time < 38) return { from: 'day', to: 'day', mix: 0 };
-  if (time < 55) return { from: 'day', to: 'dusk', mix: (time - 38) / 17 };
-  if (time < 72) return { from: 'dusk', to: 'night', mix: (time - 55) / 17 };
-  if (time < 104) return { from: 'night', to: 'night', mix: 0 };
-  if (time < 121) return { from: 'night', to: 'dawn', mix: (time - 104) / 17 };
-  return { from: 'dawn', to: 'day', mix: (time - 121) / 15 };
+  if (time < DAY_DUSK_START) return { from: 'day', to: 'day', mix: 0 };
+  if (time < DUSK_NIGHT_START) return { from: 'day', to: 'dusk', mix: (time - DAY_DUSK_START) / (DUSK_NIGHT_START - DAY_DUSK_START) };
+  if (time < NIGHT_START) return { from: 'dusk', to: 'night', mix: (time - DUSK_NIGHT_START) / (NIGHT_START - DUSK_NIGHT_START) };
+  if (time < NIGHT_FADE_START) return { from: 'night', to: 'night', mix: 0 };
+  if (time < NIGHT_END) return { from: 'night', to: 'dawn', mix: (time - NIGHT_FADE_START) / (NIGHT_END - NIGHT_FADE_START) };
+  if (time < DAY_START) return { from: 'dawn', to: 'day', mix: (time - NIGHT_END) / (DAY_START - NIGHT_END) };
+  return { from: 'day', to: 'day', mix: 0 };
 }
 
 function drawFirelight(x, y, radius, strength) {
@@ -587,7 +597,12 @@ function paint() {
     paintHutDecor(ctx, hutDecorations);
     paintSpecialHomeDecor(ctx,'hut',specialRewards,hutDecorations);
   }
+  const shadowFade = skyMode === 'auto' && phaseClock >= NIGHT_FADE_START
+    ? clamp((NIGHT_END - phaseClock) / (NIGHT_END - NIGHT_FADE_START), 0, 1) : 1;
+  ctx.save();
+  ctx.globalAlpha *= shadowFade;
   creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
+  ctx.restore();
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
   });
@@ -841,7 +856,7 @@ function currentLandmarks() {
 
 function canSleepAtBed() {
   const time = phaseClock % DAY_LENGTH;
-  return skyMode === 'night' || (skyMode === 'auto' && time >= 72 && time < 121);
+  return skyMode === 'night' || (skyMode === 'auto' && time >= NIGHT_START && time < NIGHT_END);
 }
 
 function updatePrompt() {
@@ -1003,7 +1018,9 @@ function showJournalEntry(id) {
   if (!entry) return;
   el('journalTopic').textContent = 'FIELD NOTE';
   el('journalEntryTitle').textContent = entry.title;
-  el('journalEntryBody').textContent = entry.body;
+  el('journalEntryBody').textContent = entry.id === 'trail-tallies'
+    ? 'Lantern Dock fishing casts: ' + fishingCastCount + '. Alvin pets in the hut: ' + alvinPetCount + '.'
+    : entry.body;
   for (const button of el('journalEntryList').children) {
     button.setAttribute('aria-pressed', String(button.dataset.entryId === id));
   }
@@ -1107,6 +1124,7 @@ function saveCamp() {
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned,
+      fishingCastCount, alvinPetCount,
       discoveredRegions: [...discoveredRegions], alvinResting, journalEntries: [...journalEntries], pickedBushes: [...pickedBushes],
       visited: [...visited], flowers: [...collected], quest, hearthLearned, victory, crystals: [...crystals],
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
@@ -1210,6 +1228,8 @@ function begin(save) {
   hasNet = save?.hasNet === true;
   hughQuest = save?.hughQuest === true;
   fishing = readFishing(save?.fishing);
+  fishingCastCount = savedInteger(save?.fishingCastCount, 0, 1000000, 0);
+  alvinPetCount = savedInteger(save?.alvinPetCount, 0, 1000000, 0);
   nightIndex = savedInteger(save?.nightIndex, 0, 1000000, 0);
   treeHarvestDays = {};
   for (const id of tools.chopped) {
@@ -1262,6 +1282,7 @@ function begin(save) {
   recordJournalEntry('first-steps', { quiet: true });
   recordJournalEntry('controls', { quiet: true });
   recordJournalEntry('composure', { quiet: true });
+  recordJournalEntry('trail-tallies', { quiet: true });
   saveCamp();
   if (region === 'king' && victory && !victory.ending) {
     openDialogue('fallen-crown');
@@ -1609,6 +1630,7 @@ function petAlvin() {
     ? 'Alvin is curled up in his bed. He can stay safe here or join you on the trail again.'
     : 'Alvin is tucked into his bed for a moment. Would you like him to stay home while you explore?', [
     ['Pet Alvin', () => {
+      alvinPetCount = Math.min(1000000, alvinPetCount + 1);
       petHeartsUntil = animationClock+2.2;
       const restored = Math.min(25, 100 - composure);
       composure = Math.min(100, composure + 25);
@@ -2052,7 +2074,9 @@ function dockDialogue(result) {
 function finishCast() {
   const result = castNet(fishing);
   fishing = result.fishing;
+  fishingCastCount = Math.min(1000000, fishingCastCount + 1);
   casting = null;
+  saveCamp();
   openDialogue('dock');
   let message = 'You caught ' + result.catchName.toLowerCase() + '.';
   if (result.catchName === 'Soaked book') message = 'The net comes up heavy with a soaked book. There’s still a legible sketch inside.';
@@ -2937,8 +2961,9 @@ function updateComposure(dt) {
     }
     if (proximity > 0) {
       const fighting = swing > 0 || cooldown > 0 || swingCombat;
+      const difficultyDrain = difficulty === 'easy' ? .6 : 1;
       composure = Math.max(0, composure - dt * (.8 + proximity * 1.6 + (fighting ? 1.2 : 0)) *
-        (inRestoredBranchLight(player.x, player.y) ? .4 : 1));
+        difficultyDrain * (inRestoredBranchLight(player.x, player.y) ? .4 : 1));
     }
   }
   if (composure < 100) recordJournalEntry('composure');
@@ -3036,13 +3061,13 @@ function updateShadows(dt = 0) {
     creatures = [];
     return;
   }
-  if (!forcedNight && (phaseClock < 70 || phaseClock >= 121)) {
+  if (!forcedNight && (phaseClock < NIGHT_START || phaseClock >= NIGHT_END)) {
     creatures = [];
     if (phaseClock < 70) creatureCycleKey = cycleKey;
     return;
   }
   const current = new Map(creatures.map(creature => [creature.index, creature]));
-  if (shadowPhase < 111) {
+  if (shadowPhase < NIGHT_FADE_START) {
     for (const spawn of area.shadows(shadowPhase, nightIndex)) {
       if (defeatedShadows.has(region + ':' + nightIndex + ':' + spawn.index)) continue;
       const creature = current.get(spawn.index) ?? { ...spawn, aggro: false, homeX: spawn.x, homeY: spawn.y };
