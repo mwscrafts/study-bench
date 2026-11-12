@@ -318,7 +318,7 @@ export class HearthPresence extends DurableObject {
     this.broadcast(others, pose.region, { type: 'pose', id: prior.id, pose });
     if (prior.pose?.region !== pose.region && SHADOW_REGIONS.has(pose.region))
       await this.sendShadowSnapshot(socket, pose.region);
-    await this.updateSleepVote();
+    if (!prior.pose && this.sleepVotes.size) await this.updateSleepVote();
   }
 
   broadcast(sockets, region, message) {
