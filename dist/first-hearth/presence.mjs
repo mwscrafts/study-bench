@@ -1,7 +1,7 @@
 const SHARED_DOORS = new Set(['mine-lift', 'village-gate']);
 
 export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidden,
-  onChange, onDoorsChange, onNotesChange, onShadowState }) {
+  onChange, onDoorsChange, onNotesChange, onShadowState, onSleepStatus, onSleepComplete, onClockOffset }) {
   const peers = new Map();
   const sharedDoors = new Set();
   let socket = null;
@@ -67,6 +67,7 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
         sharedDoors.clear();
         for (const door of message.doors) if (SHARED_DOORS.has(door)) sharedDoors.add(door);
         onDoorsChange();
+        if (Number.isFinite(message.clockOffsetMs)) onClockOffset?.(message.clockOffsetMs, false);
       } else if (message.type === 'door-open' && SHARED_DOORS.has(message.door)) {
         sharedDoors.add(message.door);
         onDoorsChange();
@@ -75,6 +76,11 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
       } else if (message.type === 'shadow-snapshot' && Array.isArray(message.states)) {
         for (const state of message.states) onShadowState({ ...state, type: 'shadow-state',
           region: message.region, cycle: message.cycle, rewarded: state.winnerId === playerId() });
+      } else if (message.type === 'sleep-status') {
+        onSleepStatus?.(message);
+      } else if (message.type === 'sleep-complete' && Number.isFinite(message.clockOffsetMs)) {
+        onSleepComplete?.(message.clockOffsetMs,
+          Array.isArray(message.restedIds) && message.restedIds.includes(playerId()));
       } else if (message.type === 'snapshot' && Array.isArray(message.peers)) {
         peers.clear();
         for (const peer of message.peers) addPeer(peer.id, peer.pose);
@@ -129,8 +135,14 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     return true;
   }
 
+  function voteForSleep() {
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify({ type: 'sleep-vote' }));
+    return true;
+  }
+
   return {
-    peers, sharedDoors, connect, disconnect, sendPose, openDoor, hitShadow,
+    peers, sharedDoors, connect, disconnect, sendPose, openDoor, hitShadow, voteForSleep,
     clearPeers: () => peers.clear(),
     isConnected: () => socket?.readyState === WebSocket.OPEN
   };
