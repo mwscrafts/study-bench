@@ -63,6 +63,8 @@ h2 em { color: #f0cb8d; }
 .choices button { color: #fff1d3; background: #405744; border-color: #a0ac7944; font-size: 12px; text-align: left; }
 .choices button:hover, .secondary:hover { background: #66815b; color: #fff6e4; }
 .pause-card .primary { margin-top: 16px; }
+#close-dialogue { display: block; width: 100%; min-height: 52px; margin-top: 14px; padding: 12px 16px; border: 1px solid #edc889; border-radius: 9px; background: #405744; color: #fff1d3; font-size: 16px; font-weight: 650; text-align: center; }
+#close-dialogue:hover { background: #526e4e; }
 .control-deck { padding: 8px 13px; display: flex; gap: 12px; justify-content: space-between; align-items: center; min-height: 68px; user-select: none; }
 .move-controls, .act-controls { display: flex; gap: 8px; }
 .pad { display: grid; place-content: center; text-align: center; width: 51px; min-height: 48px; border: 1px solid #9abb9b55; background: #355243; color: #fff2d6; font-size: 23px; border-radius: 9px; touch-action: none; }
