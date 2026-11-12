@@ -104,7 +104,8 @@ function readPose(data) {
       direction: data.alvin.direction === -1 ? -1 : 1,
       gait: numberBetween(data.alvin.gait,0,1000000) ? data.alvin.gait % (Math.PI * 2) : 0,
       size: numberBetween(data.alvin.size,1,3) ? data.alvin.size : 1,
-      indoors: data.alvin.indoors === true
+      indoors: data.alvin.indoors === true,
+      bell: data.alvin.bell === true
     } : null;
   return {
     region: data.region, x: data.x, y: data.y,
@@ -114,6 +115,7 @@ function readPose(data) {
     avatar: data.avatar === 'girl' ? 'girl' : 'boy',
     tool: TOOLS.has(data.tool) ? data.tool : null,
     helmet: data.helmet === true,
+    scarf: data.scarf === true,
     name: rawName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(rawName) ? rawName : 'Adventurer',
     alvin: cat
   };

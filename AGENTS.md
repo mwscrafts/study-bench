@@ -23,7 +23,7 @@ The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest 
 | Hut and idle features | `camp-idle.mjs` |
 | Special request-board rewards | `special-rewards.mjs`, with acceptance, saves, and drawing in `playtest.mjs` |
 | Field map and Alvin home choice | `field-map.mjs`, `index.html`, `playtest.css`, `playtest.mjs` |
-| Public presence and shared doors | `presence.mjs`, with pose drawing in `playtest.mjs` |
+| Public presence and shared doors | `presence.mjs`, pose drawing in `playtest.mjs`, relay allowlist in `worker/hearth-times.mjs` |
 | Static regions, gates, and dialogue labels | `world-data.mjs` |
 | Shared sprite and canvas primitives | `canvas-art.mjs` |
 
@@ -60,6 +60,10 @@ Two one-time board commissions (`camp-festival`, `rootdeep-welcome`) are defined
 ## Rootdeep resident schedules
 
 The Lantern Keeper, Stonecarver, and Common Keeper use deterministic routes in `rootdeep.mjs` and a shared clock in `playtest.mjs`. Dawn: home doorstep to work. Day: work. Dusk: common fire. Early night: walk home. Late night: inside their corresponding home. The exterior interaction landmarks follow the sprites; the interior sprite and landmark are present only during the home phase. The manual Sky selector previews matching phases. Dorrin stays at his forge and Bram at the shaft guard post so quest gates remain accessible. Route positions are local day-clock presentation, not multiplayer-synchronized NPC state. Dialogue handlers in `playtest.mjs` reflect saved branch lanterns, winch, tunnel and Glowcap progress without changing quest gates. See `docs/rootdeep-design.md` for route coordinates and verification.
+
+## Cosmetic fields in public poses
+
+A public cosmetic must pass through both client and Worker: `playtest.mjs` puts its boolean in the outgoing pose, and `worker/hearth-times.mjs` `readPose()` must copy it into the allowlisted peer pose. `paintPeers()` then draws it. Adding only the client send/draw paths is insufficient because the Worker rebuilds pose objects. This path now preserves top-level `scarf` and nested `alvin.bell`.
 
 ## Field map and Alvin at home
 

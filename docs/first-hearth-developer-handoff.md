@@ -27,6 +27,12 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=7
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
+### Public cosmetic relay correction
+
+- The owner reported Ash could see the player's Alvin but not his bell cosmetic. Client source confirmed `playtest.mjs` included `bell` under `pose.alvin`, and remote `paintPeers()` drew it when received. The actual missing step was Worker `readPose()` in `worker/hearth-times.mjs`: it rebuilt a safe pose object while omitting both `alvin.bell` and top-level player `scarf`. This explains the symptom; the earlier base visibility fix was not cosmetic-ready by itself, and the client cosmetic was only partially wired.
+- The fix adds strict boolean copies for both fields to the Worker allowlist. The existing pose payload and the two clients' rendering paths already support them. The next presence update carries the selected state; the owner should refresh both players and verify the bell and scarf visually in a two-player session.
+- Worker patch is being committed after the map/Alvin-bed changes; deployment and live relay have not been verified here.
+
 ### Field map and Alvin home checkpoint
 
 - Code commit `b5e9f5db49fe7a229a1a306c7aa18ad308d72da8` is on `main`: `field-map.mjs?v=1`, `playtest.mjs?v=75`, `playtest.css?v=17`, and `index.html`. Save version 21 and the saved-footing whitelist both include the new record.
