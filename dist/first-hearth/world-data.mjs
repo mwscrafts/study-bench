@@ -1,4 +1,4 @@
-import { campTerrain, landmarks, flowers } from './terrain.mjs?v=16';
+import { campTerrain, landmarks, flowers } from './terrain.mjs?v=17';
 import { buildCampArt } from './camp-art.mjs?v=14';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=13';
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=14';
