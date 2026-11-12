@@ -10,9 +10,9 @@ import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel,
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
-import { beachFlower, readFishing, castNet, fishingLevel, FISHING_XP_PER_LEVEL,
-  ROWBOAT_WOOD_COST } from './beach.mjs?v=3';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=3';
+import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
+  ROWBOAT_WOOD_COST } from './beach.mjs?v=4';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=4';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -30,7 +30,7 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=14';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=15';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=2';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=3';
@@ -948,7 +948,7 @@ function updateNotes() {
     : region === 'mine' ? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? 'Lift running'
       : hughQuest ? 'Hugh Mungus needs 1 tideglass gemstone' : 'Follow the lanterns to Hugh Mungus')
     : region === 'beach' ? 'Fishing Lv ' + fishingLevel(fishing.xp) +
-      (fishingLevel(fishing.xp) < 10 ? ' · XP ' + (fishing.xp % FISHING_XP_PER_LEVEL) + '/' + FISHING_XP_PER_LEVEL :
+      (fishingLevel(fishing.xp) < 10 ? ' · XP ' + fishingProgress(fishing.xp).progress + '/' + fishingProgress(fishing.xp).required :
         fishing.rowboat ? ' · Rowboat ready' : ' · Rowboat at Tide Arch') +
       ' · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
@@ -2098,11 +2098,12 @@ function startNetCast(offshore) {
 
 function rowboatDialogue(result) {
   openDialogue('tide-arch');
-  const level = fishingLevel(fishing.xp);
+  const progress = fishingProgress(fishing.xp);
+  const level = progress.level;
   if (!fishing.rowboat) {
     if (level < 10) {
       setDialogue((result ? result + ' ' : '') + 'A rowboat could reach deeper water, but it needs a practiced hand. Fishing level ' +
-        level + ' / 10 · ' + (fishing.xp % FISHING_XP_PER_LEVEL) + ' / ' + FISHING_XP_PER_LEVEL +
+        level + ' / 10 · ' + progress.progress + ' / ' + progress.required +
         ' XP toward the next level. Keep casting at Lantern Dock.');
     } else if (spareWood(tools) < ROWBOAT_WOOD_COST) {
       setDialogue('You have fishing level 10. Build the rowboat with ' + ROWBOAT_WOOD_COST + ' spare wood; you have ' +

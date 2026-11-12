@@ -13,8 +13,8 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 - Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.
 - Existing Cove Bridge saves migrate: an accepted repair stays accepted, a completed repair transfers to the King’s Bridge, and saves that already reached the King retain their access. Old `overlook` footing is mapped to the new bridge surfaces.
-- Fishing earns 1 saved XP per completed cast. Every 3 XP advances a level, up to level 10 (27 casts from a new save). Level 10 unlocks a Tide Arch rowboat project costing 8 spare wood. Built boats appear on the beach and enable offshore fishing for larger catches. Existing cast totals seed XP for old saves.
-- Current cache versions: `crownwood.mjs?v=14`, `crownwood-art.mjs?v=16`, `beach.mjs?v=3`, `beach-art.mjs?v=3`, `world-data.mjs?v=14`, and entry `playtest.mjs?v=85`.
+- Fishing earns 1 saved XP per completed cast. The next level costs 3 XP at level 1, then each level costs 1 XP more (4 through 11); level 10 takes 63 total casts from a new save. Level 10 unlocks a Tide Arch rowboat project costing 8 spare wood. Built boats appear on the beach and enable offshore fishing for larger catches. Existing cast totals seed XP for old saves.
+- Current cache versions: `crownwood.mjs?v=14`, `crownwood-art.mjs?v=16`, `beach.mjs?v=4`, `beach-art.mjs?v=4`, `world-data.mjs?v=15`, and entry `playtest.mjs?v=86`.
 - Feature source commit: `8efcef5`; history integration with the current `origin/main`: merge commit `81657df`.
 - JavaScript syntax checks passed for all changed game modules and `git diff --check` passed. No live gameplay, mobile visual review, or public playtest was performed. A push to `main` triggers Cloudflare deployment; completion has not been verified. The owner and Ash should verify the new bridge gate, resource spend, old-save migration, level 10 unlock, rowboat persistence, and offshore catches.
 
@@ -54,7 +54,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=85` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4` and `mine-art.mjs?v=07`. Bump the relevant query string when an imported module changes. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=86` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4` and `mine-art.mjs?v=07`. Bump the relevant query string when an imported module changes. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 

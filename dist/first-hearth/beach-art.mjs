@@ -1,5 +1,5 @@
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
-import { beachTerrain, beachLandmarks } from './beach.mjs?v=3';
+import { beachTerrain, beachLandmarks } from './beach.mjs?v=4';
 
 const { width, height, floor, ledges } = beachTerrain;
 const colors = {

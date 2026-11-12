@@ -1,11 +1,23 @@
 import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs';
 
-export const FISHING_XP_PER_LEVEL = 3;
 export const MAX_FISHING_LEVEL = 10;
+export const MAX_FISHING_XP = ((MAX_FISHING_LEVEL - 1) * (3 + 11)) / 2;
 export const ROWBOAT_WOOD_COST = 8;
 
+export function fishingProgress(xp = 0) {
+  let remaining = clamp(Number.isSafeInteger(xp) ? xp : 0, 0, MAX_FISHING_XP);
+  let level = 1;
+  while (level < MAX_FISHING_LEVEL) {
+    const required = level + 2;
+    if (remaining < required) return { level, progress: remaining, required };
+    remaining -= required;
+    level++;
+  }
+  return { level, progress: 0, required: 0 };
+}
+
 export function fishingLevel(xp = 0) {
-  return Math.min(MAX_FISHING_LEVEL, 1 + Math.floor(Math.max(0, xp) / FISHING_XP_PER_LEVEL));
+  return fishingProgress(xp).level;
 }
 
 const sand = { id: 'shore-sand', points: [
@@ -48,8 +60,8 @@ export function readFishing(save, legacyCasts = 0) {
     misses: Number.isInteger(save?.misses) ? clamp(save.misses,0,3) : 0,
     fish: Number.isSafeInteger(save?.fish) ? Math.max(0,save.fish) : 0,
     driftwood: Number.isSafeInteger(save?.driftwood) ? Math.max(0,save.driftwood) : 0,
-    xp: Number.isSafeInteger(save?.xp) ? clamp(save.xp,0,(MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL)
-      : clamp(Number.isSafeInteger(legacyCasts) ? legacyCasts : 0,0,(MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL),
+    xp: Number.isSafeInteger(save?.xp) ? clamp(save.xp,0,MAX_FISHING_XP)
+      : clamp(Number.isSafeInteger(legacyCasts) ? legacyCasts : 0,0,MAX_FISHING_XP),
     rowboat: save?.rowboat === true,
     godslayer: save?.godslayer === true
   };
@@ -57,10 +69,10 @@ export function readFishing(save, legacyCasts = 0) {
 
 export function castNet(state, roll = Math.random, offshore = false) {
   if (!state.book) {
-    return { fishing: { ...state, book: true, xp: Math.min((MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL,(state.xp ?? 0)+1) }, catchName: 'Soaked book', rare: false };
+    return { fishing: { ...state, book: true, xp: Math.min(MAX_FISHING_XP,(state.xp ?? 0)+1) }, catchName: 'Soaked book', rare: false };
   }
   const fishing = { ...state };
-  fishing.xp = Math.min((MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL,(state.xp ?? 0)+1);
+  fishing.xp = Math.min(MAX_FISHING_XP,(state.xp ?? 0)+1);
   let catchName;
   if (state.tideglass === 'seeking' && (state.misses === 3 || roll() < .25)) {
     fishing.tideglass = 'caught';
