@@ -16,6 +16,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - Fishing earns 1 saved XP per completed cast. The next level costs 3 XP at level 1, then each level costs 1 XP more (4 through 11); level 10 takes 63 total casts from a new save. Level 10 unlocks a Tide Arch rowboat project costing 8 spare wood. Built boats appear on the beach and enable offshore fishing for larger catches. Existing cast totals seed XP for old saves.
 - Current cache versions: `crownwood.mjs?v=14`, `crownwood-art.mjs?v=16`, `beach.mjs?v=4`, `beach-art.mjs?v=4`, `world-data.mjs?v=15`, and entry `playtest.mjs?v=86`.
 - Feature source commit: `8efcef5`; history integration with the current `origin/main`: merge commit `81657df`.
+- Fishing curve correction: source commit `3be8169` makes each new level cost 1 XP more than the previous one, for 63 casts total to level 10. Existing saved XP and rowboat ownership are preserved; only the level mapping and displayed progress changed. Syntax and whitespace checks passed. No public playtest or live deployment check was performed.
 - JavaScript syntax checks passed for all changed game modules and `git diff --check` passed. No live gameplay, mobile visual review, or public playtest was performed. A push to `main` triggers Cloudflare deployment; completion has not been verified. The owner and Ash should verify the new bridge gate, resource spend, old-save migration, level 10 unlock, rowboat persistence, and offshore catches.
 
 ### Lantern Village art and Barry's home
