@@ -1,6 +1,6 @@
 import { surfaceAt } from './terrain.mjs';
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs?v=15';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=14';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;
 const bridge = crownwoodTerrain.byId.get('rope-bridge');
@@ -10,6 +10,9 @@ const campGate = landmark('camp-return');
 const drop = landmark('mist-drop');
 const hearth = landmark('first-hearth');
 const king = landmark('king-trail');
+const overlookWest = crownwoodTerrain.byId.get('king-bridge-west');
+const overlookEast = crownwoodTerrain.byId.get('king-bridge-east');
+const overlookSpan = [[5070,151],[5260,160],[5450,165]];
 const rootdeep = landmark('rootdeep-entrance');
 
 export function paintBarry(ctx, x, y) {
@@ -158,7 +161,7 @@ export function buildCrownwoodArt() {
   }
   sign(ctx,campGate.x,campGate.y,'← Alder Camp',-1);
   sign(ctx,452,678,'Three Boughs ↗');
-  sign(ctx,king.x,king.y,'King’s Grounds →');
+  sign(ctx,4960,surfaceAt(overlookWest,4960),'King’s Grounds →');
   sign(ctx,3265,surfaceAt(floor,3265),'← Lower Root Trail',-1);
   sign(ctx,4410,797,'← Lower Root Trail',-1);
   sign(ctx,1200,760,'← Root Landing',-1);
@@ -180,6 +183,40 @@ export function buildCrownwoodArt() {
     poly(ctx,[[lx-4,ly-8],[lx+4,ly-8],[lx+4,ly+1],[lx-4,ly+1]],'#ffd18a');
   }
   return canvas;
+}
+
+export function paintKingBridge(ctx, repaired) {
+  const left = 5070, right = 5450;
+  poly(ctx,[[left-38,152],[left+4,153],[left+29,180],[left+33,208],[left-36,213]],'#44564a');
+  poly(ctx,[[right-24,165],[right+29,166],[right+40,210],[right-34,213]],'#44564a');
+  if (repaired) {
+    path(ctx,overlookSpan.map(([x,y])=>[x,y+17]),'#4c3b30',14);
+    for(let x=left+10;x<right;x+=31) {
+      const y=151+(x-left)*14/380;
+      ctx.fillStyle = x % 2 ? '#b28c5c' : '#a27d52';
+      ctx.beginPath();
+      ctx.moveTo(x,y-3); ctx.lineTo(x+25,y-3+25*14/380);
+      ctx.lineTo(x+25,y+12+25*14/380); ctx.lineTo(x,y+12); ctx.closePath(); ctx.fill();
+      path(ctx,[[x+7,y+1],[x+7,y+5]],'#594333',2);
+    }
+    path(ctx,overlookSpan,'#8f6b48',9);
+    for(const x of [left+18,left+105,left+190,left+285,right-16]) {
+      const y=151+(x-left)*14/380;
+      path(ctx,[[x,y-5],[x,y-57]],'#6a5039',7);
+      orb(ctx,x,y-57,4,'#d7bd89');
+    }
+    path(ctx,[[left+18,94],[left+105,96],[left+190,101],[left+285,105],[right-16,108]],'#c2a06b',5);
+    path(ctx,[[left+18,166],[left+108,174],[left+190,179],[left+285,184],[right-16,187]],'#c2a06b',5);
+  } else {
+    for(const [x,y] of [[left,151],[right,165]]) {
+      path(ctx,[[x,y+8],[x,y-48]],'#72553a',11);
+      path(ctx,[[x-16,y-48],[x+16,y-48]],'#c2a06b',6);
+    }
+    path(ctx,[[left,103],[left+73,99],[left+119,126]],'#aa8d61',5);
+    path(ctx,[[right,117],[right-54,112],[right-20,143]],'#aa8d61',5);
+    path(ctx,[[left,158],[left+36,170]],'#6b5037',9);
+    path(ctx,[[right,171],[right-32,183]],'#6b5037',9);
+  }
 }
 
 export function paintCrownwoodPines(ctx, chopped = [], treeStage = () => 'mature') {

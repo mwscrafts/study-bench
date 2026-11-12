@@ -6,7 +6,9 @@ const crystals = { id: 'crystal-shelf', points: [[2015,184],[2080,174],[2370,170
 // Keep the shelf above the understory's double-jump reach.
 const mist = { id: 'mist-shelf', points: [[3090,534],[3235,522],[3410,502],[3585,502],[3870,510],[4050,532]] };
 const three = { id: 'bough-three', points: [[1230,447],[1290,435],[1570,430],[1675,430]] };
-const crown = { id: 'overlook', points: [[4770,152],[4835,145],[5200,145],[5480,169],[5760,166]] };
+const kingBridgeWest = { id: 'king-bridge-west', points: [[4770,152],[4835,145],[5000,145],[5070,151]] };
+const kingBridgeEast = { id: 'king-bridge-east', points: [[5450,165],[5480,169],[5760,166]] };
+const kingBridgeSpan = { id: 'king-bridge-span', points: [[5070,151],[5260,160],[5450,165]] };
 export const crownwoodTerrain = defineTerrain(5760, 935, 273, [
   floor,
   { id: 'bough-one', points: [[515,611],[580,599],[850,590],[940,590]] },
@@ -14,8 +16,15 @@ export const crownwoodTerrain = defineTerrain(5760, 935, 273, [
   three, bridge, crystals, mist,
   { id: 'east-bough', points: [[4105,253],[4160,242],[4510,236]] },
   { id: 'east-rise', points: [[4470,207],[4540,197],[4840,189]] },
-  crown
+  kingBridgeWest, kingBridgeEast
 ]);
+export const crownwoodKingBridgeTerrain = defineTerrain(5760, 935, 273, [
+  ...crownwoodTerrain.surfaces, kingBridgeSpan
+]);
+export const KING_BRIDGE_START = 5070;
+export const KING_BRIDGE_END = 5450;
+export const KING_BRIDGE_WOOD_COST = 5;
+export const KING_BRIDGE_IRON_COST = 2;
 
 function spot(surface, id, x, label, radius = 75) {
   return { id, x, y: surfaceAt(surface, x), label, radius };
@@ -24,11 +33,12 @@ function spot(surface, id, x, label, radius = 75) {
 export const crownwoodLandmarks = [
   spot(floor, 'camp-return', 180, 'Return to Alder Camp', 92),
   spot(floor, 'rootdeep-entrance', 5555, 'Enter Rootdeep Mine', 100),
+  spot(kingBridgeWest, 'king-bridge', 4960, 'Inspect the broken bridge to the King', 92),
   spot(bridge, 'barry', 1900, 'Talk to Barry', 94),
   { ...spot(bridge, 'mist-drop', 3380, 'Drop to the ledge below', 84), ground: bridge.id },
   { ...spot(mist, 'first-hearth', 3690, 'Enter behind the falls'), ground: mist.id },
   { ...spot(mist, 'lodestone-canopy', 3930, 'Inspect the old lodestone', 70), ground: mist.id },
-  spot(crown, 'king-trail', 5530, 'Enter the King’s Grounds', 100)
+  spot(kingBridgeEast, 'king-trail', 5530, 'Enter the King’s Grounds', 100)
 ];
 
 export const crownwoodTimberTrees = [

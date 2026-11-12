@@ -1,18 +1,20 @@
 import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs';
 
+export const FISHING_XP_PER_LEVEL = 3;
+export const MAX_FISHING_LEVEL = 10;
+export const ROWBOAT_WOOD_COST = 8;
+
+export function fishingLevel(xp = 0) {
+  return Math.min(MAX_FISHING_LEVEL, 1 + Math.floor(Math.max(0, xp) / FISHING_XP_PER_LEVEL));
+}
+
 const sand = { id: 'shore-sand', points: [
   [0,435],[430,435],[625,495],[785,565],[940,621],[1130,650],[1460,660],[1700,630],
   [1910,623],[2640,623],[2810,606],[2980,558],[3180,528],[3520,536],[3840,539]
 ] };
 const drift = { id: 'drift-ledge', points: [[925,601],[1030,585],[1255,582],[1460,594],[1650,610],[1760,624]] };
 const lookout = { id: 'lookout-rock', points: [[3040,473],[3160,460],[3350,460],[3440,483]] };
-const westBridgeStub = { id: 'cove-bridge-west', points: [[820,504],[1015,501]] };
-const eastBridgeStub = { id: 'cove-bridge-east', points: [[1560,522],[1740,526]] };
-const repairedBridgeSpan = { id: 'cove-bridge-span', points: [[1015,501],[1310,511],[1560,522]] };
-export const beachTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout, westBridgeStub, eastBridgeStub]);
-export const beachBridgeTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout, westBridgeStub, eastBridgeStub, repairedBridgeSpan]);
-export const BRIDGE_WOOD_COST = 5;
-export const BRIDGE_IRON_COST = 2;
+export const beachTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout]);
 
 function at(surface, id, x, label, radius = 74) {
   return { id, x, y: surfaceAt(surface, x), label, radius };
@@ -22,14 +24,11 @@ export const beachLandmarks = [
   at(sand,'shore-return',165,'Return to Alder Camp',88),
   dock,
   at(lookout,'lodestone-shore',3260,'Inspect the old lodestone',70),
-  at(sand,'tide-arch',3525,'Look out from Tide Arch',90),
-  at(sand,'beach-bridge-west',850,'Inspect the broken cove bridge',85),
-  at(sand,'beach-bridge-east',1720,'Inspect the broken cove bridge',85)
+  at(sand,'tide-arch',3525,'Look out from Tide Arch',90)
 ];
 export const beachFlower = at(drift,'beach',1420,'Pick Driftwood Cove dusklily',58);
 
 export function beachLocation(player) {
-  if (player.ground?.startsWith('cove-bridge-')) return 'Cove Bridge';
   if (player.x < 870) return 'Salt Pines';
   if (player.x < 1800) return 'Driftwood Cove';
   if (player.x < 2720) return 'Lantern Dock';
@@ -42,22 +41,26 @@ const patrols = [
 ];
 export const beachShadows = (phase, night) => patrolShadows(patrols, phase, night);
 
-export function readFishing(save) {
+export function readFishing(save, legacyCasts = 0) {
   return {
     book: save?.book === true,
     tideglass: ['caught','spent'].includes(save?.tideglass) ? save.tideglass : 'seeking',
     misses: Number.isInteger(save?.misses) ? clamp(save.misses,0,3) : 0,
     fish: Number.isSafeInteger(save?.fish) ? Math.max(0,save.fish) : 0,
     driftwood: Number.isSafeInteger(save?.driftwood) ? Math.max(0,save.driftwood) : 0,
+    xp: Number.isSafeInteger(save?.xp) ? clamp(save.xp,0,(MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL)
+      : clamp(Number.isSafeInteger(legacyCasts) ? legacyCasts : 0,0,(MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL),
+    rowboat: save?.rowboat === true,
     godslayer: save?.godslayer === true
   };
 }
 
-export function castNet(state, roll = Math.random) {
+export function castNet(state, roll = Math.random, offshore = false) {
   if (!state.book) {
-    return { fishing: { ...state, book: true }, catchName: 'Soaked book', rare: false };
+    return { fishing: { ...state, book: true, xp: Math.min((MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL,(state.xp ?? 0)+1) }, catchName: 'Soaked book', rare: false };
   }
   const fishing = { ...state };
+  fishing.xp = Math.min((MAX_FISHING_LEVEL-1)*FISHING_XP_PER_LEVEL,(state.xp ?? 0)+1);
   let catchName;
   if (state.tideglass === 'seeking' && (state.misses === 3 || roll() < .25)) {
     fishing.tideglass = 'caught';
@@ -65,9 +68,12 @@ export function castNet(state, roll = Math.random) {
     catchName = 'Tideglass gemstone';
   } else {
     if (state.tideglass === 'seeking') fishing.misses++;
-    if (roll() < .55) {
+    if (offshore && roll() < .65) {
+      fishing.fish += 2;
+      catchName = 'A deepwater shoal · 2 fish';
+    } else if (roll() < .55) {
       fishing.fish++;
-      catchName = 'Fish';
+      catchName = offshore ? 'Deepwater fish' : 'Fish';
     } else {
       fishing.driftwood++;
       catchName = 'Driftwood';

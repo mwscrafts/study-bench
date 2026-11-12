@@ -1,14 +1,14 @@
 import { campTerrain, landmarks, flowers } from './terrain.mjs?v=17';
 import { buildCampArt } from './camp-art.mjs?v=15';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=13';
-import { buildCrownwoodArt } from './crownwood-art.mjs?v=15';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=14';
+import { buildCrownwoodArt } from './crownwood-art.mjs?v=16';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=16';
 import { buildMineArt } from './mine-art.mjs?v=06';
 import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=9';
 import { buildRootdeepArt } from './rootdeep-art.mjs?v=14';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=2';
-import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=2';
-import { buildBeachArt } from './beach-art.mjs?v=2';
+import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=3';
+import { buildBeachArt } from './beach-art.mjs?v=3';
 import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=10';
 import { buildHearthArt } from './hearth-art.mjs';
@@ -28,7 +28,7 @@ export const regions = {
   },
   crownwood: {
     title: ['Crownwood', 'Canopy'],
-    intro: 'Climb Three Boughs, cross the rope bridge, and look for a way down to the falls.',
+    intro: 'Climb Three Boughs, repair the last bridge to the King, and look for a way down to the falls.',
     terrain: crownwoodTerrain, landmarks: [...crownwoodLandmarks,...barryHouseLandmarks.filter(item => item.id !== 'barry-home-exit')], flowers: [crownwoodFlower],
     buildArt: buildCrownwoodArt, location: crownwoodLocation, shadows: crownwoodShadows, retreat: 'Root Landing'
   },
@@ -47,7 +47,7 @@ export const regions = {
   },
   beach: {
     title: ['The', 'Beach'],
-    intro: 'Follow the bluff to Driftwood Cove, inspect the broken bridge, and cast Hugh Mungus’s net off Lantern Dock.',
+    intro: 'Follow the bluff to Driftwood Cove, cast Hugh Mungus’s net at Lantern Dock, and look out from Tide Arch.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
   },
@@ -94,7 +94,7 @@ export const gates = {
   'hearth-return': { region: 'crownwood', footing: { x: 3445, ground: 'mist-shelf' } },
   'hearth-notch': { region: 'crownwood', footing: { x: 3975, ground: 'mist-shelf' } },
   'king-trail': { region: 'king' },
-  'king-return': { region: 'crownwood', footing: { x: 5375, ground: 'overlook' } }
+  'king-return': { region: 'crownwood', footing: { x: 5500, ground: 'king-bridge-east' } }
 };
 gates['village-gate'] = { region: 'village' };
 gates['village-return'] = { region: 'king', footing: { x: 3670, ground: 'king-floor' } };
@@ -119,8 +119,7 @@ export const conversations = {
   hugh: { name: 'Hugh Mungus', role: 'KEEPER OF EMBERVEIN' },
   dorrin: { name: 'Dorrin', role: 'ROOTDEEP KEEPER' },
   'rootdeep-guard': { name: 'Bram', role: 'SHAFT GUARD' },
-  'beach-bridge-west': { name: 'Cove Bridge', role: 'BROKEN CROSSING' },
-  'beach-bridge-east': { name: 'Cove Bridge', role: 'BROKEN CROSSING' },
+  'king-bridge': { name: 'The King’s Bridge', role: 'CROWNWOOD CROSSING' },
   'village-home-site': { name: 'Your village plot', role: 'HOME PROJECT' },
   'lyss-tent-site': { name: 'Lyss’s tent', role: 'CAMP PROJECT' },
   'village-home-decor': { name: 'Your home', role: 'DECORATIONS' },

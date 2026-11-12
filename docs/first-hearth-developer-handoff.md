@@ -9,6 +9,15 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### King’s Bridge, fishing levels, and rowboat
+
+- Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.
+- Existing Cove Bridge saves migrate: an accepted repair stays accepted, a completed repair transfers to the King’s Bridge, and saves that already reached the King retain their access. Old `overlook` footing is mapped to the new bridge surfaces.
+- Fishing earns 1 saved XP per completed cast. Every 3 XP advances a level, up to level 10 (27 casts from a new save). Level 10 unlocks a Tide Arch rowboat project costing 8 spare wood. Built boats appear on the beach and enable offshore fishing for larger catches. Existing cast totals seed XP for old saves.
+- Current cache versions: `crownwood.mjs?v=14`, `crownwood-art.mjs?v=16`, `beach.mjs?v=3`, `beach-art.mjs?v=3`, `world-data.mjs?v=14`, and entry `playtest.mjs?v=85`.
+- Feature source commit: `8efcef5`; history integration with the current `origin/main`: merge commit `81657df`.
+- JavaScript syntax checks passed for all changed game modules and `git diff --check` passed. No live gameplay, mobile visual review, or public playtest was performed. A push to `main` triggers Cloudflare deployment; completion has not been verified. The owner and Ash should verify the new bridge gate, resource spend, old-save migration, level 10 unlock, rowboat persistence, and offshore catches.
+
 ### Lantern Village art and Barry's home
 
 - Rebuilt Lantern Village's background and residents with layered cottages, timber/stone detail, faces, street lamps, planting, cobbles, and a more finished eastern arch. The celebration house now has a detailed hall interior with guests, a feast table, cake, wine goblets, and warm lighting. Route coordinates and interaction landmarks remain in `village.mjs`; drawing lives in `village-art.mjs`.
@@ -45,7 +54,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=84` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4` and `mine-art.mjs?v=07`. Bump the relevant query string when an imported module changes. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=85` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4` and `mine-art.mjs?v=07`. Bump the relevant query string when an imported module changes. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
@@ -124,13 +133,10 @@ Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=8
 - The response choice makes Hugh step off the stilts: `hughStiltsRevealed` saves, the full-body sprite height changes from 105 to 64 while its feet stay on the ground, a pair of stilts appears by his alcove, and his later dialogue reflects the reunion. Closing before the response keeps the reunion pending for the next conversation. This trigger occurs on travel from Rootdeep to the mine, not simply when the tunnel is repaired.
 - Imports are `mine-art.mjs?v=06` and `world-data.mjs?v=10`, with playtest entry `v=69`. The edited JavaScript syntax was checked. No live gameplay/visual check was performed by Codex. Owner should travel via cart, speak to Hugh, choose the response, confirm he shrinks, reload, and speak again.
 
-### Cove Bridge checkpoint
+### Former Cove Bridge (removed)
 
-- A distinct broken bridge sits above Driftwood Cove on the beach. The two end stubs are always walkable; the missing middle is a real terrain ledge added only when repaired. The lower shore route remains open throughout, so this repair cannot trap the player. It is separate from Rootdeep's minecart tunnel.
-- Inspect either end to discover it. Accepting the repair request starts a beach-only material tracker; the cost is 5 **spare** wood and 2 iron. Wood is deducted via `tools.woodDonated` and iron via `ironStock`. The saved `beachBridgeQuest` state controls the visual and terrain switch after reload. The bridge markers disappear when complete.
-- The bridge artwork draws broken timber, dangling rope, end pilings, a missing deck and remnants below. Once repaired, it draws a detailed continuous plank deck, rivets, rails, rope and braces. The collision surface is `cove-bridge-span`; the pre-existing stub surfaces remain in both terrain variants. Its upper route runs roughly x=820–1740 above the cove. The lower shore path runs beneath it.
-- See `docs/cove-bridge-design.md` for exact geometry, ownership and manual route. Imports are `beach.mjs?v=2`, `beach-art.mjs?v=2`, `world-data.mjs?v=10`, with playtest entry `v=70`. Syntax/source checks passed; Codex did not do a public gameplay/visual test.
-- Next features from the owner's list: village home after the King, Lyss's tent-to-cabin upgrade, Rootdeep settler routines, and request-board choice rewards.
+- The upper route across Driftwood Cove did not create enough value: the shore remained open and the repair unlocked no new area or meaningful shortcut. Its beach landmarks, terrain, and artwork were removed.
+- Old `beachBridgeQuest` saves migrate into `kingBridgeQuest` so prior accepted/completed progress is preserved. Current geometry and checks are in `docs/king-bridge-design.md`.
 
 ### Two home projects checkpoint
 

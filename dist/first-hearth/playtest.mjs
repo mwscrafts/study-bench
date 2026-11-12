@@ -1,15 +1,18 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
 import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=15';
-import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
-import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=15';
+import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes, crownwoodTerrain, crownwoodKingBridgeTerrain,
+  KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=14';
+import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow,
+  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=16';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
 import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=07';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
-import { beachFlower, beachTerrain, beachBridgeTerrain, BRIDGE_WOOD_COST, BRIDGE_IRON_COST, readFishing, castNet } from './beach.mjs?v=2';
-import { paintBeachHorizon, paintBeachDetails, paintCoveBridge } from './beach-art.mjs?v=2';
+import { beachFlower, readFishing, castNet, fishingLevel, FISHING_XP_PER_LEVEL,
+  ROWBOAT_WOOD_COST } from './beach.mjs?v=3';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=3';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -27,7 +30,7 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=13';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=14';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=2';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=3';
@@ -42,7 +45,8 @@ const journalCatalog = [
   { id: 'first-steps', title: 'A field journal', body: 'The trail will teach you as you explore. New notes are added here when you encounter useful things, so you can keep moving and read them whenever you like.' },
   { id: 'controls', title: 'Finding your way', body: 'Move with A and D or the arrow keys. Space jumps; E interacts with nearby people and objects, or swings your equipped tool. On touch screens, use the controls below the world.' },
   { id: 'composure', title: 'Keeping your composure', body: 'Nearby threats wear down Composure, and fighting while one is close drains it faster. At zero Composure, you lose 1 health each second. In the hut, pet Alvin to restore up to 25 Composure.' },
-  { id: 'trail-tallies', title: 'Trail tallies', body: 'Your adventure keeps a count of completed fishing casts at Lantern Dock and pets given to Alvin in the hut.' },
+  { id: 'trail-tallies', title: 'Trail tallies', body: 'Your adventure keeps a count of fishing casts at Lantern Dock and offshore, plus pets given to Alvin in the hut.' },
+  { id: 'fishing', title: 'Fishing and the rowboat', body: 'Each completed cast earns fishing experience. Fishing level 10 unlocks the rowboat project at Tide Arch. Once built, the boat lets you cast farther offshore for larger catches.' },
   { id: 'gathering', title: 'Gathering along the trail', body: 'Get close to a plant, ore vein, or other resource and use E (or the action button). Some things need the right tool. Supplies save with your adventure; useful notes appear here as you discover them.' },
   { id: 'berries', title: 'Berries and health', body: 'Berry bushes add berries to your backpack. Eat one with the Berry button or from your backpack to restore health.' },
   { id: 'gear', title: 'Tools and gear', body: 'Open your backpack with I to review supplies and equipment. Tap a piece of gear you own to equip it; E uses your equipped tool when you act.' },
@@ -51,7 +55,7 @@ const journalCatalog = [
   { id: 'iron-branch', title: 'The dark iron gallery', body: 'The iron gallery has an unlit lantern. A Glowcap can restore it and make a safer pocket beside this branch. Other parts of Rootdeep remain dangerous.' },
   { id: 'root-branch', title: 'The shadow-root branch', body: 'A lantern has gone dark among the tangled roots. Restore it with a Glowcap to ease the danger nearby. This light is separate from the settlement and the old tunnel.' },
   { id: 'old-tunnel', title: 'The old minecart tunnel', body: 'The collapsed tunnel may join Rootdeep to Hugh’s mine. First clear the cave goblins. Relight the passage with Glowcaps so the dwarves can assess it; then bring timber for supports. The carts will run only after excavation is finished.' },
-  { id: 'cove-bridge', title: 'The broken cove bridge', body: 'A wooden span once crossed above Driftwood Cove. Repair it with renewable wood and iron fittings to open a high route toward Lantern Dock. The lower shore path remains open.' },
+  { id: 'king-bridge', title: 'The King’s Bridge', body: 'The broken crossing on Crownwood’s high trail is the only walkable route to the King’s Grounds. Repair it with spare wood and iron; the gap cannot be crossed on foot while it is broken.' },
   { id: 'village-home', title: 'A place of your own', body: 'After the King, a village plot can become a home for you and Alvin. Gather wood and iron to build it, then return to furnish its rooms whenever you like.' },
   { id: 'lyss-cabin', title: 'A cabin for Lyss', body: 'Lyss’s tent can become a little log cabin beside the forge. This is her home, separate from your village house. Help furnish it after the walls go up.' },
   { id: 'barry-home', title: 'Barry’s workshop', body: 'Barry can make a sturdy home and workshop above the Crownwood bridge. Bring ten spare wood and four iron to build it.' }
@@ -96,7 +100,7 @@ let tunnelGuardSpoken = false;
 let tunnelQuestAccepted = false;
 let pendingTunnelReunion = false;
 let hughStiltsRevealed = false;
-let beachBridgeQuest = 'unoffered';
+let kingBridgeQuest = 'unoffered';
 let villageHomeQuest = 'unoffered';
 let lyssCabinQuest = 'unoffered';
 let barryHomeQuest = 'unoffered';
@@ -476,6 +480,7 @@ function paint() {
     paintCampFacilities(ctx, { berryPlots, growMs:BERRY_GROW_MS, catnipUnlocked,
       catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && hughQuest }, animationClock);
   } else if (region === 'crownwood') {
+    paintKingBridge(ctx, kingBridgeQuest === 'complete');
     paintCrownwoodPines(ctx, tools.chopped, treeStage);
     paintBarryHomeExterior(ctx,barryHomeQuest === 'complete');
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
@@ -539,7 +544,7 @@ function paint() {
     if(hughStiltsRevealed) paintDiscardedStilts(ctx,1955,hugh.y);
     drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, hughStiltsRevealed ? 64 : 105);
   } else if (region === 'beach') {
-    paintCoveBridge(ctx, beachBridgeQuest === 'complete', animationClock);
+    if (fishing.rowboat) paintRowboat(ctx);
     paintBeachDetails(ctx, camera, animationClock, night, casting);
     paintRegionalLodestones();
   } else if (region === 'hearth') {
@@ -810,7 +815,7 @@ function currentLandmarks() {
     (item !== netChest || !hasNet) && (item.id !== 'fallen-crown' || victory) &&
     (item.id !== 'village-gate' || victory?.ending || sharedDoors.has('village-gate')) &&
     (item.id !== 'restored-king' || victory?.ending === 'free') &&
-    (!item.id.startsWith('beach-bridge-') || beachBridgeQuest !== 'complete') &&
+    (item.id !== 'king-bridge' || kingBridgeQuest !== 'complete') &&
     !(region === 'rootdeep' && item.atHome) &&
     !(region.startsWith('rootdeep-home-') && rootdeepSettlerRoutes.some(route => route.id === item.id) && !rootdeepResidentAtHome(item.id)) &&
     (item.id !== 'village-home-site' || !!victory?.ending && villageHomeQuest !== 'complete') &&
@@ -901,9 +906,9 @@ function updateNotes() {
   const glowcapNote = glowcapQuest === 'accepted' ? 'Glowcaps for the lanterns · ' + Math.min(glowcaps, 3) + ' / 3' : '';
   const specialNote = region === 'camp' && activeRequest && specialRequests[activeRequest]
     ? specialRequests[activeRequest].title + ' · ' + specialSupplyText(specialRequests[activeRequest]) : '';
-  const bridgeNote = region === 'beach' && beachBridgeQuest === 'accepted'
-    ? 'Cove Bridge · Wood ' + Math.min(spareWood(tools),BRIDGE_WOOD_COST) + '/' + BRIDGE_WOOD_COST +
-      ' · Iron ' + Math.min(ironStock,BRIDGE_IRON_COST) + '/' + BRIDGE_IRON_COST : '';
+  const kingBridgeNote = region === 'crownwood' && kingBridgeQuest === 'accepted'
+    ? 'King’s Bridge · Wood ' + Math.min(spareWood(tools),KING_BRIDGE_WOOD_COST) + '/' + KING_BRIDGE_WOOD_COST +
+      ' · Iron ' + Math.min(ironStock,KING_BRIDGE_IRON_COST) + '/' + KING_BRIDGE_IRON_COST : '';
   const villageHomeNote = region === 'village' && villageHomeQuest === 'accepted'
     ? 'Your home · Wood ' + Math.min(spareWood(tools),VILLAGE_HOME_WOOD_COST) + '/' + VILLAGE_HOME_WOOD_COST +
       ' · Iron ' + Math.min(ironStock,VILLAGE_HOME_IRON_COST) + '/' + VILLAGE_HOME_IRON_COST : '';
@@ -918,7 +923,7 @@ function updateNotes() {
       light: 'Tunnel · Relight with 2 Glowcaps · ' + Math.min(glowcaps,2) + ' / 2',
       assess: 'Tunnel · Ask Dorrin to assess the lit passage',
       timber: 'Tunnel · Timber supports · ' + Math.min(spareWood(tools),4) + ' / 4' })[tunnelStage] : '';
-  el('quest-tracker').textContent = villageHomeNote || barryHomeNote || specialNote || lyssCabinNote || bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
+  el('quest-tracker').textContent = villageHomeNote || barryHomeNote || specialNote || lyssCabinNote || kingBridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
     ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : rootdeepQuest === 'accepted' ? 'Rootglass · ' + rootglass.size + ' / 3' : '')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
@@ -942,7 +947,10 @@ function updateNotes() {
     ? 'Crownwood crystals · ' + crystals.size + ' / ' + crystalNodes.length
     : region === 'mine' ? (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift') ? 'Lift running'
       : hughQuest ? 'Hugh Mungus needs 1 tideglass gemstone' : 'Follow the lanterns to Hugh Mungus')
-    : region === 'beach' ? 'Lantern Dock catches · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
+    : region === 'beach' ? 'Fishing Lv ' + fishingLevel(fishing.xp) +
+      (fishingLevel(fishing.xp) < 10 ? ' · XP ' + (fishing.xp % FISHING_XP_PER_LEVEL) + '/' + FISHING_XP_PER_LEVEL :
+        fishing.rowboat ? ' · Rowboat ready' : ' · Rowboat at Tide Arch') +
+      ' · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood
     : region === 'hearth' ? 'Both passages return to Mist Shelf'
     : region === 'king' ? (victory?.ending ? 'Village gate key earned · Gate at the far right'
       : sharedDoors.has('village-gate') ? 'A fellow adventurer opened the village gate' : 'The altar calls the final night')
@@ -1100,7 +1108,7 @@ function saveCamp() {
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
       tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, pendingTunnelReunion, hughStiltsRevealed,
-      beachBridgeQuest, villageHomeQuest, lyssCabinQuest, barryHomeQuest, lyssCabinThanksSeen,
+      kingBridgeQuest, villageHomeQuest, lyssCabinQuest, barryHomeQuest, lyssCabinThanksSeen,
       villageHomeDecor: [...villageHomeDecor], lyssCabinDecor: [...lyssCabinDecor],
       defeatedTunnelGoblins: [...defeatedTunnelGoblins],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
@@ -1170,8 +1178,12 @@ function begin(save) {
   tunnelQuestAccepted = save?.tunnelQuestAccepted === true || ['assess','timber','open'].includes(tunnelStage);
   pendingTunnelReunion = save?.pendingTunnelReunion === true;
   hughStiltsRevealed = save?.hughStiltsRevealed === true;
-  beachBridgeQuest = ['accepted','complete'].includes(save?.beachBridgeQuest) ? save.beachBridgeQuest : 'unoffered';
-  regions.beach.terrain = beachBridgeQuest === 'complete' ? beachBridgeTerrain : beachTerrain;
+  const alreadyReachedKing = save?.region === 'king' || visited.has('king-trail') || !!victory || save?.footing?.ground === 'overlook' ||
+    save?.region === 'crownwood' && Number.isFinite(save?.footing?.x) && save.footing.x > KING_BRIDGE_START && save.footing.y < 500;
+  const oldBridgeProgress = ['accepted','complete'].includes(save?.beachBridgeQuest) ? save.beachBridgeQuest : 'unoffered';
+  kingBridgeQuest = alreadyReachedKing ? 'complete'
+    : ['accepted','complete'].includes(save?.kingBridgeQuest) ? save.kingBridgeQuest : oldBridgeProgress;
+  regions.crownwood.terrain = kingBridgeQuest === 'complete' ? crownwoodKingBridgeTerrain : crownwoodTerrain;
   villageHomeQuest = ['accepted','complete'].includes(save?.villageHomeQuest) ? save.villageHomeQuest : 'unoffered';
   lyssCabinQuest = ['accepted','complete'].includes(save?.lyssCabinQuest) ? save.lyssCabinQuest : 'unoffered';
   barryHomeQuest = ['accepted','complete'].includes(save?.barryHomeQuest) ? save.barryHomeQuest : 'unoffered';
@@ -1198,8 +1210,8 @@ function begin(save) {
   shadowHealth = new Map();
   hasNet = save?.hasNet === true;
   hughQuest = save?.hughQuest === true;
-  fishing = readFishing(save?.fishing);
   fishingCastCount = savedInteger(save?.fishingCastCount, 0, 1000000, 0);
+  fishing = readFishing(save?.fishing, fishingCastCount);
   alvinPetCount = savedInteger(save?.alvinPetCount, 0, 1000000, 0);
   nightIndex = savedInteger(save?.nightIndex, 0, 1000000, 0);
   treeHarvestDays = {};
@@ -1243,10 +1255,15 @@ function begin(save) {
   el('mapButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  let footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
+  if (savedRegion === 'crownwood' && footing?.ground === 'overlook') {
+    const ground = footing.x < KING_BRIDGE_START ? 'king-bridge-west'
+      : footing.x > KING_BRIDGE_END ? 'king-bridge-east' : 'king-bridge-span';
+    footing = { ...footing, ground };
+  }
   if (onlineEnabled) syncPublicClock();
   enterRegion(savedRegion, footing);
   connectPresence();
@@ -2054,33 +2071,88 @@ function dockDialogue(result) {
     setDialogue('You need a casting net. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
     return;
   }
-  const choices = [['Cast the net', () => {
-    equipped = 'net';
-    updateNotes();
-    saveCamp();
-    casting = { start: animationClock, x: player.x, y: player.y };
-    closeDialogue();
-    clearControls();
-    updatePrompt();
-  }]];
+  const choices = [['Cast the net', () => startNetCast(false)]];
   if (fishing.book) {
     choices.push(['Read the soaked book', () => setDialogue(bookClue, [['Back', () => dockDialogue()]])]);
   }
   setDialogue(result ?? 'The water is calm here. Cast the net from the end of the pier.', choices);
 }
 
+function startNetCast(offshore) {
+  if (!hasNet) {
+    setDialogue('You need a casting net. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
+    return;
+  }
+  if (offshore && !fishing.rowboat) {
+    setDialogue('You need the rowboat from Tide Arch to fish offshore.');
+    return;
+  }
+  equipped = 'net';
+  updateNotes();
+  saveCamp();
+  casting = { start: animationClock, x: player.x, y: player.y, offshore };
+  closeDialogue();
+  clearControls();
+  updatePrompt();
+}
+
+function rowboatDialogue(result) {
+  openDialogue('tide-arch');
+  const level = fishingLevel(fishing.xp);
+  if (!fishing.rowboat) {
+    if (level < 10) {
+      setDialogue((result ? result + ' ' : '') + 'A rowboat could reach deeper water, but it needs a practiced hand. Fishing level ' +
+        level + ' / 10 · ' + (fishing.xp % FISHING_XP_PER_LEVEL) + ' / ' + FISHING_XP_PER_LEVEL +
+        ' XP toward the next level. Keep casting at Lantern Dock.');
+    } else if (spareWood(tools) < ROWBOAT_WOOD_COST) {
+      setDialogue('You have fishing level 10. Build the rowboat with ' + ROWBOAT_WOOD_COST + ' spare wood; you have ' +
+        spareWood(tools) + '. Marked pines regrow after three nights.');
+    } else {
+      setDialogue((result ? result + ' ' : '') + 'Fishing level 10 is enough to build a rowboat. It needs ' +
+        ROWBOAT_WOOD_COST + ' spare wood. Build it here?', [
+        ['Build the rowboat · ' + ROWBOAT_WOOD_COST + ' wood', () => {
+          if (fishing.rowboat || fishingLevel(fishing.xp) < 10 || spareWood(tools) < ROWBOAT_WOOD_COST) return rowboatDialogue();
+          tools.woodDonated = (tools.woodDonated ?? 0) + ROWBOAT_WOOD_COST;
+          fishing.rowboat = true;
+          notice = 'Rowboat built · offshore fishing unlocked';
+          noticeUntil = animationClock + 3;
+          saveCamp(); updateNotes(); updatePrompt();
+          setDialogue(hasNet
+            ? 'The rowboat is ready below Tide Arch. You can now fish farther offshore for larger catches.'
+            : 'The rowboat is ready below Tide Arch. Bring Hugh Mungus’s casting net before heading offshore.',
+            hasNet ? [['Fish offshore', () => startNetCast(true)]] : []);
+        }],
+        ['Later', closeDialogue]
+      ]);
+    }
+    return;
+  }
+  const line = (result ? result + ' ' : '') + 'Your rowboat is ready below Tide Arch. Fishing level ' + level +
+    ' · Fish ' + fishing.fish + ' · Driftwood ' + fishing.driftwood + '.';
+  if (!hasNet) {
+    setDialogue(line + ' Find Hugh Mungus’s casting net in Embervein Mine before heading offshore.');
+    return;
+  }
+  setDialogue(line, [['Cast the net offshore', () => startNetCast(true)]]);
+}
+
 function finishCast() {
-  const result = castNet(fishing);
+  const offshore = casting.offshore === true;
+  const oldLevel = fishingLevel(fishing.xp);
+  const result = castNet(fishing, Math.random, offshore);
   fishing = result.fishing;
   fishingCastCount = Math.min(1000000, fishingCastCount + 1);
   casting = null;
   saveCamp();
-  openDialogue('dock');
+  recordJournalEntry('fishing', { quiet: true });
+  openDialogue(offshore ? 'tide-arch' : 'dock');
   let message = 'You caught ' + result.catchName.toLowerCase() + '.';
   if (result.catchName === 'Soaked book') message = 'The net comes up heavy with a soaked book. There’s still a legible sketch inside.';
   if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Hugh Mungus to repair the lift.';
+  const newLevel = fishingLevel(fishing.xp);
+  if (newLevel > oldLevel) message += ' Fishing reached level ' + newLevel + '!';
   if (result.rare) message += ' Tangled in the net alongside it is the Godslayer.';
-  dockDialogue(message);
+  if (offshore) rowboatDialogue(message); else dockDialogue(message);
 }
 
 function emberBoxDialogue() {
@@ -2424,6 +2496,7 @@ const interactionHandlers = {
   barry: barryDialogue,
   workbench: workbenchDialogue,
   dock: dockDialogue,
+  'tide-arch': rowboatDialogue,
   'ember-box': emberBoxDialogue,
   'request-board': requestBoardDialogue,
   'player-board': openPlayerNoticeboard,
@@ -2510,34 +2583,35 @@ function homeDecorDialogue(kind) {
   showChoices();
 }
 
-function coveBridgeDialogue() {
-  openDialogue('beach-bridge-west');
-  visited.add('beach-bridge-west');
-  recordJournalEntry('cove-bridge', { quiet: true });
-  if(beachBridgeQuest === 'unoffered') {
-    setDialogue('The old bridge stops over Driftwood Cove. From up here it could lead toward Lantern Dock without winding through the lower shore. The far bank is still reachable on foot. It needs five wood for new decking and two iron fittings. Will you restore it?', [
-      ['I’ll repair the bridge', () => {
-        beachBridgeQuest = 'accepted';
+function kingBridgeDialogue() {
+  openDialogue('king-bridge');
+  visited.add('king-bridge');
+  recordJournalEntry('king-bridge', { quiet: true });
+  if(kingBridgeQuest === 'unoffered') {
+    setDialogue('The high trail ends at a collapsed bridge over the ravine. It is the only route to the King’s Grounds, and there is no safe way around the gap. Five spare wood and two iron fittings will rebuild the crossing. Will you take it on?', [
+      ['I’ll repair the King’s Bridge', () => {
+        kingBridgeQuest = 'accepted';
         updateNotes(); saveCamp();
-        setDialogue('Gather five spare wood and two iron ore, then return to either end of the broken bridge. The marked pines regrow.');
+        setDialogue('Gather five spare wood and two iron ore, then return here. The lower Crownwood trail to Rootdeep stays open while the bridge is broken.');
       }],
-      ['Leave it', closeDialogue]
+      ['Leave it for now', closeDialogue]
     ]);
-  } else if(spareWood(tools) < BRIDGE_WOOD_COST || ironStock < BRIDGE_IRON_COST) {
-    setDialogue('The bridge needs ' + BRIDGE_WOOD_COST + ' wood and ' + BRIDGE_IRON_COST +
-      ' iron. You have ' + spareWood(tools) + ' wood and ' + ironStock + ' iron. The lower shore route remains open.');
+  } else if(spareWood(tools) < KING_BRIDGE_WOOD_COST || ironStock < KING_BRIDGE_IRON_COST) {
+    setDialogue('The King’s Bridge needs ' + KING_BRIDGE_WOOD_COST + ' spare wood and ' + KING_BRIDGE_IRON_COST +
+      ' iron. You have ' + spareWood(tools) + ' wood and ' + ironStock + ' iron.');
   } else {
-    setDialogue('The timber and iron fittings are ready. Rebuild the span over Driftwood Cove?', [
-      ['Repair the bridge', () => {
-        tools.woodDonated = (tools.woodDonated ?? 0) + BRIDGE_WOOD_COST;
-        ironStock -= BRIDGE_IRON_COST;
-        beachBridgeQuest = 'complete';
-        regions.beach.terrain = beachBridgeTerrain;
-        terrain = beachBridgeTerrain;
-        notice = 'Cove Bridge repaired · upper route open';
+    setDialogue('The timber and iron fittings are ready. Rebuild the only crossing to the King?', [
+      ['Repair the King’s Bridge', () => {
+        if(kingBridgeQuest === 'complete' || spareWood(tools) < KING_BRIDGE_WOOD_COST || ironStock < KING_BRIDGE_IRON_COST) return kingBridgeDialogue();
+        tools.woodDonated = (tools.woodDonated ?? 0) + KING_BRIDGE_WOOD_COST;
+        ironStock -= KING_BRIDGE_IRON_COST;
+        kingBridgeQuest = 'complete';
+        regions.crownwood.terrain = crownwoodKingBridgeTerrain;
+        terrain = crownwoodKingBridgeTerrain;
+        notice = 'King’s Bridge repaired · route to the King open';
         noticeUntil = animationClock + 3;
-        updateNotes(); saveCamp();
-        setDialogue('The new planks lock into the old supports. You can cross above the cove toward Lantern Dock. The shore below is still there when you want it.');
+        updateNotes(); updatePrompt(); saveCamp();
+        setDialogue('The new span meets both ledges. This is the only crossing to the King’s Grounds; the gap cannot be jumped around.');
       }],
       ['Keep the materials', closeDialogue]
     ]);
@@ -2642,6 +2716,15 @@ function interact() {
     return;
   }
   const id = item.id;
+  if (id === 'king-bridge') {
+    kingBridgeDialogue();
+    return;
+  }
+  if (id === 'king-trail' && kingBridgeQuest !== 'complete') {
+    openDialogue('king-bridge');
+    setDialogue('The King’s Grounds lie beyond the broken bridge. Repair the crossing on the west ledge first; there is no route around it.');
+    return;
+  }
   if (id.startsWith('lodestone-')) {
     if (rootKeyQuest !== 'accepted' && rootKeyQuest !== 'ready') {
       openDialogue('lodestone');
@@ -2761,10 +2844,6 @@ function interact() {
   }
   if (id === 'village-home-decor' || id === 'lyss-cabin-decor') {
     homeDecorDialogue(id === 'village-home-decor' ? 'village' : 'lyss');
-    return;
-  }
-  if (id.startsWith('beach-bridge-')) {
-    coveBridgeDialogue();
     return;
   }
   if (id === 'rootdeep-tunnel' || id === 'mine-tunnel') {
@@ -3182,6 +3261,8 @@ function frame(time) {
     if (nearRootdeepLadder() && vertical) rootdeepClimbing = true;
     for (let remaining = dt; remaining > 0;) {
       const step = Math.min(remaining, 1 / 120);
+      const previousX = player.x;
+      const previousGround = player.ground;
       if (region === 'rootdeep' && rootdeepClimbing && direction) {
         rootdeepClimbing = false;
         player.ground = null;
@@ -3212,6 +3293,23 @@ function frame(time) {
           rootdeepClimbing = false;
         }
       } else movePlayer(player, direction, step, terrain);
+      if (region === 'crownwood' && kingBridgeQuest !== 'complete' && player.y < 500) {
+        if (previousX <= KING_BRIDGE_START && player.x > KING_BRIDGE_START) {
+          player.x = KING_BRIDGE_START - 24;
+          if (previousGround === 'king-bridge-west') {
+            player.ground = 'king-bridge-west';
+            player.y = surfaceAt(terrain.byId.get('king-bridge-west'),player.x);
+            player.velocityY = 0; player.jumps = 0;
+          }
+        } else if (previousX >= KING_BRIDGE_END && player.x < KING_BRIDGE_END) {
+          player.x = KING_BRIDGE_END + 24;
+          if (previousGround === 'king-bridge-east') {
+            player.ground = 'king-bridge-east';
+            player.y = surfaceAt(terrain.byId.get('king-bridge-east'),player.x);
+            player.velocityY = 0; player.jumps = 0;
+          }
+        }
+      }
       if(region === 'rootdeep' && !tunnelGuardSpoken && player.y > 4200) {
         player.y = surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-8'),player.x);
         player.ground = 'rootdeep-level-8';

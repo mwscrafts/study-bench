@@ -25,6 +25,6 @@ The village celebration house remains separate from the player's home. Its door 
 - `home-projects.mjs` and `home-projects-art.mjs`: house project data, art, costs, and interiors.
 - `playtest.mjs`: dialogue, material spend, tracking, saves, and state-dependent exterior rendering.
 - `world-data.mjs`: rooms, gates and labels; `field-map.mjs`: interior identification.
-- Cache references: `terrain.mjs?v=17`, `camp-art.mjs?v=15`, `village.mjs?v=14`, `village-art.mjs?v=1`, `home-projects.mjs?v=2`, `home-projects-art.mjs?v=2`, `world-data.mjs?v=13`, `field-map.mjs?v=2`, `playtest.mjs?v=81`.
+- Cache references at the current release: `terrain.mjs?v=17`, `camp-art.mjs?v=15`, `crownwood.mjs?v=14`, `village.mjs?v=14`, `village-art.mjs?v=1`, `home-projects.mjs?v=2`, `home-projects-art.mjs?v=2`, `world-data.mjs?v=14`, `field-map.mjs?v=2`, `playtest.mjs?v=85`.
 
 Owner/Ash should visually check each project in the live game, including material costs, construction, entrance/exit, persistence after reload, village artwork, and Barry's exterior. Do not use the public game to test without the owner's specific authorization.
