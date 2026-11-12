@@ -1,4 +1,4 @@
-import { defineTerrain, surfaceAt } from './terrain.mjs?v=16';
+import { defineTerrain, surfaceAt } from './terrain.mjs?v=17';
 
 const villageHomeFloor = { id: 'village-home-floor', points: [[0,650],[1440,650]] };
 const lyssCabinFloor = { id: 'lyss-cabin-floor', points: [[0,650],[1080,650]] };
