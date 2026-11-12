@@ -9,15 +9,15 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
-The newest code commits are the shared-sleep implementation (`b7b53ef3e3a3c27a3ee59b41bf36a528f2f1826f`, `77b3b389fe49b049b34f3ab528afe7f884ab022e`, `6131adca5c69ccf3c74410b0c887321023398278`, `d291c7045f8c051bb4fbfe538afa6716d55d3817`) and mobile UI update (`6e8783d610a6b586c6992eb47b594ae4f1dbec01`, `3d648841ce12105895c00688fac93677f2daa7bd`). Earlier feature commits include the field map/Alvin choice (`b5e9f5db49fe7a229a1a306c7aa18ad308d72da8`), public clock/Composure correction (`adc13618eeabb76d286d8148f25224f95000ada9`), request rewards (`94d508fcf864e5964c08d6db1773bddff0e272e8`), Rootdeep routines (`626bf321985839d2a4f52ffa9e72bd92235be654`), and the village home/Lyss cabin (`2e61fc220e83e8830718f92da159ce1a2b7c3efc`). The earlier world updates are recorded below.
+The newest recovery is on `main`, followed by the night-scaling and co-op shadow changes. The earlier UI changes from `6e8783d610a6b586c6992eb47b594ae4f1dbec01` and `3d648841ce12105895c00688fac93677f2daa7bd` remain.
 
-The current follow-up list from the owner's 10-item review is: enlarge Continue Journey; spread mobile movement arrows; coordinate shared sleep; enable co-op shadow fights; verify/fix public Alvin cosmetics (the relay allowlist fix is committed); count fishing casts and Alvin pets; shorten nights relative to days; ease Composure drain on Easy; remove Hugh's cave dwarf spoiler; fade ghosts at daybreak. Work through the list in that order without pausing after each item unless a concrete blocker needs the owner's input.
+The owner's 10-item review remains the roadmap: larger Continue Journey; wider movement arrows; coordinated sleep; co-op shadow fights; public Alvin cosmetics; fishing/pet counts; shorter nights; easier Easy Composure drain; remove Hugh's spoiler; ghost fade at dawn.
 
-**Follow-up list:** The 10 items are larger Continue Journey; wider mobile movement-arrow spacing; coordinate shared sleep; co-op shadow fights; public Alvin cosmetic relay; count fishing casts and Alvin pets; shorter nights; easier Easy Composure drain; remove Hugh's dwarf spoiler; fade ghosts at daybreak. The first, second, third, and fifth are now implemented. Keep moving down this list without pausing between items unless a concrete blocker requires owner input.
+**Follow-up list:** The larger Continue Journey and wider mobile movement arrows are complete. Public Alvin cosmetic relay is fixed. Night count no longer scales shadow HP, patrol tempo, jump height, or chase speed. Cooperative shadow health is now shared by region and public cycle; each player keeps personal Easy/Hard damage intake and only the defeating player receives the shadow drop. Next: coordinate shared sleep, then continue the remaining list.
 
 **Mobile UI follow-up:** Continue saved playtest is now a larger, high-contrast touch target, and the mobile movement buttons have more spacing. `playtest.css` cache query is v18. `git diff --check` passed before the GitHub write. No live visual playtest was run.
 
-**Shared sleep:** In Public mode, Sleep at the hut bed is a unanimous vote among currently connected players. The Worker validates each vote against the hut region and bed coordinates, persists the clock offset, and advances the shared cycle to dawn only once everyone has voted. Voters recover health; other players see the shared sky advance without receiving bed-rest healing. Votes clear on reconnect/disconnect. Client cache versions are `playtest.mjs?v=76` and `presence.mjs?v=3`. Source was reviewed but no automated checks or live multiplayer test were run. Next: co-op shadow fights.
+**Shared sleep attempt:** The first attempt was rolled back after the client script was truncated. It is not currently implemented. Resume this after the co-op shadow work.
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
@@ -31,7 +31,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=76` and `playtest.css?v=18`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=79` and `playtest.css?v=18`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
