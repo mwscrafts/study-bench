@@ -13,11 +13,11 @@ The newest recovery is on `main`, followed by the night-scaling and co-op shadow
 
 The owner's 10-item review remains the roadmap: larger Continue Journey; wider movement arrows; coordinated sleep; co-op shadow fights; public Alvin cosmetics; fishing/pet counts; shorter nights; easier Easy Composure drain; remove Hugh's spoiler; ghost fade at dawn.
 
-**Follow-up list:** The larger Continue Journey and wider mobile movement arrows are complete. Public Alvin cosmetic relay is fixed. Night count no longer scales shadow HP, patrol tempo, jump height, or chase speed. Cooperative shadow health is now shared by region and public cycle; each player keeps personal Easy/Hard damage intake and only the defeating player receives the shadow drop. Next: coordinate shared sleep, then continue the remaining list.
+**Follow-up list:** The larger Continue Journey and wider mobile movement arrows are complete. Public Alvin cosmetic relay is fixed. Night count no longer scales shadow HP, patrol tempo, jump height, or chase speed. Cooperative shadow health is shared by region and public cycle; each player keeps personal Easy/Hard damage intake and only the defeating player receives the shadow drop. Coordinated public sleep is restored: active connected players must unanimously choose Sleep at the hut bed; the shared clock advances to dawn, and only voters are healed. Remaining owner-list items: fishing/pet counts, shorter nights, easier Easy Composure drain, remove Hugh's spoiler, and fade ghosts at dawn.
 
 **Mobile UI follow-up:** Continue saved playtest is a larger high-contrast target, mobile movement buttons have wider spacing, and the in-dialogue **Keep exploring** action is now full-width, high-contrast, and at least 52 px tall. CSS cache query is v19. No live visual playtest was run.
 
-**Shared sleep attempt:** The first attempt was rolled back after the client script was truncated. It is not currently implemented. Resume this after the co-op shadow work.
+**Shared sleep:** In Public, the Worker validates each vote against the hut bed, counts active connections, and advances the shared clock only when all active players have voted. The clock offset survives Worker hibernation; votes are removed when a player disconnects and cleared when the room empties. Client shadow cycles use the same adjusted clock. Solo sleep remains unchanged. Cache versions are `playtest.mjs?v=80` and `presence.mjs?v=4`. Static syntax/source checks are next; no live two-player gameplay or deployment has been verified.
 
 The field journal now:
 - Appears as a **Journal** button in the play controls and opens with **J**; **Escape** closes it.
@@ -31,7 +31,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=79` and `playtest.css?v=19`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=80` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4`. If either file changes, bump its query string. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 
