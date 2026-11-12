@@ -1,13 +1,13 @@
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
-import { buildCampArt, paintHorizon, paintCampTint, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=14';
+import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=15';
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
-import { paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=14';
+import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow, paintCrownwoodPines } from './crownwood-art.mjs?v=15';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
 import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=07';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
-  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=13';
+  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
 import { beachFlower, beachTerrain, beachBridgeTerrain, BRIDGE_WOOD_COST, BRIDGE_IRON_COST, readFishing, castNet } from './beach.mjs?v=2';
 import { paintBeachHorizon, paintBeachDetails, paintCoveBridge } from './beach-art.mjs?v=2';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
@@ -20,16 +20,17 @@ import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
 import { paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
-import { paintRestoredKing } from './village.mjs?v=13';
-import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, LYSS_CABIN_IRON_COST } from './home-projects.mjs?v=1';
-import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor } from './home-projects-art.mjs?v=1';
+import { paintRestoredKing, buildVillageArt } from './village-art.mjs?v=1';
+import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, LYSS_CABIN_IRON_COST,
+  BARRY_HOME_WOOD_COST, BARRY_HOME_IRON_COST } from './home-projects.mjs?v=2';
+import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, paintBarryHomeExterior } from './home-projects-art.mjs?v=2';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=11';
-import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=1';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=13';
+import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=2';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
-  paintWave, paintOpenLift, paintLodestone } from './canvas-art.mjs?v=2';
+  paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=3';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const allIronNodes = [...oreNodes, ...rootdeepOreNodes];
@@ -52,7 +53,8 @@ const journalCatalog = [
   { id: 'old-tunnel', title: 'The old minecart tunnel', body: 'The collapsed tunnel may join Rootdeep to Hugh’s mine. First clear the cave goblins. Relight the passage with Glowcaps so the dwarves can assess it; then bring timber for supports. The carts will run only after excavation is finished.' },
   { id: 'cove-bridge', title: 'The broken cove bridge', body: 'A wooden span once crossed above Driftwood Cove. Repair it with renewable wood and iron fittings to open a high route toward Lantern Dock. The lower shore path remains open.' },
   { id: 'village-home', title: 'A place of your own', body: 'After the King, a village plot can become a home for you and Alvin. Gather wood and iron to build it, then return to furnish its rooms whenever you like.' },
-  { id: 'lyss-cabin', title: 'A cabin for Lyss', body: 'Lyss’s tent can become a little log cabin beside the forge. This is her home, separate from your village house. Help furnish it after the walls go up.' }
+  { id: 'lyss-cabin', title: 'A cabin for Lyss', body: 'Lyss’s tent can become a little log cabin beside the forge. This is her home, separate from your village house. Help furnish it after the walls go up.' },
+  { id: 'barry-home', title: 'Barry’s workshop', body: 'Barry can make a sturdy home and workshop above the Crownwood bridge. Bring ten spare wood and four iron to build it.' }
 ];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
 const DAY_LENGTH = 136;
@@ -97,6 +99,7 @@ let hughStiltsRevealed = false;
 let beachBridgeQuest = 'unoffered';
 let villageHomeQuest = 'unoffered';
 let lyssCabinQuest = 'unoffered';
+let barryHomeQuest = 'unoffered';
 let villageHomeDecor = new Set();
 let lyssCabinDecor = new Set();
 let lyssCabinThanksSeen = false;
@@ -274,7 +277,7 @@ function paintPeers() {
       const size = Number.isFinite(alvin.size) ? clamp(alvin.size, 1, 3) : 1;
       ctx.save();
       if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
-      shadow(peer.alvinX, peer.alvinY, 17);
+      paintShadow(ctx, peer.alvinX, peer.alvinY, 17);
       drawSprite(ctx, sprites.alvin, peer.alvinX, peer.alvinY, (indoor ? 37 : 44) * size,
         indoor ? 1 : alvin.direction, indoor ? 0 : -Math.abs(Math.sin(alvin.gait || 0)) * 2.2,
         indoor ? -Math.PI / 2 : Math.sin(alvin.gait || 0) * .035);
@@ -287,7 +290,7 @@ function paintPeers() {
     const tilt = (pose.moving ? Math.sin(pose.gait) * .045 : 0) + pose.swing * -.23;
     ctx.save();
     if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
-    shadow(peer.x,peer.y,22);
+    paintShadow(ctx,peer.x,peer.y,22);
     drawSprite(ctx,sprites[pose.avatar],peer.x,peer.y,97,pose.direction,bob,tilt);
     if (pose.scarf === true) paintTrailScarf(ctx,peer.x,peer.y,pose.direction,bob);
     if (pose.helmet) {
@@ -401,14 +404,6 @@ function skyState() {
   return { from: 'day', to: 'day', mix: 0 };
 }
 
-function drawFirelight(x, y, radius, strength) {
-  const halo = ctx.createRadialGradient(x, y, 3, x, y, radius);
-  halo.addColorStop(0, 'rgba(255,179,84,' + strength + ')');
-  halo.addColorStop(1, 'rgba(255,179,84,0)');
-  ctx.fillStyle = halo;
-  ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-}
-
 function paintMarker(landmark) {
   const height = landmark.id === 'lyss' || landmark.id === 'hugh' ? 125 : 103;
   const y = landmark.y - height + Math.sin(animationClock * 2) * 4;
@@ -429,34 +424,10 @@ function paintMarker(landmark) {
   ctx.restore();
 }
 
-function shadow(x, y, width) {
-  ctx.fillStyle = '#1729214d';
-  ctx.beginPath();
-  ctx.ellipse(x, y + 1, width, width * .24, 0, 0, Math.PI * 2);
-  ctx.fill();
-}
-
 function paintRegionalLodestones() {
   for (const stone of regions[region].landmarks.filter(item => item.id.startsWith('lodestone-'))) {
     paintLodestone(ctx, stone, activatedLodestones.has(stone.id), animationClock);
   }
-}
-
-function paintRootdeepLock() {
-  if (hasRootKey || sharedDoors.has('rootdeep-entrance')) return;
-  const stone = crownwoodLandmarks.find(item => item.id === 'rootdeep-entrance');
-  const x = stone.x, y = stone.y - 4;
-  ctx.save();
-  ctx.strokeStyle = '#6e8072'; ctx.lineWidth = 11; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(x - 56, y - 8); ctx.lineTo(x - 56, y - 73);
-  ctx.moveTo(x + 56, y - 8); ctx.lineTo(x + 56, y - 73);
-  ctx.moveTo(x - 56, y - 65); ctx.lineTo(x + 56, y - 65);
-  ctx.moveTo(x - 56, y - 35); ctx.lineTo(x + 56, y - 35);
-  ctx.moveTo(x - 56, y - 5); ctx.lineTo(x + 56, y - 5); ctx.stroke();
-  ctx.fillStyle = '#e4c989'; ctx.strokeStyle = '#263a32'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(x, y - 49, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  ctx.fillRect(x - 3, y - 44, 6, 14);
-  ctx.restore();
 }
 
 function paint() {
@@ -487,9 +458,9 @@ function paint() {
   const night = (sky.from === 'night' ? 1 - sky.mix : 0) + (sky.to === 'night' ? sky.mix : 0);
   if (outdoors) paintCampTint(ctx, camera, night);
   if (region === 'camp') {
-    drawFirelight(2258, 595, 132, .18 + night * .42);
-    drawFirelight(2150, 582, 90, .08 + night * .25);
-    drawFirelight(4168, 677, 90, .12 + night * .31);
+    paintFirelight(ctx, 2258, 595, 132, .18 + night * .42);
+    paintFirelight(ctx, 2150, 582, 90, .08 + night * .25);
+    paintFirelight(ctx, 4168, 677, 90, .12 + night * .31);
     paintFlame(ctx, 2258, 604, animationClock);
     for (let i = 0; i < 7; i++) {
       const rise = (animationClock * 26 + i * 14) % 97;
@@ -497,7 +468,7 @@ function paint() {
       ctx.fillRect(2258 + Math.sin(rise * .08 + i) * 15, 594 - rise, 2.7, 2.7);
     }
     const lyss = landmarks[0];
-    shadow(lyss.x, lyss.y, 24);
+    paintShadow(ctx, lyss.x, lyss.y, 24);
     drawSprite(ctx, sprites.lyss, lyss.x, lyss.y, 98);
     paintCraftingProps(ctx, tools, treeStage);
     if (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) paintOpenLift(ctx,2415,groundAt(2415)-127);
@@ -506,25 +477,19 @@ function paint() {
       catnipReadyAt, catnipShowUntil, minecartOre, minecartUnlocked: fishing.tideglass === 'spent' && hughQuest }, animationClock);
   } else if (region === 'crownwood') {
     paintCrownwoodPines(ctx, tools.chopped, treeStage);
+    paintBarryHomeExterior(ctx,barryHomeQuest === 'complete');
     const barry = crownwoodLandmarks.find(item => item.id === 'barry');
-    shadow(barry.x, barry.y, 29);
-    ctx.save();
-    ctx.translate(barry.x, barry.y);
-    ctx.fillStyle = '#514c3c'; ctx.fillRect(-19,-49,38,41);
-    ctx.fillStyle = '#bd9680'; ctx.fillRect(-13,-77,26,29);
-    ctx.fillStyle = '#262322';
-    for (const [x,y] of [[-14,-77],[-6,-86],[5,-86],[15,-77]]) {
-      ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.fill();
-    }
-    ctx.fillStyle = '#302925'; ctx.fillRect(-6,-61,3,3); ctx.fillRect(5,-61,3,3);
-    ctx.fillStyle = '#48332a'; ctx.fillRect(-18,-8,14,8); ctx.fillRect(6,-8,14,8);
-    ctx.restore();
+    paintShadow(ctx, barry.x, barry.y, 29);
+    paintBarry(ctx, barry.x, barry.y);
     if (camera.x < 4100 && camera.x + camera.width > 3200) paintCrownwoodWater(ctx, animationClock);
     crystalNodes.forEach(node => {
       if (!crystals.has(node.id)) paintCrystal(ctx, node, animationClock);
     });
     paintRegionalLodestones();
-    paintRootdeepLock();
+    if (!hasRootKey && !sharedDoors.has('rootdeep-entrance')) {
+      const entrance = crownwoodLandmarks.find(item => item.id === 'rootdeep-entrance');
+      paintRootdeepEntranceLock(ctx, entrance);
+    }
   } else if (region === 'rootdeep') {
     paintRootdeepLights(ctx, camera, animationClock, night, glowcapLanternLit, branchLanternsLit);
     paintRootdeepTunnel(ctx, tunnelStage, animationClock);
@@ -536,12 +501,12 @@ function paint() {
     const guard = rootdeepLandmarks.find(item => item.id === 'rootdeep-guard');
     paintTunnelGuard(ctx,guard.x,guard.y,animationClock);
     const dorrin = rootdeepLandmarks.find(item => item.id === 'dorrin');
-    shadow(dorrin.x,dorrin.y,15);
+    paintShadow(ctx,dorrin.x,dorrin.y,15);
     paintDorrin(ctx,dorrin.x,dorrin.y,animationClock);
     for (const route of rootdeepSettlerRoutes) {
       const state = rootdeepSettlerState(route,rootdeepRoutineTime());
       if(state.atHome) continue;
-      shadow(state.x,state.y,13);
+      paintShadow(ctx,state.x,state.y,13);
       paintRootdeepSettler(ctx,state.x,state.y,animationClock,route.variant,.46,state.moving);
     }
     const high = rootdeepLandmarks.find(item => item.id === 'rootdeep-lift-high');
@@ -552,7 +517,7 @@ function paint() {
   } else if (region.startsWith('rootdeep-home-')) {
     const resident = regions[region].landmarks[1];
     if(rootdeepResidentAtHome(resident.id)) {
-      shadow(resident.x,resident.y,13);
+      paintShadow(ctx,resident.x,resident.y,13);
       paintRootdeepSettler(ctx,resident.x,resident.y,animationClock,
         region.endsWith('lantern') ? 1 : region.endsWith('stone') ? 2 : 3,.52);
     }
@@ -566,7 +531,7 @@ function paint() {
     }
     if (!tools.flint) paintFlint(ctx);
     paintRegionalLodestones();
-    shadow(hugh.x, hugh.y, 26);
+    paintShadow(ctx, hugh.x, hugh.y, 26);
     if(tunnelStage === 'open') {
       paintRootdeepSettler(ctx,2035,hugh.y,animationClock,1,.47);
       paintRootdeepSettler(ctx,2290,hugh.y,animationClock,3,.44);
@@ -614,7 +579,7 @@ function paint() {
     const indoor = region === 'hut';
     const catX = indoor ? 665 : cat.x;
     const catY = indoor ? 596 : cat.y;
-    shadow(catX, catY, 17);
+    paintShadow(ctx, catX, catY, 17);
     drawSprite(ctx, sprites.alvin, catX, catY, (indoor ? 37 : 44) * (1 + fishFed / 4), indoor ? 1 : cat.direction,
       indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2, indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
     if (specialRewards.has('bell')) paintAlvinBell(ctx,catX,catY,1 + fishFed / 4,indoor);
@@ -633,7 +598,7 @@ function paint() {
       ctx.stroke();
     }
   }
-  if (player.ground) shadow(player.x, player.y, 22);
+  if (player.ground) paintShadow(ctx, player.x, player.y, 22);
   if (animationClock < hitUntil && Math.floor(animationClock * 13) % 2) ctx.globalAlpha = .52;
   const bob = player.moving && player.ground ? -Math.abs(Math.sin(gait)) * 4 : 0;
   const tilt = (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
@@ -851,7 +816,9 @@ function currentLandmarks() {
     (item.id !== 'village-home-site' || !!victory?.ending && villageHomeQuest !== 'complete') &&
     (item.id !== 'village-home-door' || villageHomeQuest === 'complete') &&
     (item.id !== 'lyss-tent-site' || lyssCabinQuest !== 'complete') &&
-    (item.id !== 'lyss-cabin-door' || lyssCabinQuest === 'complete'));
+    (item.id !== 'lyss-cabin-door' || lyssCabinQuest === 'complete') &&
+    (item.id !== 'barry-home-site' || barryHomeQuest !== 'complete') &&
+    (item.id !== 'barry-home-door' || barryHomeQuest === 'complete'));
 }
 
 function canSleepAtBed() {
@@ -943,12 +910,15 @@ function updateNotes() {
   const lyssCabinNote = region === 'camp' && lyssCabinQuest === 'accepted'
     ? 'Lyss’s cabin · Wood ' + Math.min(spareWood(tools),LYSS_CABIN_WOOD_COST) + '/' + LYSS_CABIN_WOOD_COST +
       ' · Iron ' + Math.min(ironStock,LYSS_CABIN_IRON_COST) + '/' + LYSS_CABIN_IRON_COST : '';
+  const barryHomeNote = region === 'crownwood' && barryHomeQuest === 'accepted'
+    ? 'Barry’s workshop · Wood ' + Math.min(spareWood(tools),BARRY_HOME_WOOD_COST) + '/' + BARRY_HOME_WOOD_COST +
+      ' · Iron ' + Math.min(ironStock,BARRY_HOME_IRON_COST) + '/' + BARRY_HOME_IRON_COST : '';
   const tunnelNote = tunnelQuestAccepted && tunnelStage !== 'open' && (region === 'rootdeep' || region === 'mine')
     ? ({ goblins: 'Tunnel · Clear cave goblins ' + defeatedTunnelGoblins.size + ' / 2',
       light: 'Tunnel · Relight with 2 Glowcaps · ' + Math.min(glowcaps,2) + ' / 2',
       assess: 'Tunnel · Ask Dorrin to assess the lit passage',
       timber: 'Tunnel · Timber supports · ' + Math.min(spareWood(tools),4) + ' / 4' })[tunnelStage] : '';
-  el('quest-tracker').textContent = villageHomeNote || specialNote || lyssCabinNote || bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
+  el('quest-tracker').textContent = villageHomeNote || barryHomeNote || specialNote || lyssCabinNote || bridgeNote || rootKeyNote || tunnelNote || glowcapNote || (region.startsWith('rootdeep')
     ? (rootdeepQuest === 'complete' ? 'Rootglass winch repaired' : rootdeepQuest === 'accepted' ? 'Rootglass · ' + rootglass.size + ' / 3' : '')
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
@@ -1120,7 +1090,7 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 21, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 22, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned,
@@ -1130,7 +1100,7 @@ function saveCamp() {
       rootglass: [...rootglass], rootdeepQuest, gatheredGlowcaps: [...gatheredGlowcaps], glowcaps,
       glowcapQuest, glowcapLanternLit, branchLanternsLit: [...branchLanternsLit],
       tunnelStage, tunnelSeen, tunnelGuardSpoken, tunnelQuestAccepted, pendingTunnelReunion, hughStiltsRevealed,
-      beachBridgeQuest, villageHomeQuest, lyssCabinQuest, lyssCabinThanksSeen,
+      beachBridgeQuest, villageHomeQuest, lyssCabinQuest, barryHomeQuest, lyssCabinThanksSeen,
       villageHomeDecor: [...villageHomeDecor], lyssCabinDecor: [...lyssCabinDecor],
       defeatedTunnelGoblins: [...defeatedTunnelGoblins],
       rootKeyQuest, rootKeyGuidance, hasRootKey,
@@ -1204,6 +1174,7 @@ function begin(save) {
   regions.beach.terrain = beachBridgeQuest === 'complete' ? beachBridgeTerrain : beachTerrain;
   villageHomeQuest = ['accepted','complete'].includes(save?.villageHomeQuest) ? save.villageHomeQuest : 'unoffered';
   lyssCabinQuest = ['accepted','complete'].includes(save?.lyssCabinQuest) ? save.lyssCabinQuest : 'unoffered';
+  barryHomeQuest = ['accepted','complete'].includes(save?.barryHomeQuest) ? save.barryHomeQuest : 'unoffered';
   villageHomeDecor = new Set(['alvin-cushion','tapestry','bookshelf'].filter(id => Array.isArray(save?.villageHomeDecor) && save.villageHomeDecor.includes(id)));
   lyssCabinDecor = new Set(['herb-shelf','woven-rug','warm-lantern'].filter(id => Array.isArray(save?.lyssCabinDecor) && save.lyssCabinDecor.includes(id)));
   lyssCabinThanksSeen = save?.lyssCabinThanksSeen === true;
@@ -1272,7 +1243,7 @@ function begin(save) {
   el('mapButton').disabled = false;
   el('wave').disabled = false;
   // Only the original one-screen map has unrelated footing coordinates.
-  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
+  const footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
@@ -1311,7 +1282,8 @@ function enterRegion(next, footing) {
     }
   }
   backgrounds[next] ??= next === 'rootdeep' ? buildRootdeepArt(rootdeepQuest === 'complete')
-    : next === 'camp' ? buildCampArt(lyssCabinQuest === 'complete') : area.buildArt();
+    : next === 'camp' ? buildCampArt(lyssCabinQuest === 'complete')
+    : next === 'village' ? buildVillageArt(hasRootKey || sharedDoors.has('rootdeep-entrance')) : area.buildArt();
   player = createPlayer(footing, terrain);
   tunnelGoblins = next === 'rootdeep' && tunnelStage === 'goblins'
     ? [{id:'goblin-west',x:385,hp:64},{id:'goblin-east',x:495,hp:64}]
@@ -1737,6 +1709,32 @@ function barryDialogue() {
     ['Can we save him?', () => setDialogue('I want to believe so. Lyss still remembers the old ways. If only there were another way…', [['Back', barryDialogue]])],
     ['What happened here?', () => setDialogue('The shadows followed him from the ruins. Now every night they reach farther into the woods. We have to make it safe again, even if it means facing him.', [['Back', barryDialogue]])]
   ]);
+}
+
+function barryHomeBuildDialogue() {
+  openDialogue('barry-home-site');
+  recordJournalEntry('barry-home', { quiet: true });
+  visited.add('barry-home-site');
+  if(barryHomeQuest === 'unoffered') {
+    setDialogue('I’ve been fixing other people’s gear up here for years. A little home with room for my tools would be nice. Ten spare wood and four iron will do it.', [
+      ['I’ll help build it', () => {
+        barryHomeQuest='accepted';updateNotes();saveCamp();
+        setDialogue('Bring ten spare wood and four iron back to this spot. The marked pines grow back after a few nights.');
+      }],['Maybe later',closeDialogue]
+    ]);
+  } else if(spareWood(tools)<BARRY_HOME_WOOD_COST || ironStock<BARRY_HOME_IRON_COST) {
+    setDialogue('The workshop needs ten spare wood and four iron. You have '+spareWood(tools)+' spare wood and '+ironStock+' iron.');
+  } else {
+    setDialogue('You have enough materials for the workshop. Ready to put it together?', [
+      ['Build Barry’s home', () => {
+        tools.woodDonated=(tools.woodDonated??0)+BARRY_HOME_WOOD_COST;ironStock-=BARRY_HOME_IRON_COST;
+        barryHomeQuest='complete';notice='Barry’s workshop is ready';noticeUntil=animationClock+3;
+        updateNotes();updatePrompt();saveCamp();
+        setDialogue('There we go. A roof over my head and space for the tools. You’re welcome here whenever you need a rest.');
+      }],['Keep the materials',closeDialogue]
+    ]);
+  }
+  saveCamp();
 }
 
 function lanternKeeperDialogue() {
@@ -2757,6 +2755,10 @@ function interact() {
     homeBuildDialogue(id === 'village-home-site' ? 'village' : 'lyss');
     return;
   }
+  if (id === 'barry-home-site') {
+    barryHomeBuildDialogue();
+    return;
+  }
   if (id === 'village-home-decor' || id === 'lyss-cabin-decor') {
     homeDecorDialogue(id === 'village-home-decor' ? 'village' : 'lyss');
     return;
@@ -3537,90 +3539,3 @@ for (const [id, direction] of [['left', -1], ['right', 1]]) {
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, release));
 }
 el('down').addEventListener('pointerdown', event => {
-  if (!controlsActive() || region !== 'rootdeep' || !(rootdeepClimbing || nearRootdeepLadder())) return;
-  event.preventDefault();
-  rootdeepClimbing = true;
-  heldPointers.set(event.pointerId, 'down');
-  el('down').setPointerCapture(event.pointerId);
-});
-el('down').addEventListener('pointerup', event => heldPointers.delete(event.pointerId));
-el('down').addEventListener('pointercancel', event => heldPointers.delete(event.pointerId));
-el('down').addEventListener('click', event => {
-  if (!controlsActive()) return;
-  if (event.detail === 0 && region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
-    rootdeepClimbing = true;
-    player.y = Math.min(tunnelGuardSpoken ? rootdeepTerrain.floor.points[0][1]
-      : surfaceAt(rootdeepTerrain.byId.get('rootdeep-level-8'),ROOTDEEP_LADDER_X), player.y + 130);
-  } else if (!nearRootdeepLadder() && !(region === 'rootdeep' && player.ground === 'rootdeep-level-8' && !tunnelGuardSpoken)) dropThrough(player, terrain);
-});
-el('jump').addEventListener('pointerdown', event => {
-  event.preventDefault();
-  if (!controlsActive()) return;
-  if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
-    rootdeepClimbing = true;
-    heldPointers.set(event.pointerId, 'up');
-    el('jump').setPointerCapture(event.pointerId);
-  } else jump(player);
-});
-el('jump').addEventListener('pointerup', event => heldPointers.delete(event.pointerId));
-el('jump').addEventListener('pointercancel', event => heldPointers.delete(event.pointerId));
-el('jump').addEventListener('click', event => {
-  if (event.detail === 0 && controlsActive()) {
-    if (region === 'rootdeep' && (rootdeepClimbing || nearRootdeepLadder())) {
-      rootdeepClimbing = true;
-      player.y = Math.max(80, player.y - 130);
-    } else jump(player);
-  }
-});
-// Fire on press so touch players can keep a movement button held while tapping action.
-el('interact').addEventListener('pointerdown', event => {
-  if (!controlsActive()) return;
-  event.preventDefault();
-  interact();
-});
-// Keyboard and assistive-technology activation can dispatch click without pointerdown.
-el('interact').addEventListener('click', event => {
-  if (event.detail === 0) interact();
-});
-window.addEventListener('blur', clearControls);
-window.addEventListener('pagehide', () => { saveCamp(); disconnectPresence(); });
-window.addEventListener('pageshow', connectPresence);
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    clearControls();
-    saveCamp();
-    disconnectPresence('Away');
-  } else connectPresence();
-});
-new ResizeObserver(resize).observe(world);
-
-async function boot() {
-  try {
-    const [party, keepers] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp')
-    ]);
-    backgrounds.camp = buildCampArt();
-    sprites = {
-      boy: spriteBounds(party, 0, 1 / 3, .64),
-      girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
-      alvin: spriteBounds(party, 2 / 3, 1, .65),
-      lyss: spriteBounds(keepers, .5, 1, .55),
-      hugh: spriteBounds(keepers, 0, .5, .52)
-    };
-    drawPortrait(el('choose-boy').querySelector('canvas'), sprites.boy);
-    drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);
-    el('begin').disabled = false;
-    el('begin').textContent = 'Enter Alder Camp →';
-    const saved = getSavedCamp();
-    el('continue').hidden = !saved;
-    if (saved?.publicName) el('player-name').value = saved.publicName;
-    updatePresenceButton();
-    resize();
-    requestAnimationFrame(frame);
-  } catch (error) {
-    console.error('Camp load failed', error);
-    el('load-error').hidden = false;
-  }
-}
-
-boot();

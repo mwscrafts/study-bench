@@ -1,4 +1,4 @@
-import { random, poly, path, orb, stone } from './camp-art.mjs?v=12';
+import { random, poly, path, orb, stone } from './camp-art.mjs?v=15';
 import { rootdeepTerrain, rootdeepLights, rootdeepLandmarks, rootdeepBranchLanterns } from './rootdeep.mjs?v=9';
 
 const { width, height, floor, ledges } = rootdeepTerrain;

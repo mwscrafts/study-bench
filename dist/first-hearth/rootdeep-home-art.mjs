@@ -1,4 +1,4 @@
-import { poly, path, orb, stone } from './camp-art.mjs?v=12';
+import { poly, path, orb, stone } from './camp-art.mjs?v=15';
 
 const palettes = {
   lantern: { wall:'#45564d', light:'#e8b66c', accent:'#879477', rug:'#655345' },

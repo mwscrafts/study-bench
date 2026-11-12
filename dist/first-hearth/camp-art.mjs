@@ -298,6 +298,14 @@ export function paintCampTint(ctx, view, night) {
   ctx.fillRect(x,y,width,height);
 }
 
+export function paintFirelight(ctx, x, y, radius, strength) {
+  const halo = ctx.createRadialGradient(x, y, 3, x, y, radius);
+  halo.addColorStop(0, 'rgba(255,179,84,' + strength + ')');
+  halo.addColorStop(1, 'rgba(255,179,84,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+}
+
 export function paintFlame(ctx, x, y, clock) {
   const flicker = Math.sin(clock*14)*5 + Math.sin(clock*9)*3;
   poly(ctx,[[x-16,y],[x-13,y-21],[x-5,y-13],[x+2,y-35-flicker],[x+11,y-18],[x+14,y-26],[x+18,y]],'#e9904d');

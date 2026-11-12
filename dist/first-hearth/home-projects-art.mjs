@@ -1,5 +1,7 @@
-import { poly, path, orb, stone } from './camp-art.mjs';
-import { villageHomeTerrain, lyssCabinTerrain } from './home-projects.mjs?v=1';
+import { poly, path, orb, stone } from './camp-art.mjs?v=15';
+import { villageHomeTerrain, lyssCabinTerrain, barryHouseTerrain } from './home-projects.mjs?v=2';
+import { crownwoodTerrain } from './crownwood.mjs?v=13';
+import { surfaceAt } from './terrain.mjs?v=17';
 
 export function paintVillageHomeExterior(ctx,built) {
   const x=3190,y=630;
@@ -140,4 +142,78 @@ export function paintLyssCabinDecor(ctx,items) {
     poly(ctx,[[883,305],[913,305],[913,335],[883,335]],'#edbf79');
     orb(ctx,898,320,76,'rgba(255,203,117,.16)');
   }
+}
+
+export function paintBarryHomeExterior(ctx,built) {
+  const x=2300,y=surfaceAt(crownwoodTerrain.byId.get('rope-bridge'),2300);
+  if(!built) {
+    // A neat, marked foundation makes the planned home readable before construction.
+    poly(ctx,[[x-188,y+5],[x-151,y-16],[x+151,y-16],[x+188,y+5]],'#756a50');
+    for(const dx of [-130,-45,42,130]) stone(ctx,x+dx,y-10,28,14,'#b49b70');
+    path(ctx,[[x-130,y-70],[x+140,y-70]],'#b49b70',5);
+    path(ctx,[[x-137,y-4],[x-137,y-104],[x-95,y-104]],'#75583f',8);
+    path(ctx,[[x+137,y-4],[x+137,y-104],[x+95,y-104]],'#75583f',8);
+    poly(ctx,[[x-48,y-70],[x+48,y-70],[x+48,y-35],[x-48,y-35]],'#a99068');
+    return;
+  }
+  ctx.save();ctx.lineJoin='round';
+  // A timber and stone workshop cabin sits behind the bridge without changing its collision path.
+  poly(ctx,[[x-158,y],[x-158,y-205],[x+155,y-205],[x+155,y]],'#6e604b');
+  poly(ctx,[[x-145,y-9],[x-145,y-196],[x+143,y-196],[x+143,y-9]],'#aa8e68');
+  for(let row=0;row<8;row++) {
+    const yy=y-21-row*22;
+    path(ctx,[[x-140,yy],[x+138,yy]],row%2?'#906f4d':'#9e7b52',11);
+    for(const dx of [-126,126]) orb(ctx,x+dx,yy,4,'#ddbd83');
+  }
+  poly(ctx,[[x-190,y-199],[x,y-328],[x+191,y-199]],'#493f39');
+  poly(ctx,[[x-171,y-202],[x,y-317],[x+173,y-202]],'#6c5144');
+  path(ctx,[[x-189,y-199],[x,y-329],[x+189,y-199]],'#d0aa70',10);
+  for(let row=0;row<5;row++) path(ctx,[[x-158+row*9,y-220+row*19],[x+158-row*9,y-220+row*19]],row%2?'#805e49':'#765545',4);
+  // Chimney, warm windows and a wide workshop door.
+  poly(ctx,[[x+86,y-280],[x+86,y-388],[x+139,y-388],[x+139,y-229]],'#665244');
+  path(ctx,[[x+78,y-388],[x+147,y-388]],'#d4b77d',7);
+  for(const dx of [-94,94]) {
+    poly(ctx,[[x+dx-32,y-151],[x+dx+32,y-151],[x+dx+32,y-79],[x+dx-32,y-79]],'#4c4035');
+    poly(ctx,[[x+dx-25,y-144],[x+dx+25,y-144],[x+dx+25,y-85],[x+dx-25,y-85]],'#d0b77d');
+    path(ctx,[[x+dx,y-143],[x+dx,y-86]],'#735940',5);path(ctx,[[x+dx-25,y-115],[x+dx+25,y-115]],'#735940',5);
+  }
+  poly(ctx,[[x-26,y],[x-26,y-129],[x-8,y-151],[x+55,y-151],[x+76,y-129],[x+76,y]],'#413d35');
+  poly(ctx,[[x-17,y],[x-17,y-128],[x,y-141],[x+47,y-141],[x+66,y-126],[x+66,y]],'#674d39');
+  orb(ctx,x+49,y-72,5,'#f0ce83');
+  // Tool rack silhouette and a bench identify this as Barry’s maker’s home.
+  path(ctx,[[x-124,y-56],[x-58,y-56]],'#5f4937',8);
+  for(const dx of [-111,-92,-73]) path(ctx,[[x+dx,y-61],[x+dx+6,y-83],[x+dx+10,y-62]],'#c1a36c',3);
+  path(ctx,[[x-119,y-37],[x-61,y-37]],'#8c6845',8);
+  ctx.restore();
+}
+
+export function buildBarryHomeArt() {
+  const canvas=document.createElement('canvas');canvas.width=barryHouseTerrain.width;canvas.height=barryHouseTerrain.height;
+  const ctx=canvas.getContext('2d');ctx.lineJoin='round';
+  interiorShell(ctx,canvas.width,canvas.height,'#846b50','#594535','#5a4a3a');
+  window(ctx,420,286);window(ctx,1010,286);
+  // A compact sleeping nook, tool rack, bench, and forge make this Barry’s home and workshop.
+  poly(ctx,[[122,648],[122,478],[340,478],[340,648]],'#674d37');
+  poly(ctx,[[145,632],[145,505],[317,505],[317,632]],'#c5a37a');
+  poly(ctx,[[145,505],[230,467],[317,505]],'#79604a');
+  path(ctx,[[167,548],[295,548]],'#e0cba6',13);
+  poly(ctx,[[595,650],[613,510],[832,510],[852,650]],'#67503b');
+  path(ctx,[[580,508],[859,508]],'#b69362',18);
+  for(const x of [615,825]) path(ctx,[[x,520],[x,650]],'#4f3e30',12);
+  for(let i=0;i<5;i++) {
+    const x=638+i*39;
+    path(ctx,[[x,492],[x+9,420+(i%2)*15],[x+22,492]],'#b7a77f',6);
+    path(ctx,[[x+9,421+(i%2)*15],[x+24,398+(i%2)*15]],'#604b38',4);
+  }
+  poly(ctx,[[984,648],[984,439],[1213,439],[1213,648]],'#5e5041');
+  poly(ctx,[[1004,633],[1004,469],[1193,469],[1193,633]],'#393832');
+  poly(ctx,[[1022,625],[1049,564],[1072,615],[1099,551],[1128,625],[1176,625]],'#e6a05d');
+  orb(ctx,1100,580,78,'rgba(255,169,91,.18)');
+  path(ctx,[[153,168],[1190,168]],'#c3a270',15);
+  for(const x of [225,335,1040,1125]) {
+    path(ctx,[[x,155],[x,332]],'#6c523b',5);
+    path(ctx,[[x-20,326],[x+20,326]],'#a4875d',5);
+    for(let i=0;i<3;i++) path(ctx,[[x-12+i*10,320],[x-5+i*10,285-(i%2)*16]],'#b38d5b',3);
+  }
+  return canvas;
 }
