@@ -145,14 +145,13 @@ export function nearbyLandmark(player, candidates) {
   }, undefined);
 }
 
-export function patrolShadows(patrols, phase, nightIndex) {
+export function patrolShadows(patrols, phase) {
   if (phase < 70 || phase >= 111) return [];
-  const tempo = 1 + Math.min(nightIndex, 6) * .16;
   return patrols.map(({surface, left, right, offset}, index) => {
-    const t = (phase - 70) * tempo + offset;
+    const t = phase - 70 + offset;
     const x = left + (.5 + .5 * Math.sin(t * .75)) * (right - left);
     const hop = Math.max(0, Math.sin(t * 2.5));
-    const y = surfaceAt(surface, x) - hop * (27 + Math.min(nightIndex, 6) * 5);
+    const y = surfaceAt(surface, x) - hop * 27;
     return { x, y, index };
   });
 }
