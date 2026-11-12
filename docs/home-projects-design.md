@@ -1,31 +1,30 @@
-# Village home and Lyss cabin maintainer notes
+# First Hearth home projects
 
-## Two separate builds
+## Separate builds
 
 | Project | Location | Unlock | Material cost | Interior |
 | --- | --- | --- | --- | --- |
 | Player home | Village east of the old arch, plot x≈3170 | Player's King ending | 8 spare wood, 4 iron | `village-home` |
 | Lyss cabin | Existing camp tent x≈1960 | Available when encountered | 6 spare wood, 2 iron | `lyss-cabin` |
+| Barry workshop home | Crownwood rope bridge, near Barry | Available when encountered | 10 spare wood, 4 iron | `barry-home` |
 
-- The village's celebration house remains separate. Its existing door and guests are not repurposed. `village.mjs` extends the road to x=3600 with an east plot; the player house exterior at x≈3190 appears only after building. The old eastern-path interaction now points toward the plot.
-- Lyss's tent at x≈1960 is replaced in `buildCampArt(lyssCabinBuilt)` with a detailed log cabin. On load, a completed cabin rebuilds the cached camp background before entering; on completion, the current camp background is rebuilt immediately. Lyss's quest dialogue gets a one-time thank-you after completion.
-- Each project uses a saved `unoffered/accepted/complete` state (`villageHomeQuest`, `lyssCabinQuest`). The HUD tracker appears only after acceptance in the relevant exterior region. Costs use `spareWood(tools)` and `tools.woodDonated` for renewable wood, and `ironStock` for iron.
+Each project has an independent saved `unoffered/accepted/complete` state, material spend, route, and room. Costs use `spareWood(tools)` and `tools.woodDonated` for renewable wood, and `ironStock` for iron. The HUD tracker appears after accepting a project in its exterior region. Barry's existing talk point and the bridge route remain intact; the worksite is beside them, and his door appears only after construction.
+
+The village celebration house remains separate from the player's home. Its door and guest scene are not repurposed. Lyss's completed tent becomes a log cabin in camp artwork.
 
 ## Interiors and decor
 
-- `home-projects.mjs` defines two terrain/floor and landmark sets. `world-data.mjs` registers both rooms with distinct region IDs for correct multiplayer presence grouping and explicit exit footings. The village door is hidden until built and the plot marker hides afterward. The same swap occurs for Lyss's tent site and cabin door.
-- `home-projects-art.mjs` draws the village home's hearth, bed, tables and windows, and Lyss's cabin fireplace, workbench and window at native canvas resolution. Decor is a free, reversible choice after construction, with saved sets:
-  - `villageHomeDecor`: `alvin-cushion`, `tapestry`, `bookshelf`.
-  - `lyssCabinDecor`: `herb-shelf`, `woven-rug`, `warm-lantern`.
-- Both rooms have an interior decor landmark and an exit to their own exterior. Neither decor set changes the other. The village home requires a King ending; Lyss's cabin does not.
+- `home-projects.mjs` defines the three home projects' floor and landmark data. `world-data.mjs` registers distinct room IDs and exits for public presence and route handling.
+- `home-projects-art.mjs` draws the player home's hearth, bed, tables and windows; Lyss's cabin fireplace and workbench; and Barry's bed nook, tool rack, workbench and forge. Barry's room has its own exit and no new decor system.
+- `villageHomeDecor` and `lyssCabinDecor` remain separate reversible furnishing sets. The village home still requires a King ending; Lyss's cabin and Barry's home do not.
 
 ## Source map and review
 
-- `terrain.mjs`: Lyss tent/cabin exterior landmarks.
-- `camp-art.mjs`: tent/cabin exterior art selected by state.
-- `village.mjs`: extended village path and plot/door landmarks.
-- `home-projects.mjs` and `home-projects-art.mjs`: room data and art.
-- `playtest.mjs`: dialogue, material spend, tracking, save/load, interior furnishings and exterior rendering.
-- `world-data.mjs`: distinct rooms, gates and dialogue labels.
-- Current cache references: `terrain.mjs?v=16`, `camp-art.mjs?v=14`, `village.mjs?v=13`, `home-projects.mjs?v=1`, `home-projects-art.mjs?v=1`, `world-data.mjs?v=10`, `playtest.mjs?v=71`.
-- Owner/Ash manual route: check the village plot stays inaccessible without the player's King ending, build each project independently, enter/exit both rooms, toggle each furnishing, reload in each room, and confirm decorations, exteriors and material stock persist.
+- `camp-art.mjs`: Lyss's tent/cabin exterior selected by saved state.
+- `village.mjs` and `village-art.mjs`: village route data and the separate village/celebration-room drawings.
+- `home-projects.mjs` and `home-projects-art.mjs`: house project data, art, costs, and interiors.
+- `playtest.mjs`: dialogue, material spend, tracking, saves, and state-dependent exterior rendering.
+- `world-data.mjs`: rooms, gates and labels; `field-map.mjs`: interior identification.
+- Cache references: `terrain.mjs?v=17`, `camp-art.mjs?v=15`, `village.mjs?v=14`, `village-art.mjs?v=1`, `home-projects.mjs?v=2`, `home-projects-art.mjs?v=2`, `world-data.mjs?v=13`, `field-map.mjs?v=2`, `playtest.mjs?v=81`.
+
+Owner/Ash should visually check each project in the live game, including material costs, construction, entrance/exit, persistence after reload, village artwork, and Barry's exterior. Do not use the public game to test without the owner's specific authorization.

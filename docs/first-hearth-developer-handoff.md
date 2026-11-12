@@ -9,6 +9,20 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Lantern Village art and Barry's home
+
+- Rebuilt Lantern Village's background and residents with layered cottages, timber/stone detail, faces, street lamps, planting, cobbles, and a more finished eastern arch. The celebration house now has a detailed hall interior with guests, a feast table, cake, wine goblets, and warm lighting. Route coordinates and interaction landmarks remain in `village.mjs`; drawing lives in `village-art.mjs`.
+- Rootdeep's Dorrin and Stonecarver appear as visiting dwarves in the village once the Root Key opens Rootdeep; the scene is drawn into the village background on region entry. No quest or multiplayer state is shared by this appearance.
+- Added Barry's buildable workshop home beside his existing Crownwood location. It costs 10 spare wood and 4 iron, saves through `barryHomeQuest`, has a separate `barry-home` room/exit, and does not replace Barry's existing interaction or bridge route.
+- Versioned imports are aligned: `village.mjs?v=14`, `village-art.mjs?v=1`, `home-projects.mjs?v=2`, `home-projects-art.mjs?v=2`, `world-data.mjs?v=13`, `field-map.mjs?v=2`, and `playtest.mjs?v=84`; entry `index.html` uses `playtest.mjs?v=84`.
+- Local source checkpoint: `c718690`; the publishable copy is in GitHub PR #2. JavaScript syntax checks and `git diff --check` passed. No public gameplay or mobile visual review has been performed. The owner and Ash should review the visuals and Barry’s construction flow in-game.
+
+### Canvas helper cleanup (local, not published)
+
+- Moved the state-independent oval ground shadow to `canvas-art.mjs` (`paintShadow`), camp firelight drawing to `camp-art.mjs`, and Barry plus Rootdeep entrance lock drawing to `crownwood-art.mjs`. `playtest.mjs` still chooses their visibility and placement and owns scene composition/draw order, as directed by `AGENTS.md`.
+- Peer pose smoothing and departed-peer expiration/UI updates remain coupled to `paintPeers()`; the time label remains a DOM update in `paint()`. Neither was moved.
+- Cache versions: `camp-art.mjs?v=15`, `crownwood-art.mjs?v=15`, `canvas-art.mjs?v=3`, `rootdeep-art.mjs?v=14`, `rootdeep-home-art.mjs?v=2`, `rootdeep-home.mjs?v=2`, `world-data.mjs?v=12`, and `playtest.mjs?v=80`; importers are aligned. Checked JavaScript syntax, art-module imports, and `git diff --check`; no live gameplay/browser review or deployment was performed. No commit was made.
+
 The newest recovery is on `main`, followed by the night-scaling and co-op shadow changes. The earlier UI changes from `6e8783d610a6b586c6992eb47b594ae4f1dbec01` and `3d648841ce12105895c00688fac93677f2daa7bd` remain.
 
 The owner's 10-item review remains the roadmap: larger Continue Journey; wider movement arrows; coordinated sleep; co-op shadow fights; public Alvin cosmetics; fishing/pet counts; shorter nights; easier Easy Composure drain; remove Hugh's spoiler; ghost fade at dawn.
@@ -31,7 +45,7 @@ The field journal now:
 - Glowcap patches regrow after three night advances, like marked pines. Harvest-night timestamps are saved; old saves without timestamps start the countdown from their current night when loaded. Glowcap stock can exceed the original three-node count so future restoration projects can draw on regrown supplies.
 - Shows a brief journal-update notice for newly discovered entries where the current game notice allows it. No modal or forced tutorial stops movement.
 
-Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=83` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4` and `mine-art.mjs?v=07`. Bump the relevant query string when either module changes. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
+Cache versions in `dist/first-hearth/index.html` are currently `playtest.mjs?v=84` and `playtest.css?v=19`. The playtest imports `presence.mjs?v=4` and `mine-art.mjs?v=07`. Bump the relevant query string when an imported module changes. The site deploys from `main`; commits there trigger the configured Cloudflare Worker build/deploy.
 
 **Gameplay verification status:** the journal, HUD gates, and Glowcap regrowth code were statically reviewed and the committed files were confirmed on `main`; Codex did not play the public game or verify the live deployment. The owner and Ash do live gameplay checks. Do not log into or play the public game to test a change without the owner's explicit authorization for that specific test. When reporting work, distinguish source review, automated checks, live gameplay, and deployment status.
 

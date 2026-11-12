@@ -2,6 +2,13 @@
 // so the game loop can focus on deciding what to draw, not how each shape is drawn.
 export const WAVE_TIME = 1.25;
 
+export function paintShadow(context, x, y, width) {
+  context.fillStyle = '#1729214d';
+  context.beginPath();
+  context.ellipse(x, y + 1, width, width * .24, 0, 0, Math.PI * 2);
+  context.fill();
+}
+
 export function paintLodestone(context, stone, active, clock) {
   const { x, y } = stone;
   const pulse = active ? .5 + Math.sin(clock * 4 + x) * .18 : .12;

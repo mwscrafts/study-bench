@@ -2,11 +2,12 @@
 export const mapRegionIds = [
   'camp','crownwood','mine','beach','rootdeep','hearth','king','village',
   'hut','lyss-cabin','village-home','house',
-  'rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common'
+  'rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common','barry-home'
 ];
 
 export const mapParent = {
   hut:'camp', 'lyss-cabin':'camp', 'village-home':'village', house:'village',
+  'barry-home':'crownwood',
   'rootdeep-home-lantern':'rootdeep', 'rootdeep-home-stone':'rootdeep', 'rootdeep-home-common':'rootdeep'
 };
 
@@ -34,7 +35,7 @@ const links = [
 
 const placeNames = {
   hut:'Alvin’s Hut', 'lyss-cabin':'Lyss’s Cabin', 'village-home':'Your Village Home',
-  house:'Homecoming House', 'rootdeep-home-lantern':'Lantern Keeper’s Home',
+  house:'Homecoming House', 'barry-home':'Barry’s Workshop', 'rootdeep-home-lantern':'Lantern Keeper’s Home',
   'rootdeep-home-stone':'Stonecarver’s Home', 'rootdeep-home-common':'Common House'
 };
 const ns='http://www.w3.org/2000/svg';

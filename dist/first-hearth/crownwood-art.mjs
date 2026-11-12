@@ -1,5 +1,5 @@
 import { surfaceAt } from './terrain.mjs';
-import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
+import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs?v=15';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=13';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;
@@ -11,6 +11,35 @@ const drop = landmark('mist-drop');
 const hearth = landmark('first-hearth');
 const king = landmark('king-trail');
 const rootdeep = landmark('rootdeep-entrance');
+
+export function paintBarry(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#514c3c'; ctx.fillRect(-19,-49,38,41);
+  ctx.fillStyle = '#bd9680'; ctx.fillRect(-13,-77,26,29);
+  ctx.fillStyle = '#262322';
+  for (const [x,y] of [[-14,-77],[-6,-86],[5,-86],[15,-77]]) {
+    ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.fill();
+  }
+  ctx.fillStyle = '#302925'; ctx.fillRect(-6,-61,3,3); ctx.fillRect(5,-61,3,3);
+  ctx.fillStyle = '#48332a'; ctx.fillRect(-18,-8,14,8); ctx.fillRect(6,-8,14,8);
+  ctx.restore();
+}
+
+export function paintRootdeepEntranceLock(ctx, stone) {
+  const x = stone.x, y = stone.y - 4;
+  ctx.save();
+  ctx.strokeStyle = '#6e8072'; ctx.lineWidth = 11; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x - 56, y - 8); ctx.lineTo(x - 56, y - 73);
+  ctx.moveTo(x + 56, y - 8); ctx.lineTo(x + 56, y - 73);
+  ctx.moveTo(x - 56, y - 65); ctx.lineTo(x + 56, y - 65);
+  ctx.moveTo(x - 56, y - 35); ctx.lineTo(x + 56, y - 35);
+  ctx.moveTo(x - 56, y - 5); ctx.lineTo(x + 56, y - 5); ctx.stroke();
+  ctx.fillStyle = '#e4c989'; ctx.strokeStyle = '#263a32'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y - 49, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillRect(x - 3, y - 44, 6, 14);
+  ctx.restore();
+}
 
 function canopy(ctx, x, y, size, tone, tip) {
   const edge = [[-.95,.34],[-1,-.1],[-.73,-.41],[-.43,-.46],[-.22,-.62],[.23,-.69],[.49,-.53],[.79,-.44],[1,-.08],[.82,.32],[.36,.34],[.17,.52],[-.3,.5]];
