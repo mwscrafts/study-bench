@@ -24,7 +24,7 @@ import { paintRestoredKing } from './village.mjs?v=13';
 import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, LYSS_CABIN_IRON_COST } from './home-projects.mjs?v=1';
 import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor } from './home-projects-art.mjs?v=1';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
-import { createPresence } from './presence.mjs?v=2';
+import { createPresence } from './presence.mjs?v=3';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=11';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=1';
@@ -209,7 +209,8 @@ const presence = createPresence({
   isHidden: () => document.hidden,
   onChange: updatePresenceButton,
   onDoorsChange: () => { updatePrompt(); updateNotes(); },
-  onNotesChange: () => { if (playing) updateNotes(); }
+  onNotesChange: () => { if (playing) updateNotes(); },
+  onShadowState: applySharedShadowState
 });
 const peers = presence.peers;
 const sharedDoors = presence.sharedDoors;
@@ -306,6 +307,24 @@ function syncPublicClock() {
   }
   publicClockCycle = cycle;
   phaseClock = (now - cycle * WORLD_CYCLE_MS) / 1000;
+}
+
+function applySharedShadowState(message) {
+  if (!message || message.region !== region || message.cycle !== publicClockCycle || !Number.isInteger(message.index)) return;
+  const id = region + ':' + nightIndex + ':' + message.index;
+  const target = creatures.find(creature => creature.index === message.index);
+  const x = Number.isFinite(message.x) ? message.x : target?.x ?? player.x;
+  const y = Number.isFinite(message.y) ? message.y : target?.y ?? player.y;
+  shadowHealth.set(id, Math.max(0, Number(message.hp) || 0));
+  if (message.defeated && !defeatedShadows.has(id)) {
+    defeatedShadows.add(id);
+    creatures = creatures.filter(creature => creature.index !== message.index);
+    if (message.rewarded) {
+      shadowStock++;
+      floater(floaters, x, y - 116, '+1 shadow');
+    }
+    updateNotes(); saveCamp();
+  }
 }
 
 function skyState() {
@@ -618,17 +637,21 @@ function updateAlvinCombat() {
       const target = creatures.find(item => item.index === attack.index);
       if (target) {
         const id = region + ':' + nightIndex + ':' + target.index;
-        const remaining = (shadowHealth.get(id) ?? 60) - power;
-        shadowHealth.set(id,remaining);
+        if (onlineEnabled && presence.isConnected()) {
+          presence.hitShadow(target.index, power, target.x, target.y, 'alvin');
+        } else {
+          const remaining = (shadowHealth.get(id) ?? 60) - power;
+          shadowHealth.set(id,remaining);
+          if (remaining <= 0) {
+            defeatedShadows.add(id);
+            creatures = creatures.filter(item => item !== target);
+            shadowStock++;
+            floater(floaters,target.x,target.y-116,'+1 shadow');
+            updateNotes(); saveCamp();
+          }
+        }
         puff(particles,target.x,target.y-44,'#d9b8ea',8);
         floater(floaters,target.x,target.y-90,'Alvin −'+power);
-        if (remaining <= 0) {
-          defeatedShadows.add(id);
-          creatures = creatures.filter(item => item !== target);
-          shadowStock++;
-          floater(floaters,target.x,target.y-116,'+1 shadow');
-          updateNotes(); saveCamp();
-        }
       }
     }
   }
@@ -2282,15 +2305,19 @@ function updateSwing(dt) {
           const basePower = equipped === 'godslayer' ? 999 : equipped === 'shadowBlade' ? 100
             : equipped === 'ironSword' ? 70 : equipped === 'pickaxe' ? 45 : 32;
           const power = equipped === 'godslayer' ? basePower : Math.max(1, Math.floor(basePower * composureDamageFactor()));
-          const remaining = (shadowHealth.get(id) ?? 60) - power;
           result = { x: target.x, y: target.y, damage: power };
-          shadowHealth.set(id, remaining);
-          if (remaining <= 0) {
-            defeatedShadows.add(id);
-            creatures = creatures.filter(creature => creature !== target);
-            shadowStock++;
-            floater(floaters, target.x, target.y - 78, '+1 shadow');
-            updateNotes(); saveCamp();
+          if (onlineEnabled && presence.isConnected()) {
+            presence.hitShadow(target.index, power, target.x, target.y, 'player');
+          } else {
+            const remaining = (shadowHealth.get(id) ?? 60) - power;
+            shadowHealth.set(id, remaining);
+            if (remaining <= 0) {
+              defeatedShadows.add(id);
+              creatures = creatures.filter(creature => creature !== target);
+              shadowStock++;
+              floater(floaters, target.x, target.y - 78, '+1 shadow');
+              updateNotes(); saveCamp();
+            }
           }
         }
   
