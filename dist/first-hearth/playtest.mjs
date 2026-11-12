@@ -2,7 +2,7 @@ import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
 import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=15';
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes, crownwoodTerrain, crownwoodKingBridgeTerrain,
-  KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=14';
+  KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=15';
 import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow,
   paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=16';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';

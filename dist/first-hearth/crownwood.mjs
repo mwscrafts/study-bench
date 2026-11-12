@@ -69,7 +69,7 @@ const patrols = [
   { surface: three, left: 1295, right: 1420, offset: 0 },
   { surface: bridge, left: 2685, right: 3065, offset: 2.2 },
   { surface: bridge, left: 3650, right: 4010, offset: 4.5 },
-  { surface: crown, left: 4910, right: 5240, offset: 1.3 }
+  { surface: kingBridgeWest, left: 4910, right: 5055, offset: 1.3 }
 ];
 
 export function crownwoodShadows(phase, nightIndex) {
