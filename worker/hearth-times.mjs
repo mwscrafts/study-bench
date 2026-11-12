@@ -3,6 +3,7 @@ import { DurableObject } from 'cloudflare:workers';
 const PATH = '/first-hearth/api/times';
 const PRESENCE_PATH = '/first-hearth/api/presence';
 const BOARD_PATH = '/first-hearth/api/noticeboard';
+const PUBLIC_CYCLE_MS = 136000;
 const response = (data, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
 });
@@ -128,10 +129,18 @@ export class HearthPresence extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.doors = new Set();
+    this.sleepVotes = new Set();
+    this.clockOffsetMs = 0;
     this.shadowCycleState = { cycle: null, states: {} };
     ctx.blockConcurrencyWhile(async () => {
-      if (ctx.getWebSockets().length) this.doors = new Set(await ctx.storage.get('opened-doors') ?? []);
-      else await ctx.storage.delete('opened-doors');
+      this.clockOffsetMs = await ctx.storage.get('public-clock-offset') ?? 0;
+      if (ctx.getWebSockets().length) {
+        this.doors = new Set(await ctx.storage.get('opened-doors') ?? []);
+        this.sleepVotes = new Set(await ctx.storage.get('sleep-votes') ?? []);
+      } else {
+        await ctx.storage.delete('opened-doors');
+        await ctx.storage.delete('sleep-votes');
+      }
       this.shadowCycleState = await ctx.storage.get('shared-shadow-state') ?? { cycle: null, states: {} };
     });
   }
@@ -140,15 +149,18 @@ export class HearthPresence extends DurableObject {
     if (request.method !== 'GET' || request.headers.get('Upgrade')?.toLowerCase() !== 'websocket')
       return response({ error: 'WebSocket required' }, 426);
     this.expireStalePeers(Date.now());
-    if (!this.ctx.getWebSockets().length && this.doors.size) {
+    if (!this.ctx.getWebSockets().length) {
       this.doors.clear();
+      this.sleepVotes.clear();
       await this.ctx.storage.delete('opened-doors');
+      await this.ctx.storage.delete('sleep-votes');
     }
     const url = new URL(request.url);
     const suppliedId = url.searchParams.get('player');
     const playerId = typeof suppliedId === 'string' &&
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedId)
       ? suppliedId : crypto.randomUUID();
+    if (this.sleepVotes.delete(playerId)) await this.ctx.storage.put('sleep-votes', [...this.sleepVotes]);
     const [client, server] = Object.values(new WebSocketPair());
     this.ctx.acceptWebSocket(server);
     const now = Date.now();
@@ -160,17 +172,53 @@ export class HearthPresence extends DurableObject {
         peer.pose.region, { type: 'left', id: peer.id, temporary: true });
       try { old.close(4000, 'Session reconnected'); } catch { /* An expired socket may already be closed. */ }
     }
-    server.send(JSON.stringify({ type: 'ready', doors: [...this.doors] }));
+    server.send(JSON.stringify({ type: 'ready', doors: [...this.doors], clockOffsetMs: this.clockOffsetMs }));
     return new Response(null, { status: 101, webSocket: client });
   }
 
   async ensureShadowCycle() {
-    const cycle = Math.floor(Date.now() / 136000);
+    const cycle = Math.floor((Date.now() + this.clockOffsetMs) / PUBLIC_CYCLE_MS);
     if (this.shadowCycleState?.cycle !== cycle) {
       this.shadowCycleState = { cycle, states: {} };
       await this.ctx.storage.put('shared-shadow-state', this.shadowCycleState);
     }
     return this.shadowCycleState;
+  }
+
+  activeSleepPeers(except = null, now = Date.now()) {
+    return this.ctx.getWebSockets().filter(socket => {
+      if (socket === except) return false;
+      const peer = socket.deserializeAttachment();
+      const lastSeen = peer?.lastAt || peer?.connectedAt || 0;
+      return !!peer?.id && lastSeen > 0 && now - lastSeen < 45000;
+    }).map(socket => socket.deserializeAttachment());
+  }
+
+  broadcastAll(message) {
+    const payload = JSON.stringify(message);
+    for (const socket of this.ctx.getWebSockets()) {
+      try { socket.send(payload); } catch { /* An interrupted peer will reconnect. */ }
+    }
+  }
+
+  async updateSleepVote(except = null) {
+    const peers = this.activeSleepPeers(except);
+    const ids = new Set(peers.map(peer => peer.id));
+    for (const id of this.sleepVotes) if (!ids.has(id)) this.sleepVotes.delete(id);
+    if (peers.length && peers.every(peer => this.sleepVotes.has(peer.id))) {
+      const phase = ((Date.now() + this.clockOffsetMs) % PUBLIC_CYCLE_MS + PUBLIC_CYCLE_MS) % PUBLIC_CYCLE_MS;
+      this.clockOffsetMs += PUBLIC_CYCLE_MS - phase;
+      const restedIds = peers.filter(peer => this.sleepVotes.has(peer.id)).map(peer => peer.id);
+      this.sleepVotes.clear();
+      await this.ctx.storage.put('public-clock-offset', this.clockOffsetMs);
+      await this.ctx.storage.delete('sleep-votes');
+      this.broadcastAll({ type: 'sleep-complete', clockOffsetMs: this.clockOffsetMs, restedIds });
+      return;
+    }
+    await this.ctx.storage.put('sleep-votes', [...this.sleepVotes]);
+    this.broadcastAll({ type: 'sleep-status',
+      votes: peers.filter(peer => this.sleepVotes.has(peer.id)).length,
+      total: peers.length });
   }
 
   async sendShadowSnapshot(socket, region) {
@@ -245,6 +293,14 @@ export class HearthPresence extends DurableObject {
       await this.applyShadowHit(socket, data);
       return;
     }
+    if (data?.type === 'sleep-vote') {
+      const peer = socket.deserializeAttachment();
+      if (!peer?.pose || Date.now() - peer.lastAt > 10000 || peer.pose.region !== 'hut'
+        || Math.abs(peer.pose.x - 410) > 110 || Math.abs(peer.pose.y - 650) > 140) return;
+      this.sleepVotes.add(peer.id);
+      await this.updateSleepVote();
+      return;
+    }
     if (data?.type !== 'pose') return;
     const pose = readPose(data.pose);
     if (!pose) return;
@@ -262,6 +318,7 @@ export class HearthPresence extends DurableObject {
     this.broadcast(others, pose.region, { type: 'pose', id: prior.id, pose });
     if (prior.pose?.region !== pose.region && SHADOW_REGIONS.has(pose.region))
       await this.sendShadowSnapshot(socket, pose.region);
+    await this.updateSleepVote();
   }
 
   broadcast(sockets, region, message) {
@@ -280,9 +337,14 @@ export class HearthPresence extends DurableObject {
     const temporary = code !== 1000 || reason === 'Away';
     if (peer?.pose && !replacement) this.broadcast(this.ctx.getWebSockets().filter(other => other !== socket),
       peer.pose.region, { type: 'left', id: peer.id, temporary });
+    if (peer?.id && !replacement) this.sleepVotes.delete(peer.id);
     if (!this.ctx.getWebSockets().some(other => other !== socket)) {
       this.doors.clear();
+      this.sleepVotes.clear();
       await this.ctx.storage.delete('opened-doors');
+      await this.ctx.storage.delete('sleep-votes');
+    } else if (!replacement) {
+      await this.updateSleepVote(socket);
     }
   }
 
