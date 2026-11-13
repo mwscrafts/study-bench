@@ -21,20 +21,28 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 - The owner approved a shared angular rune with coastal tideglass, forest roots and moss, and dwarven copper, iron, and violet mineral details. The transparent game spritesheet is `dist/first-hearth/lodestones.webp`. `playtest.mjs` crops its three columns and maps them to the existing `lodestone-shore`, `lodestone-canopy`, and `lodestone-mine` landmarks. The sites, interactions, activation saves, and progression remain the same.
 - Code and artwork commit `f244195b04575673b9e83a402df28be9219d1dc5` is on `main`. Cache versions are `canvas-art.mjs?v=4` and entry `playtest.mjs?v=96`. The generated sprites are loaded during game startup and drawn with their regional activation glows.
-- No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment, but completion and mobile appearance remain unverified. The owner’s next visual check is to inspect all three stones. The next requested art task is the rowboat graphic.
+- No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment, but completion and mobile appearance remain unverified. The owner’s next visual check is to inspect all three stones. The rowboat art update is recorded below.
 
 ### Save-safe journey start
 
 - The owner reported that Continue saved playtest sat beside Enter Alder Camp, making a new start easy to tap accidentally. With an existing save, the start screen now places **Continue Journey** first, then explains that starting a new journey overwrites the save on this device. A divider and **Start a new journey** heading separate the character, difficulty, and name choices below.
 - The continue button still loads the existing save; the new journey action still starts a fresh adventure and saves to the existing device key. Cache versions are `playtest.css?v=20` and entry `playtest.mjs?v=97`. Code commit `1fa1bfdbd20f4f3d60e176234888d82db8197ec3` is on `main`.
-- No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment; completion and mobile appearance are unverified. The owner should check that Continue appears first, the warning text is readable, and the new journey controls are clearly separated. The rowboat graphic is the next requested art task.
+- No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment; completion and mobile appearance are unverified. The owner should check that Continue appears first, the warning text is readable, and the new journey controls are clearly separated. The rowboat art update is recorded below.
 
 ### Mobile touch-control reach
 
 - The owner asked for the bottom-left movement controls and bottom-right Wave / Interact / Jump controls to sit slightly farther from the phone corners for comfort, while keeping the rest of the HUD intact.
 - In landscape touch layouts, `.game-bottom` now adds 14 px beyond the previous safe-area-aware side inset, shifting the movement group right and the action group left. Button sizes, gaps, and center inventory placement are unchanged. The stylesheet cache version in `index.html` is `playtest.css?v=21`.
 - Source was reviewed and the change is limited to that landscape bottom-bar inset plus the stylesheet cache bump. Code commit `77eaef909981f1e82aa4c95698eec26187491581` is on `main`. No syntax check, live mobile visual check, gameplay check, or deployment completion check was performed. The commit to `main` triggers the configured Cloudflare deployment; the owner should confirm the new control reach on a phone.
-- The rowboat graphic remains the next requested art task.
+- The rowboat art update is recorded below.
+
+### Rowboat graphic: classic clinker skiff
+
+- After comparing three concept directions, the owner selected the classic clinker skiff for the Tide Arch rowboat graphic.
+- `paintRowboat()` now draws a warm plank hull with overlapping visible strakes, two short benches, paired oars, and sunset-lit gunwale highlights. Its existing Tide Arch position and the boat build/unlock behavior are unchanged.
+- Cache versions are `beach-art.mjs?v=12` and entry `playtest.mjs?v=98`. Code commit `88669e47685402381a6570975c77b5307ad04ff5` is on `main`.
+- Source was reviewed only. No syntax check, live mobile visual check, gameplay check, or deployment completion check was performed. The commit to `main` triggers the configured Cloudflare deployment; the owner should verify the boat in context at Tide Arch.
+- The next requested work is the owner’s in-game visual check of the rowboat.
 
 ### King’s Bridge, fishing levels, and rowboat
 
