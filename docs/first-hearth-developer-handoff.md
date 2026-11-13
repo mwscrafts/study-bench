@@ -9,12 +9,18 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Beach graphical concept preview
+
+- Added the painted coastal concept as a camera-cropped backdrop beneath the existing beach terrain and landmarks. The live horizon and its day/night behavior remain visible; collision surfaces, interaction coordinates, rowboat state, and draw order for foreground props are unchanged.
+- The image is stored as `dist/first-hearth/beach-concept.webp` (about 500 KB). `beach-art.mjs?v=5` draws it and entry `playtest.mjs?v=88` loads the updated renderer.
+- Source commit: `f51d5ab`. JavaScript syntax checks and `git diff --check` passed. No in-game playthrough or live deployment verification has been performed yet.
+
 ### King’s Bridge, fishing levels, and rowboat
 
 - Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.
 - Existing Cove Bridge saves migrate: an accepted repair stays accepted, a completed repair transfers to the King’s Bridge, and saves that already reached the King retain their access. Old `overlook` footing is mapped to the new bridge surfaces.
 - Fishing earns 1 saved XP per completed cast. The next level costs 3 XP at level 1, then each level costs 1 XP more (4 through 11); level 10 takes 63 total casts from a new save. Level 10 unlocks a Tide Arch rowboat project costing 8 spare wood. Built boats appear on the beach and enable offshore fishing for larger catches. Existing cast totals seed XP for old saves.
-- Current cache versions: `crownwood.mjs?v=15`, `crownwood-art.mjs?v=16`, `beach.mjs?v=4`, `beach-art.mjs?v=4`, `world-data.mjs?v=15`, and entry `playtest.mjs?v=87`.
+- Current cache versions: `crownwood.mjs?v=15`, `crownwood-art.mjs?v=16`, `beach.mjs?v=4`, `beach-art.mjs?v=5`, `world-data.mjs?v=15`, and entry `playtest.mjs?v=88`.
 - Feature source commit: `8efcef5`; history integration with the current `origin/main`: merge commit `81657df`.
 - Fishing curve correction: source commit `3be8169` makes each new level cost 1 XP more than the previous one, for 63 casts total to level 10. Existing saved XP and rowboat ownership are preserved; only the level mapping and displayed progress changed. Syntax and whitespace checks passed. No public playtest or live deployment check was performed.
 - Startup failure fix (source commit `9f61246`): the bridge update removed the old Crownwood overlook surface but left one shadow patrol referring to it, which stopped `playtest.mjs` before `boot()` and left the start button on “Loading camp…”. The patrol now stays on the west bank of the broken bridge; the bridge gap and repair gate are unchanged. JavaScript syntax, full module import resolution, and whitespace checks passed. No gameplay changes beyond the startup repair; live browser verification remains pending.
