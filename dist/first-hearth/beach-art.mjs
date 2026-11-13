@@ -67,9 +67,38 @@ export function buildBeachArt() {
   canvas.height=height;
   const ctx=canvas.getContext('2d');
   const image=new Image();
-  image.onload=()=>ctx.drawImage(image,0,0,width,height);
+  image.onload=()=>{
+    ctx.drawImage(image,0,0,width,height);
+    paintDockLanding(ctx);
+  };
   image.src=new URL('./beach-map.webp',import.meta.url).href;
   return canvas;
+}
+
+// A short sloping run of boards ties the shore path into the painted dock.
+export function paintDockLanding(ctx) {
+  ctx.save();
+  const rise = x => 645 - (x - 1600) * .19;
+  const starts=[1602,1616,1592,1626];
+  const ends=[1768,1780,1759,1776];
+  const shades=['#9d7047','#ad7b4c','#91643e','#aa7848'];
+  for(let i=0;i<4;i++) {
+    const x=starts[i], end=ends[i], offset=(i-1.5)*7;
+    const y=rise(x)+offset, far=rise(end)+offset;
+    const grad=ctx.createLinearGradient(0,y-2,0,y+6);
+    grad.addColorStop(0,'#d2a16a');
+    grad.addColorStop(.34,shades[i]);
+    grad.addColorStop(1,'#674831');
+    path(ctx,[[x+3,y+7],[end,far+6]],'#47352389',2);
+    poly(ctx,[[x,y+2],[x+8,y-2],[end,far-2],[end,far+5],[x+5,y+8]],grad);
+    path(ctx,[[x+8,y],[end-5,far-1]],'#ddb17c80',1);
+    path(ctx,[[x+18,y+5],[end-10,far+3]],'#51392866',.9);
+    for(let j=0;j<3;j++) {
+      const px=x+28+j*40+(i*13%19);
+      path(ctx,[[px,rise(px)+offset+2],[px+12,rise(px+12)+offset+1]],'#d0a06b65',.9);
+    }
+  }
+  ctx.restore();
 }
 
 export function paintRowboat(ctx) {

@@ -8,7 +8,7 @@ import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows }
 import { buildRootdeepArt } from './rootdeep-art.mjs?v=14';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=2';
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=7';
-import { buildBeachArt } from './beach-art.mjs?v=9';
+import { buildBeachArt } from './beach-art.mjs?v=10';
 import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=10';
 import { buildHearthArt } from './hearth-art.mjs';
