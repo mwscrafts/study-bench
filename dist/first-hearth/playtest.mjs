@@ -2939,6 +2939,10 @@ function interact() {
     updatePrompt();
     return;
   }
+  if (id === 'rowboat-chair') {
+    rowboatChairDialogue();
+    return;
+  }
   openDialogue(id);
   if (Object.hasOwn(interactionHandlers, id)) interactionHandlers[id]();
   else setDialogue(conversations[id].greeting);
