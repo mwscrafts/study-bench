@@ -311,6 +311,8 @@ PR #3 was squash merged into `main` as `fc1f6b23bb101168bb772ab9b302b4067102d6fb
 
 ## Offshore chair prompt and surf audibility — 2026-11-13
 
-The owner reported the rowboat-ready prompt appearing after arriving offshore and sitting in the chair, and asked for louder surf. The rowboat builder dialogue now closes instead of displaying outside the beach region, preventing stale or misrouted calls from reopening it aboard the boat. The synthesized surf swell envelope is approximately three times higher; occasional gull calls are unchanged. `playtest.mjs` now imports `rowboat-ambience.mjs?v=2`, and the page entry is `playtest.mjs?v=104` for cache refresh.
+The owner reported the rowboat-ready prompt appearing after arriving offshore and sitting in the chair, and asked for louder surf. The first follow-up added a region guard to the rowboat builder dialogue and raised the surf swell envelope about threefold while leaving gull calls unchanged. `playtest.mjs` imports `rowboat-ambience.mjs?v=2` and was bumped to entry v104.
 
-PR #4 was squash merged to `main` as `a03886574255eabedd69715cc471d4ae11c683a1`, triggering the configured deployment. Static source and PR diff review only; no tests, syntax checks, live gameplay checks, or deployment completion check were run. The owner should verify the chair interaction and surf level on a phone.
+The owner’s next screenshot clarified that the blank CAMP KEEPSAKE window appears on the chair interaction itself. The cause was `interact()` opening a generic dialogue before calling the chair’s sit/stand handler, which does not populate a dialogue. The chair now routes directly to its handler before the generic dialogue path, so sitting or standing opens no window. PR #5 was squash merged to `main` as `cfc468674450bc3521368166b3415341bcc33e1c`; entry is now `playtest.mjs?v=105`.
+
+PR #4 and PR #5 merges triggered the configured deployment. Static source and diff review only; no tests, syntax checks, live gameplay checks, or deployment completion check were run. The owner should verify the chair interaction and surf level on a phone.
