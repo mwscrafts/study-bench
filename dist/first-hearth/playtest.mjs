@@ -33,7 +33,7 @@ import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell,
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=21';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=2';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
-  paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=3';
+  paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=4';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const allIronNodes = [...oreNodes, ...rootdeepOreNodes];
@@ -430,7 +430,8 @@ function paintMarker(landmark) {
 
 function paintRegionalLodestones() {
   for (const stone of regions[region].landmarks.filter(item => item.id.startsWith('lodestone-'))) {
-    paintLodestone(ctx, stone, activatedLodestones.has(stone.id), animationClock);
+    const variant = stone.id === 'lodestone-canopy' ? 'canopy' : stone.id === 'lodestone-mine' ? 'mine' : 'shore';
+    paintLodestone(ctx, stone, activatedLodestones.has(stone.id), animationClock, sprites.lodestones[variant]);
   }
 }
 
@@ -3697,11 +3698,16 @@ new ResizeObserver(resize).observe(world);
 
 async function boot() {
   try {
-    const [party, keepers] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp')
+    const [party, keepers, lodestoneSheet] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp')
     ]);
     backgrounds.camp = buildCampArt();
     sprites = {
+      lodestones: {
+        shore: spriteBounds(lodestoneSheet, 0, 1 / 3, .5),
+        canopy: spriteBounds(lodestoneSheet, 1 / 3, 2 / 3, .5),
+        mine: spriteBounds(lodestoneSheet, 2 / 3, 1, .5)
+      },
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
       alvin: spriteBounds(party, 2 / 3, 1, .65),
