@@ -2,7 +2,9 @@ import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs';
 
 export const MAX_FISHING_LEVEL = 10;
 export const MAX_FISHING_XP = ((MAX_FISHING_LEVEL - 1) * (3 + 11)) / 2;
-export const ROWBOAT_WOOD_COST = 8;
+export const ROWBOAT_WOOD_COST = 5;
+export const ROWBOAT_DRIFTWOOD_COST = 20;
+export const ROWBOAT_IRON_COST = 2;
 export const LODESTONE_SHORE_X = 3380;
 export const ROWBOAT_X = 3725;
 
@@ -68,6 +70,7 @@ export function readFishing(save, legacyCasts = 0) {
     xp: Number.isSafeInteger(save?.xp) ? clamp(save.xp,0,MAX_FISHING_XP)
       : clamp(Number.isSafeInteger(legacyCasts) ? legacyCasts : 0,0,MAX_FISHING_XP),
     rowboat: save?.rowboat === true,
+    rootglass: Number.isSafeInteger(save?.rootglass) ? Math.max(0,save.rootglass) : 0,
     godslayer: save?.godslayer === true
   };
 }
@@ -96,7 +99,9 @@ export function castNet(state, roll = Math.random, offshore = false) {
       catchName = 'Driftwood';
     }
   }
+  const rootglassFound = offshore && roll() < .01;
+  if (rootglassFound) fishing.rootglass = (fishing.rootglass ?? 0) + 1;
   const rare = !state.godslayer && roll() < .001;
   if (rare) fishing.godslayer = true;
-  return { fishing, catchName, rare };
+  return { fishing, catchName, rare, rootglass: rootglassFound };
 }
