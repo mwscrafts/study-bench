@@ -1,8 +1,21 @@
 import { drawSprite, paintShadow } from './canvas-art.mjs?v=4';
-import { paintBeachHorizon } from './beach-art.mjs?v=16';
 import {
   rowboatTerrain, ROWBOAT_CENTER_X, ROWBOAT_BASELINE_Y, ROWBOAT_DECK_Y, ROWBOAT_CHAIR_X
 } from './rowboat.mjs?v=1';
+
+let sandyCoveWaterColor = '#4c8790';
+const sandyCoveBackdrop = new Image();
+sandyCoveBackdrop.addEventListener('load', () => {
+  const sampleCanvas = document.createElement('canvas');
+  sampleCanvas.width = 1;
+  sampleCanvas.height = 1;
+  const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+  const sampleY = Math.round(sandyCoveBackdrop.naturalHeight * .60);
+  sampleCtx.drawImage(sandyCoveBackdrop, 0, sampleY, sandyCoveBackdrop.naturalWidth, 1, 0, 0, 1, 1);
+  const [r, g, b] = sampleCtx.getImageData(0, 0, 1, 1).data;
+  sandyCoveWaterColor = `rgb(${r}, ${g}, ${b})`;
+});
+sandyCoveBackdrop.src = new URL('./beach-map.webp', import.meta.url).href;
 
 export function buildRowboatArt() {
   const canvas = document.createElement('canvas');
@@ -12,12 +25,22 @@ export function buildRowboatArt() {
 }
 
 export function paintRowboatSky(ctx, view, phase, alpha, clock) {
-  paintBeachHorizon(ctx, view, phase, alpha, clock);
   if (alpha <= 0) return;
   const {x,y,width,height} = view;
+  const horizon = 388 + y * .32;
   const wrap = value => ((value % (width + 260)) + (width + 260)) % (width + 260);
   ctx.save();
   ctx.globalAlpha *= alpha;
+  ctx.fillStyle = sandyCoveWaterColor;
+  ctx.fillRect(x, y, width, height);
+  if (sandyCoveBackdrop.complete && sandyCoveBackdrop.naturalWidth) {
+    const sourceHorizon = Math.round(sandyCoveBackdrop.naturalHeight * .56);
+    ctx.drawImage(
+      sandyCoveBackdrop,
+      0, 0, sandyCoveBackdrop.naturalWidth, sourceHorizon,
+      x, y, width, Math.max(0, horizon - y)
+    );
+  }
   for (let i=0;i<5;i++) {
     const base = i * (width + 260) / 5 + i * 83;
     const cloudX = x + wrap(base + clock * (8 + i * 1.6)) - 130;
