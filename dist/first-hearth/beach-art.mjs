@@ -2,6 +2,7 @@ import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
 import { beachTerrain, beachLandmarks } from './beach.mjs?v=4';
 
 const { width, height, floor, ledges } = beachTerrain;
+let beachConceptImage;
 const colors = {
   day: ['#689eaa','#c3d3b9','#f3d9a7','#51898a','#a8c7ad'],
   dusk: ['#52577d','#ca909c','#fac58e','#5c7f90','#c7a4a1'],
@@ -58,6 +59,30 @@ export function paintBeachHorizon(ctx, view, phase, alpha, clock) {
     const length=12+i*3.5;
     path(ctx,[[sx-length,sy],[sx+length,sy]],night?'#f1e6bf58':'#ffe4a572',2);
   }
+  ctx.restore();
+}
+
+export function paintBeachConcept(ctx, view) {
+  beachConceptImage ??= new Image();
+  if (!beachConceptImage.src) beachConceptImage.src = new URL('./beach-concept.webp', import.meta.url).href;
+  if (!beachConceptImage.complete || !beachConceptImage.naturalWidth) return;
+
+  const scale = width / beachConceptImage.naturalWidth;
+  const horizon = 388 + view.y * .32;
+  const conceptHorizon = 291;
+  const imageTop = horizon - conceptHorizon * scale;
+  const sourceX = view.x / scale;
+  const sourceY = (view.y - imageTop) / scale;
+  const sourceWidth = view.width / scale;
+  const sourceHeight = view.height / scale;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(view.x, horizon, view.width, Math.max(0, view.y + view.height - horizon));
+  ctx.clip();
+  ctx.globalAlpha = .9;
+  ctx.drawImage(beachConceptImage, sourceX, sourceY, sourceWidth, sourceHeight,
+    view.x, view.y, view.width, view.height);
   ctx.restore();
 }
 
