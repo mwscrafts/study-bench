@@ -1,8 +1,7 @@
-import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs';
-import { beachTerrain, beachLandmarks } from './beach.mjs?v=4';
+import { random, poly, path, orb } from './camp-art.mjs';
+import { beachTerrain } from './beach.mjs?v=4';
 
-const { width, height, floor, ledges } = beachTerrain;
-let beachConceptImage;
+const { width, height } = beachTerrain;
 const colors = {
   day: ['#689eaa','#c3d3b9','#f3d9a7','#51898a','#a8c7ad'],
   dusk: ['#52577d','#ca909c','#fac58e','#5c7f90','#c7a4a1'],
@@ -62,95 +61,14 @@ export function paintBeachHorizon(ctx, view, phase, alpha, clock) {
   ctx.restore();
 }
 
-export function paintBeachConcept(ctx, view) {
-  beachConceptImage ??= new Image();
-  if (!beachConceptImage.src) beachConceptImage.src = new URL('./beach-concept.webp', import.meta.url).href;
-  if (!beachConceptImage.complete || !beachConceptImage.naturalWidth) return;
-
-  const scale = width / beachConceptImage.naturalWidth;
-  const horizon = 388 + view.y * .32;
-  const conceptHorizon = 291;
-  const imageTop = horizon - conceptHorizon * scale;
-  const sourceX = view.x / scale;
-  const sourceY = (view.y - imageTop) / scale;
-  const sourceWidth = view.width / scale;
-  const sourceHeight = view.height / scale;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(view.x, horizon, view.width, Math.max(0, view.y + view.height - horizon));
-  ctx.clip();
-  ctx.globalAlpha = .9;
-  ctx.drawImage(beachConceptImage, sourceX, sourceY, sourceWidth, sourceHeight,
-    view.x, view.y, view.width, view.height);
-  ctx.restore();
-}
-
-function tideArch(ctx) {
-  poly(ctx,[[3348,541],[3365,427],[3405,354],[3455,321],[3548,312],[3607,350],[3660,430],[3678,537],[3602,536],[3589,435],[3554,392],[3507,379],[3463,393],[3433,444],[3419,538]],'#727d70');
-  poly(ctx,[[3348,541],[3365,427],[3405,354],[3455,321],[3548,312],[3507,350],[3450,377],[3402,444],[3392,540]],'#9a9c7d');
-  path(ctx,[[3405,357],[3455,321],[3548,312],[3607,350]],'#b3a68a',5);
-  path(ctx,[[3639,405],[3611,420],[3626,466],[3615,508]],'#555f59',4);
-}
-
 export function buildBeachArt() {
   const canvas=document.createElement('canvas');
   canvas.width=width;
   canvas.height=height;
   const ctx=canvas.getContext('2d');
-  const rand=random(6127);
-  ctx.lineJoin='round';
-  for(let x=7;x<985;x+=65+rand()*74) {
-    const y=438+Math.max(0,x-420)*.37;
-    pine(ctx,x,y,155+rand()*135,'#405c52','#5e7760');
-  }
-  for(const [x,y,w,h] of [[545,477,138,73],[746,558,110,61],[938,611,121,70],[1540,662,148,73],[2760,618,151,80],[3060,551,110,68],[3750,543,192,113]]) {
-    stone(ctx,x,y,w,h,'#718172');
-  }
-  tideArch(ctx);
-  const sand=ctx.createLinearGradient(0,428,0,height);
-  sand.addColorStop(0,'#c6ae7e');
-  sand.addColorStop(.54,'#9a8b6d');
-  sand.addColorStop(1,'#5f756b');
-  const westBank=floor.points.filter(([x])=>x<=1910);
-  const eastBank=floor.points.filter(([x])=>x>=2640);
-  const bank=[...westBank,[1938,714],[2602,714],...eastBank];
-  poly(ctx,[...bank,[width,height],[0,height]],sand);
-  path(ctx,westBank,'#e1c694',5);
-  path(ctx,eastBank,'#e1c694',5);
-  path(ctx,bank.map(([x,y],i)=>[x,y+34+(i%3)*7]),'#afa083',6);
-  for(const ledge of ledges) {
-    poly(ctx,[...ledge.points,...ledge.points.map(([x,y],i)=>[x,y+25+(i%3)*10]).reverse()],'#897f66');
-    path(ctx,ledge.points,'#c2b58c',5);
-  }
-  for(let i=1;i<floor.points.length;i++) {
-    const [a,b]=floor.points[i-1], [c,d]=floor.points[i];
-    for(let x=a+26;x<c-16;x+=28+rand()*65) {
-      if(x>1910 && x<2640) continue;
-      const y=b+(d-b)*(x-a)/(c-a);
-      if(rand()>.52) stone(ctx,x,y+rand()*33,12+rand()*26,4+rand()*13,'#89907a');
-      else path(ctx,[[x-12,y+4],[x-6,y-9],[x-3,y+2],[x+6,y-6],[x+11,y+2]],'#8b976f',2);
-    }
-  }
-  path(ctx,[[1090,644],[1180,628],[1290,652],[1367,645]],'#765e49',14);
-  path(ctx,[[1169,630],[1141,609]],'#9d8562',5);
-  path(ctx,[[1268,644],[1302,617]],'#a48a64',6);
-  for(let x=1920;x<2635;x+=73) {
-    path(ctx,[[x,586],[x,706]],'#79644c',9);
-    path(ctx,[[x+3,596],[x+3,701]],'#9d825c',3);
-  }
-  path(ctx,[[1900,623],[2646,623]],'#79644c',17);
-  path(ctx,[[1900,622],[2646,622]],'#c2a06e',7);
-  path(ctx,[[1910,586],[2162,586]],'#ab8d62',3);
-  path(ctx,[[2400,586],[2636,586]],'#ab8d62',3);
-  for(const x of [2050,2470]) {
-    path(ctx,[[x,623],[x,516],[x+22,516]],'#5e5442',6);
-    poly(ctx,[[x+12,518],[x+31,518],[x+31,545],[x+12,545]],'#534638');
-    poly(ctx,[[x+16,522],[x+27,522],[x+27,540],[x+16,540]],'#f7c17a');
-  }
-  sign(ctx,beachLandmarks[0].x,beachLandmarks[0].y,'← Alder Camp',-1);
-  sign(ctx,1795,627,'Lantern Dock →');
-  sign(ctx,2860,592,'Tide Arch →');
+  const image=new Image();
+  image.onload=()=>ctx.drawImage(image,0,0,width,height);
+  image.src=new URL('./beach-map.webp',import.meta.url).href;
   return canvas;
 }
 

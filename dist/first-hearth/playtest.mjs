@@ -12,7 +12,7 @@ import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
   ROWBOAT_WOOD_COST } from './beach.mjs?v=4';
-import { paintBeachHorizon, paintBeachConcept, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=5';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=6';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -444,7 +444,6 @@ function paint() {
     const paintSky = region === 'beach' ? paintBeachHorizon : paintHorizon;
     paintSky(ctx, camera, sky.from, 1, animationClock);
     if (sky.from !== sky.to) paintSky(ctx, camera, sky.to, sky.mix, animationClock);
-    if (region === 'beach') paintBeachConcept(ctx, camera);
   }
   if (region === 'rootdeep') {
     const image = backgrounds[region];
