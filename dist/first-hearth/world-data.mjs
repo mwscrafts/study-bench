@@ -12,7 +12,7 @@ import { rowboatTerrain, rowboatLandmarks, rowboatLocation } from './rowboat.mjs
 import { buildRowboatArt } from './rowboat-art.mjs?v=3';
 import { buildBeachArt } from './beach-art.mjs?v=17';
 import { workbench } from './crafting.mjs?v=17';
-import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=11';
+import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=12';
 import { buildHearthArt } from './hearth-art.mjs?v=1';
 import { kingTerrain, kingLandmarks, kingLocation } from './king.mjs?v=12';
 import { buildKingArt } from './king-art.mjs?v=13';
