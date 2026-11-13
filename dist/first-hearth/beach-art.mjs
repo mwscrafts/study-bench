@@ -69,38 +69,75 @@ export function buildBeachArt() {
   const image=new Image();
   image.onload=()=>{
     ctx.drawImage(image,0,0,width,height);
-    paintDockLanding(ctx);
+    paintDockLanding(ctx, image);
   };
   image.src=new URL('./beach-map.webp',import.meta.url).href;
   return canvas;
 }
 
-// A short sloping run of boards ties the shore path into the painted dock.
-export function paintDockLanding(ctx) {
-  ctx.save();
+// Shore planks reuse the dock's own painted wood texture so their grain and color carry into the landing.
+export function paintDockLanding(ctx, image) {
   const rise = x => 645 - (x - 1600) * .19;
-  const starts=[1602,1616,1592,1626];
-  const ends=[1768,1780,1759,1776];
-  const shades=['#9d7047','#ad7b4c','#91643e','#aa7848'];
-  for(let i=0;i<4;i++) {
-    const x=starts[i], end=ends[i], offset=(i-1.5)*7;
-    const y=rise(x)+offset, far=rise(end)+offset;
-    const grad=ctx.createLinearGradient(0,y-2,0,y+6);
-    grad.addColorStop(0,'#d2a16a');
-    grad.addColorStop(.34,shades[i]);
-    grad.addColorStop(1,'#674831');
-    path(ctx,[[x+3,y+7],[end,far+6]],'#47352389',2);
-    poly(ctx,[[x,y+2],[x+8,y-2],[end,far-2],[end,far+5],[x+5,y+8]],grad);
-    path(ctx,[[x+8,y],[end-5,far-1]],'#ddb17c80',1);
-    path(ctx,[[x+18,y+5],[end-10,far+3]],'#51392866',.9);
-    for(let j=0;j<3;j++) {
-      const px=x+28+j*40+(i*13%19);
-      path(ctx,[[px,rise(px)+offset+2],[px+12,rise(px+12)+offset+1]],'#d0a06b65',.9);
+  const boards = [
+    { start: 1602, end: 1780, offset: -10, textureX: 1005 },
+    { start: 1616, end: 1790, offset: -3, textureX: 1160 },
+    { start: 1592, end: 1768, offset: 4, textureX: 1005 },
+    { start: 1626, end: 1782, offset: 11, textureX: 1160 }
+  ];
+  const boardWidth = 8;
+
+  ctx.save();
+  for (const board of boards) {
+    const startY = rise(board.start) + board.offset;
+    const endY = rise(board.end) + board.offset;
+    const shape = [
+      [board.start, startY],
+      [board.end, endY],
+      [board.end, endY + boardWidth],
+      [board.start, startY + boardWidth]
+    ];
+
+    poly(ctx, shape.map(([x, y]) => [x, y + 3]), '#4933228a');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(shape[0][0], shape[0][1]);
+    for (let i = 1; i < shape.length; i++) ctx.lineTo(shape[i][0], shape[i][1]);
+    ctx.closePath();
+    ctx.clip();
+
+    ctx.drawImage(
+      image,
+      board.textureX, 300, 44, 7,
+      board.start - 2, startY - 1, board.end - board.start + 4, boardWidth + 2
+    );
+
+    const finish = ctx.createLinearGradient(0, startY, 0, startY + boardWidth);
+    finish.addColorStop(0, '#e8bf8550');
+    finish.addColorStop(.36, '#b77e4b10');
+    finish.addColorStop(1, '#3e2a1d70');
+    ctx.fillStyle = finish;
+    ctx.fillRect(board.start - 2, startY - 1, board.end - board.start + 4, boardWidth + 2);
+    ctx.restore();
+
+    path(ctx, [[board.start, startY], [board.end, endY]], '#e0b678b5', 1.1);
+    path(ctx, [[board.start, startY + boardWidth], [board.end, endY + boardWidth]], '#49321fba', 1.4);
+
+    for (const portion of [.12, .88]) {
+      const x = board.start + (board.end - board.start) * portion;
+      const y = rise(x) + board.offset + boardWidth / 2;
+      ctx.fillStyle = '#3e2e23c0';
+      ctx.beginPath();
+      ctx.arc(x, y, 1.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#d8ad78a0';
+      ctx.beginPath();
+      ctx.arc(x - .45, y - .45, .55, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
   ctx.restore();
 }
-
 export function paintRowboat(ctx) {
   const x=3725, y=552;
   ctx.save();
