@@ -7,10 +7,8 @@ import { buildMineArt } from './mine-art.mjs?v=06';
 import { rootdeepTerrain, rootdeepLandmarks, rootdeepLocation, rootdeepShadows } from './rootdeep.mjs?v=9';
 import { buildRootdeepArt } from './rootdeep-art.mjs?v=14';
 import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=2';
-import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=9';
-import { rowboatTerrain, rowboatLandmarks, rowboatLocation } from './rowboat.mjs?v=1';
-import { buildRowboatArt } from './rowboat-art.mjs?v=1';
-import { buildBeachArt } from './beach-art.mjs?v=16';
+import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=8';
+import { buildBeachArt } from './beach-art.mjs?v=15';
 import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=10';
 import { buildHearthArt } from './hearth-art.mjs';
@@ -52,12 +50,6 @@ export const regions = {
     intro: 'Follow the bluff to Driftwood Cove, cast Hugh Mungus’s net at Lantern Dock, and look out from Tide Arch.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
-  },
-  rowboat: {
-    title: ['Open', 'Sea'],
-    intro: 'A quiet stretch of water, a hand-painted skiff, and room to take your time.',
-    terrain: rowboatTerrain, landmarks: rowboatLandmarks, flowers: [],
-    buildArt: buildRowboatArt, location: rowboatLocation
   },
   hearth: {
     title: ['The First', 'Hearth'],
@@ -177,7 +169,6 @@ export const conversations = {
   'night-altar': { name: 'The night altar', role: 'ALTAR TERRACE' },
   'fallen-crown': { name: 'The fallen crown', role: 'CROWN ARENA' },
   'rowboat': { name: 'The rowboat', role: 'TIDE ARCH' },
-  'rowboat-fish': { name: 'From the rowboat', role: 'OFFSHORE FISHING' },
   'tide-arch': {
     name: 'Tide Arch', role: 'COASTAL OVERLOOK',
     greeting: 'Through the arch you can see the lights of the dock. The trail back to Alder Camp follows the shore and climbs through the pines.'
