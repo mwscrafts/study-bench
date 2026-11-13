@@ -13,7 +13,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 - The approved complete beach map is `dist/first-hearth/beach-map.webp` (1920 × 445, drawn over world coordinates 3840 × 890). It includes the distant coast and playable foreground. The earlier concept-as-backdrop overlay was removed.
 - Owner screenshots revealed that the initial terrain correction (`45c0329`) still placed the western Salt Pines player on the fence railing and left the Tide Arch lookout a little low. Using feature matching, the four phone screenshots were mapped back to world coordinates, and the collision lines were overlaid on the screenshots. Commit `239896a585ff89ee625f60f5ac8ca7b3bb4c1bd8` lowers the western floor onto the dirt path and raises the Tide Arch lookout ledge onto its visible deck. The existing surface IDs, routes, landmark IDs, fishing progression, rowboat ownership/save state, and casting effects are unchanged. The owner later clarified that photo 4 was an art transition: boards should visibly extend from shore into the dock, with no floor change.
-- Current cache imports: `beach.mjs?v=8`, `beach-art.mjs?v=14`, `world-data.mjs?v=22`, entry `playtest.mjs?v=101`. The concept uses a fixed sunset sky; night tint applies, but phase-specific scenery is not visible beneath the full-scene art.
+- Current cache imports: `beach.mjs?v=9`, `beach-art.mjs?v=16`, `world-data.mjs?v=24`, entry `playtest.mjs?v=103`. The concept uses a fixed sunset sky; night tint applies, but phase-specific scenery is not visible beneath the full-scene art.
 - The first two screenshot overlays showed the old Salt Pines floor following the railing about 40–50 screen pixels above the path. The corrected line follows the path in both frames. The third screenshot overlay showed the Tide Arch ledge a little below the deck; the corrected line follows the deck. The owner’s before/after screenshots showed the landing shape was close, but its smooth tan boards did not match the dock’s painted texture. Commit `8b72b5626ad5f3b2d61169341fbf120025c7801b` now draws each landing plank from clear strips of the existing dock texture, with subtle edge shading and nail heads. It preserves the board layout and leaves beach terrain unchanged. The updated source has not yet had a live mobile visual check.
 - No syntax, gameplay, or live deployment check was performed for the texture revision. The commit to `main` triggered the configured Cloudflare deployment; deployment completion and mobile appearance remain unverified.
 
@@ -57,7 +57,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - In the owner’s first screenshot, the player’s standing point maps to approximately world x=3380 on the raised lookout. The shore lodestone now uses x=3380; its base is derived from that ledge surface (y≈504), keeping it planted on the slope.
 - In the second screenshot, the rowboat hull floated above the shoreline. It remains at x=3725, but its draw baseline now comes from the sand surface at that x (y≈606.4), lowering it about 21 world pixels.
 - The boat now has its own `rowboat` landmark and interaction target at the boat. `tide-arch` remains at x=3525 for the lookout dialogue. This moves the boat’s prompt toward the boat without changing its level-10 unlock, 8-wood build cost, save state, or offshore fishing.
-- Current shared beach module versions are `beach.mjs?v=8`, `beach-art.mjs?v=14`, `world-data.mjs?v=22`, and entry `playtest.mjs?v=101`. Code commit `a99195e3ee26868288eaf0cabf43c2130a299740` is on `main`.
+- At the time of the alignment patch, beach imports were v8/v14, world-data v22, and entry playtest v101. The offshore scene version update is recorded in the current checkpoint below.
 - Screenshot and source coordinates were reviewed. No syntax check, live gameplay check, or deployment completion check was performed. The owner should verify the lodestone footing, boat waterline, and separate boat interaction in-game.
 
 ### King’s Bridge, fishing levels, and rowboat
@@ -296,3 +296,14 @@ The owner reported the Tide Arch scene rendering only its procedural horizon/wat
 Fixed by importing both constants from `beach.mjs?v=8`. Bumped the beach-art module references to v15, world-data to v23, and playtest entry to v102 for cache invalidation. The requested lodestone and boat coordinates and the dedicated rowboat interaction target remain in place.
 
 Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, and `index.html`. Repair commits on `main`: `63fe81ba6fd6eec2b641a7e585e0aa43638f5bd6`, `1453273b47b0cfb03c1f827e218d87b7c1e50f07`, `a22ee943ae461d9cc3392b70b9ee380ac63373fa`, and `822d11916c31b33ab0e4279970b6144029cdbe3d`. Static source review confirmed the missing imports are present and cache versions are aligned. No tests or live gameplay check were run. The final commit to `main` triggered deployment; completion was not checked. Next step: owner refreshes Tide Arch after deployment and confirms the scene renders and placements still line up.
+
+
+## Offshore rowboat scene — 2026-11-13
+
+The owner asked for boarding the Tide Arch rowboat to enter a real offshore scene. On the feature branch `codex/offshore-rowboat-scene`, the boat boards into its own saved region, with separate interact targets to fish, sit in a small chair, and return to Tide Arch. The view reuses the beach horizon and adds slowly drifting clouds, passing gulls, shifting water, and a gentle skiff bob. A quiet synthesized surf track and occasional gull calls play only in the boat region.
+
+The level-10 build now costs exactly 20 Driftwood, 5 spare wood, and 2 iron. Offshore casts keep the existing two-fish shoal behavior and 1-in-1,000 Godslayer roll; there is also a 1-in-100 Rootglass bonus catch, counted toward Dorrin’s winch. Existing built boats and their saves remain valid.
+
+Changed files: `beach.mjs`, `beach-art.mjs`, `rowboat.mjs`, `rowboat-art.mjs`, `rowboat-ambience.mjs`, `world-data.mjs`, `field-map.mjs`, `playtest.mjs`, `index.html`, and `AGENTS.md`. Main gameplay source commit: `eafa31acaca93118f08b2ca8ad68abbe5a2a3571`; entrypoint update: `80aed6f1fad50a1767b0fcf6a3e1bcd25c7a9a01`. Cache versions on the branch: beach v9, beach-art v16, world-data v24, field-map v3, entry playtest v103.
+
+No tests, syntax checks, or live gameplay checks were run. The change is on the feature branch and is not deployed; owner review/merge is the next step.
