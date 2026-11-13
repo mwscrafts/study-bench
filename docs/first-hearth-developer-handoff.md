@@ -346,4 +346,4 @@ Changed files: `dist/first-hearth/rowboat-sea-background.webp`, `rowboat-art.mjs
 
 The owner asked for the net throw to travel left and twice as far. The beach and offshore cast animation now draws its arc, line endpoint, and splash 144 pixels left of the player (twice the previous 72-pixel endpoint). Catch timing and fishing outcomes are unchanged.
 
-Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Commit SHA: pending. Source diff review only; no tests or gameplay check were run. A commit to `main` triggers the configured deployment; completion is not yet verified.
+Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Source commit: `8763bd349c463c5ba6a58f6a5cfe84a19109217d`. Source diff review only; no tests or gameplay check were run. A commit to `main` triggers the configured deployment; completion is not yet verified.
