@@ -36,7 +36,7 @@ import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell,
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=24';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
-  paintWave, paintOpenLift, paintLodestone, paintShadow, paintIronHelmet } from './canvas-art.mjs?v=5';
+  paintWave, paintOpenLift, paintLodestone, paintShadow, paintIronHelmet } from './canvas-art.mjs?v=6';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const allIronNodes = [...oreNodes, ...rootdeepOreNodes];
@@ -301,7 +301,7 @@ function paintPeers() {
     paintShadow(ctx,peer.x,peer.y,22);
     drawSprite(ctx,sprites[pose.avatar],peer.x,peer.y,97,pose.direction,bob,tilt);
     if (pose.scarf === true) paintTrailScarf(ctx,peer.x,peer.y,pose.direction,bob);
-    if (pose.helmet) paintIronHelmet(ctx,sprites.helmet,peer.x,peer.y,pose.direction,bob,tilt,97);
+    if (pose.helmet) paintIronHelmet(ctx,peer.x,peer.y,pose.direction,bob,tilt,97);
     paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt);
     paintWave(ctx,peer.x,peer.y,pose.direction,pose.wave ?? 0,bob);
     ctx.font = 'bold 13px system-ui, sans-serif';
@@ -617,7 +617,7 @@ function paint() {
   const avatarHeight = rowboatRelaxing ? 78 : 97;
   drawSprite(ctx, sprites[avatar], player.x, player.y, avatarHeight, facing, bob, tilt);
   if (specialRewards.has('scarf')) paintTrailScarf(ctx,player.x,player.y,facing,bob);
-  if (tools.helmet && playing) paintIronHelmet(ctx,sprites.helmet,player.x,player.y,facing,bob,tilt,avatarHeight);
+  if (tools.helmet && playing) paintIronHelmet(ctx,player.x,player.y,facing,bob,tilt,avatarHeight);
   if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
   if (playing) paintWave(ctx, player.x, player.y, player.direction, wave, bob);
   ctx.globalAlpha = 1;
@@ -3778,8 +3778,8 @@ async function boot() {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
     if (saved?.publicName) el('player-name').value = saved.publicName;
-    const [party, keepers, lodestoneSheet, rowboatImage, helmetImage] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./iron-helmet.png')
+    const [party, keepers, lodestoneSheet, rowboatImage] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png')
     ]);
     backgrounds.camp = buildCampArt();
     sprites = {
@@ -3789,7 +3789,6 @@ async function boot() {
         mine: spriteBounds(lodestoneSheet, 2 / 3, 1, .5)
       },
       rowboat: spriteBounds(rowboatImage, 0, 1, .5),
-      helmet: spriteBounds(helmetImage, 0, 1, .5),
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
       alvin: spriteBounds(party, 2 / 3, 1, .65),
