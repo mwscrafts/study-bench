@@ -316,3 +316,9 @@ The owner reported the rowboat-ready prompt appearing after arriving offshore an
 The owner’s next screenshot clarified that the blank CAMP KEEPSAKE window appears on the chair interaction itself. The cause was `interact()` opening a generic dialogue before calling the chair’s sit/stand handler, which does not populate a dialogue. The chair now routes directly to its handler before the generic dialogue path, so sitting or standing opens no window. PR #5 was squash merged to `main` as `cfc468674450bc3521368166b3415341bcc33e1c`; entry is now `playtest.mjs?v=105`.
 
 PR #4 and PR #5 merges triggered the configured deployment. Static source and diff review only; no tests, syntax checks, live gameplay checks, or deployment completion check were run. The owner should verify the chair interaction and surf level on a phone.
+
+## Iron helmet visual correction — 2026-11-13
+
+The owner pointed out that the old helmet was a flat half-oval and horizontal bar drawn too low across the avatar's face. It has been replaced with a transparent faceted steel helmet overlay fitted above the face. The overlay follows the avatar's direction, bob, tilt, and seated scale. Local and multiplayer players use the same painter in `canvas-art.mjs`. The new art is `dist/first-hearth/iron-helmet.png`; cache versions are `canvas-art.mjs?v=5` and entry `playtest.mjs?v=106`.
+
+PR #6 was squash merged to `main` as `1236d390da50f74007bba3dd6c5ac30ab2efe6c9`, triggering the configured deployment. The avatar sprite, new transparent art, and both render paths were reviewed; no tests, syntax checks, live gameplay checks, or deployment completion check were run. The owner should confirm the helmet fit in game for both facing directions and both character choices.
