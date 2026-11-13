@@ -23,6 +23,12 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - Code and artwork commit `f244195b04575673b9e83a402df28be9219d1dc5` is on `main`. Cache versions are `canvas-art.mjs?v=4` and entry `playtest.mjs?v=96`. The generated sprites are loaded during game startup and drawn with their regional activation glows.
 - No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment, but completion and mobile appearance remain unverified. The owner’s next visual check is to inspect all three stones. The next requested art task is the rowboat graphic.
 
+### Save-safe journey start
+
+- The owner reported that Continue saved playtest sat beside Enter Alder Camp, making a new start easy to tap accidentally. With an existing save, the start screen now places **Continue Journey** first, then explains that starting a new journey overwrites the save on this device. A divider and **Start a new journey** heading separate the character, difficulty, and name choices below.
+- The continue button still loads the existing save; the new journey action still starts a fresh adventure and saves to the existing device key. Cache versions are `playtest.css?v=20` and entry `playtest.mjs?v=97`. Code commit `1fa1bfdbd20f4f3d60e176234888d82db8197ec3` is on `main`.
+- No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment; completion and mobile appearance are unverified. The owner should check that Continue appears first, the warning text is readable, and the new journey controls are clearly separated. The rowboat graphic is the next requested art task.
+
 ### King’s Bridge, fishing levels, and rowboat
 
 - Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.
