@@ -287,3 +287,12 @@ The journal currently has eight catalog entries: field journal, controls, Compos
 The current Rootdeep design is in `docs/rootdeep-design.md`; its recommended owner route checks entry/return, the distinct homes, Glowcap turn-in, optional iron branches/flooded boardwalk, and winch repair/travel. See that doc for detail.
 
 **Most recent HUD correction:** the owner noticed a dusklily count before accepting Lyss's quest and a “Hatchet · Wood … · Flint …” hint before explicitly asking about the pickaxe recipe. The source had used `collected.size` as a fallback tracker and had used hatchet ownership as the crafting-hint condition. Both were removed. The tracker now stays on the general camp clue until quest acceptance. A saved `pickaxeRecipeLearned` boolean is set only by choosing Lyss's explicit “How do I make a pickaxe?” dialogue option. On the first gathering-tool request, Lyss gives the hatchet and invites the player to ask later; she does not disclose the recipe in that response. This is intentional progressive disclosure, not a change to crafting cost or materials. Live playthrough remains an owner/Ash check unless explicitly authorized for that specific test.
+
+
+## Beach render regression repair — 2026-11-13
+
+The owner reported the Tide Arch scene rendering only its procedural horizon/water, with the beach art, character, lodestone, and boat absent. The rowboat placement patch changed `paintRowboat` to use `ROWBOAT_X` and `ROWBOAT_Y` but did not import those names in `beach-art.mjs`; invoking the draw function raised a `ReferenceError` and interrupted the beach paint pass.
+
+Fixed by importing both constants from `beach.mjs?v=8`. Bumped the beach-art module references to v15, world-data to v23, and playtest entry to v102 for cache invalidation. The requested lodestone and boat coordinates and the dedicated rowboat interaction target remain in place.
+
+Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, and `index.html`. Repair commits on `main`: `63fe81ba6fd6eec2b641a7e585e0aa43638f5bd6`, `1453273b47b0cfb03c1f827e218d87b7c1e50f07`, `a22ee943ae461d9cc3392b70b9ee380ac63373fa`, and `822d11916c31b33ab0e4279970b6144029cdbe3d`. Static source review confirmed the missing imports are present and cache versions are aligned. No tests or live gameplay check were run. The final commit to `main` triggered deployment; completion was not checked. Next step: owner refreshes Tide Arch after deployment and confirms the scene renders and placements still line up.
