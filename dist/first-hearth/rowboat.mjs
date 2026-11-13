@@ -6,8 +6,8 @@ export const ROWBOAT_DECK_Y = 558;
 export const ROWBOAT_FISH_X = 735;
 export const ROWBOAT_CHAIR_X = 1035;
 export const ROWBOAT_RETURN_X = 1275;
-export const ROWBOAT_DECK_MIN_X = 640;
-export const ROWBOAT_DECK_MAX_X = 1330;
+export const ROWBOAT_DECK_MIN_X = 720;
+export const ROWBOAT_DECK_MAX_X = 1200;
 
 const deck = { id: 'rowboat-deck', points: [[620,ROWBOAT_DECK_Y],[1350,ROWBOAT_DECK_Y]] };
 export const rowboatTerrain = defineTerrain(1920, 920, ROWBOAT_FISH_X, [deck]);
