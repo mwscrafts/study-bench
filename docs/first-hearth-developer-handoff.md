@@ -38,10 +38,11 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ### Rowboat graphic: classic clinker skiff
 
-- After comparing three concept directions, the owner selected the classic clinker skiff for the Tide Arch rowboat graphic.
-- `paintRowboat()` now draws a warm plank hull with overlapping visible strakes, two short benches, paired oars, and sunset-lit gunwale highlights. Its existing Tide Arch position and the boat build/unlock behavior are unchanged.
-- Cache versions are `beach-art.mjs?v=12` and entry `playtest.mjs?v=98`. Code commit `88669e47685402381a6570975c77b5307ad04ff5` is on `main`.
-- Source was reviewed only. No syntax check, live mobile visual check, gameplay check, or deployment completion check was performed. The commit to `main` triggers the configured Cloudflare deployment; the owner should verify the boat in context at Tide Arch.
+- After comparing three concept directions, the owner selected the classic clinker skiff for the Tide Arch rowboat.
+- The first implementation used hand-drawn vector shapes, but the owner flagged that its older flat look did not fit Driftwood Cove’s painterly background or the detailed lodestone sprites. The revised, boat-only transparent PNG is `dist/first-hearth/tide-arch-rowboat.png` (1994 × 789). It has a warm, hand-painted clinker hull with visible plank grain and seams, two benches, and paired oars, using the approved screenshot and lodestone sprite as style references.
+- `playtest.mjs` loads and crops the PNG through the existing `loadImage` / `spriteBounds` pipeline; `paintRowboat()` draws it at the existing Tide Arch position. The build/unlock behavior and fishing state are unchanged.
+- Cache versions are `beach-art.mjs?v=13` and entry `playtest.mjs?v=99`. Code commit `9b31061401aa9f2194a65f03b136ec24324898db` is on `main`.
+- Source and image dimensions were reviewed. No syntax check, live mobile visual check, gameplay check, or deployment completion check was performed. The commit to `main` triggers the configured Cloudflare deployment; the owner should verify the boat in context at Tide Arch.
 - The next requested work is the owner’s in-game visual check of the rowboat.
 
 ### King’s Bridge, fishing levels, and rowboat
