@@ -60,6 +60,11 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - At the time of the alignment patch, beach imports were v8/v14, world-data v22, and entry playtest v101. The offshore scene version update is recorded in the current checkpoint below.
 - Screenshot and source coordinates were reviewed. No syntax check, live gameplay check, or deployment completion check was performed. The owner should verify the lodestone footing, boat waterline, and separate boat interaction in-game.
 
+### Rowboat edge bounds correction
+
+- The owner reported that the player could walk beyond both visible hull edges and appear suspended. The rowboat movement limits were wider than the drawn skiff. Commit `1f91d3749b762df601000d83c50be31bc3584377` narrows the horizontal stop range to x=720–1200; boat art, deck height, terrain surface, and interactions are unchanged.
+- Source and cache references were checked. No gameplay or live mobile check was performed; the owner should verify both boat edges in play.
+
 ### King’s Bridge, fishing levels, and rowboat
 
 - Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.
