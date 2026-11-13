@@ -3698,6 +3698,9 @@ new ResizeObserver(resize).observe(world);
 
 async function boot() {
   try {
+    const saved = getSavedCamp();
+    el('continue-section').hidden = !saved;
+    if (saved?.publicName) el('player-name').value = saved.publicName;
     const [party, keepers, lodestoneSheet, rowboatImage] = await Promise.all([
       loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png')
     ]);
@@ -3719,14 +3722,14 @@ async function boot() {
     drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);
     el('begin').disabled = false;
     el('begin').textContent = 'Enter Alder Camp →';
-    const saved = getSavedCamp();
-    el('continue-section').hidden = !saved;
-    if (saved?.publicName) el('player-name').value = saved.publicName;
     updatePresenceButton();
     resize();
+    el('start').hidden = false;
+    el('startup').hidden = true;
     requestAnimationFrame(frame);
   } catch (error) {
     console.error('Camp load failed', error);
+    el('startup-message').hidden = true;
     el('load-error').hidden = false;
   }
 }
