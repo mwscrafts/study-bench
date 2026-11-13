@@ -276,10 +276,10 @@ export function paintCrystal(ctx, node, clock) {
   if(twinkle>.55) orb(ctx,x+22,y-49,2*twinkle,pale);
 }
 
-export function paintCrownwoodShadow(ctx, creature, clock, sprite) {
+export function paintCrownwoodShadow(ctx, creature, clock, sprite, direction = 1) {
   const { x, y, index } = creature;
   const sway = Math.sin(clock * 1.7 + index) * 2;
   const bob = Math.sin(clock * 2.4 + index) * 1.5;
   orb(ctx, x + sway, y - 31 + bob, 30, '#b399e932');
-  drawSprite(ctx, sprite, x + sway, y - 2, 72, 1, bob);
+  drawSprite(ctx, sprite, x + sway, y - 2, 72, direction, bob);
 }

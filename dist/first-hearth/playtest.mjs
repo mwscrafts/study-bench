@@ -4,7 +4,7 @@ import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, 
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes, crownwoodTerrain, crownwoodKingBridgeTerrain,
   KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=16';
 import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow,
-  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=17';
+  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=18';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
 import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=07';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
@@ -557,7 +557,7 @@ function paint() {
   } else if (region === 'king') {
     paintKingGrounds(ctx, trial, endingScene && !endingScene.struck ? { ...victory, ending: null } : victory, animationClock, endingScene, sharedDoors.has('village-gate'));
     if (trial?.stage === 'shadows') trial.shadows.forEach((shadow, index) =>
-      paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock));
+      paintCrownwoodShadow(ctx, { ...shadow, index }, animationClock, sprites.nightWisp, player.x < shadow.x ? 1 : -1));
     paintFireworks(ctx, camera, fireworksElapsed);
   } else if (region === 'village') {
     if (victory?.ending === 'free') paintRestoredKing(ctx);
@@ -576,7 +576,7 @@ function paint() {
     ? clamp((NIGHT_END - phaseClock) / (NIGHT_END - NIGHT_FADE_START), 0, 1) : 1;
   ctx.save();
   ctx.globalAlpha *= shadowFade;
-  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock, sprites.nightWisp));
+  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock, sprites.nightWisp, player.x < creature.x ? 1 : -1));
   ctx.restore();
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
