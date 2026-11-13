@@ -1,6 +1,6 @@
 # First Hearth developer handoff
 
-Updated: 2026-11-13
+Updated: 2026-11-12
 Repository: `mwscrafts/study-bench`  
 Live site: <https://love.ashquack.workers.dev/>  
 Game: <https://love.ashquack.workers.dev/first-hearth/>
@@ -16,6 +16,12 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - Current cache imports: `beach.mjs?v=7`, `beach-art.mjs?v=11`, `world-data.mjs?v=21`, entry `playtest.mjs?v=95`. The concept uses a fixed sunset sky; night tint applies, but phase-specific scenery is not visible beneath the full-scene art.
 - The first two screenshot overlays showed the old Salt Pines floor following the railing about 40–50 screen pixels above the path. The corrected line follows the path in both frames. The third screenshot overlay showed the Tide Arch ledge a little below the deck; the corrected line follows the deck. The owner’s before/after screenshots showed the landing shape was close, but its smooth tan boards did not match the dock’s painted texture. Commit `8b72b5626ad5f3b2d61169341fbf120025c7801b` now draws each landing plank from clear strips of the existing dock texture, with subtle edge shading and nail heads. It preserves the board layout and leaves beach terrain unchanged. The updated source has not yet had a live mobile visual check.
 - No syntax, gameplay, or live deployment check was performed for the texture revision. The commit to `main` triggered the configured Cloudflare deployment; deployment completion and mobile appearance remain unverified.
+
+### Regional lodestone artwork
+
+- The owner approved a shared angular rune with coastal tideglass, forest roots and moss, and dwarven copper, iron, and violet mineral details. The transparent game spritesheet is `dist/first-hearth/lodestones.webp`. `playtest.mjs` crops its three columns and maps them to the existing `lodestone-shore`, `lodestone-canopy`, and `lodestone-mine` landmarks. The sites, interactions, activation saves, and progression remain the same.
+- Code and artwork commit `f244195b04575673b9e83a402df28be9219d1dc5` is on `main`. Cache versions are `canvas-art.mjs?v=4` and entry `playtest.mjs?v=96`. The generated sprites are loaded during game startup and drawn with their regional activation glows.
+- No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment, but completion and mobile appearance remain unverified. The owner’s next visual check is to inspect all three stones. The next requested art task is the rowboat graphic.
 
 ### King’s Bridge, fishing levels, and rowboat
 
