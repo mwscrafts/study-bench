@@ -20,7 +20,7 @@ import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=1
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
 import { renderInventory } from './backpack.mjs?v=09';
-import { hearthNote } from './hearth.mjs?v=10';
+import { hearthNote } from './hearth.mjs?v=11';
 import { paintHearthDetails } from './hearth-art.mjs?v=1';
 import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
@@ -33,7 +33,7 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=29';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=30';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow, paintIronHelmet } from './canvas-art.mjs?v=6';

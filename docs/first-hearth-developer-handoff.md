@@ -381,3 +381,10 @@ The art asset is `dist/first-hearth/hidden-hearth-background.webp` (2880 × 900)
 The scene was rendered locally and visually checked against the exact authored floor line. No tests were run. The live game was not opened or played, as required by the owner’s playtest rule. The commit to `main` triggers the configured Cloudflare deployment; deployment completion and the live appearance remain unverified.
 
 Code commit: `9f882cf25ffd5d1d19c8902de32ee5ddf76c74cf`.
+
+
+## Hidden First Hearth walking surface alignment — 2026-11-13
+
+The owner authorized an Admin Ring teleport and an end-to-end live walk to inspect the new cave floor. The approved background image was already correct and remains untouched. The live walk showed the collision floor sitting roughly 30–60 world pixels above the painted shelf through the central chamber; the east exit was already close. Adjusted only the cave's continuous `hearth-floor` points to follow the existing painted path. The ledge, background, movement engine, player save, and interactions were not changed.
+
+Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playtest.mjs?v=116`. A visual overlay of the revised floor points against the existing background shows the central path following the painted shelf. The live game still needs a post-deployment walk through the west, center, and east sections before claiming the alignment is verified.
