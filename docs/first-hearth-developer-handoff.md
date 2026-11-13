@@ -387,4 +387,14 @@ Code commit: `9f882cf25ffd5d1d19c8902de32ee5ddf76c74cf`.
 
 The owner authorized an Admin Ring teleport and an end-to-end live walk to inspect the new cave floor. The approved background image was already correct and remains untouched. The live walk showed the collision floor sitting roughly 30–60 world pixels above the painted shelf through the central chamber; the east exit was already close. Adjusted only the cave's continuous `hearth-floor` points to follow the existing painted path. The ledge, background, movement engine, player save, and interactions were not changed.
 
-Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playtest.mjs?v=116`. A visual overlay of the revised floor points against the existing background shows the central path following the painted shelf. The first post-deployment check showed the central avatar still above the shelf, so the floor profile was lowered again to the visible shelf edge. The west, center, and east sections still need a final live walk after this correction before claiming the alignment is verified.
+Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playtest.mjs?v=116`. A visual overlay of the revised floor points against the existing background shows the central path following the painted shelf. The first post-deployment check showed the central avatar still above the shelf, so the floor profile was lowered again to the visible shelf edge. After the second correction, the live walk covered the west slope and entrance, the central chamber, and the east passage/return notch. The player’s feet tracked the existing painted ledge closely across those sections; the owner confirmed the result looked good. The cave artwork remains unchanged.
+
+
+## Public-facing language, Admin Ring arrival, and shadow recovery — 2026-11-13
+
+- Removed the Playtest 14 edition label and public-facing playtest wording from the game page and admin panel. Internal filenames and save flags remain for compatibility; admin tools and score eligibility still behave as before.
+- Added Open Sea to the Admin Ring's regional destinations. It places the player at x=960 on the existing `rowboat-deck` surface.
+- Defeating a field shadow restores up to 5 Composure, capped at 100. The reward applies to a shadow defeated by the player or Alvin, and uses the winner-only shared shadow event in Public. Defeating each Hollow King trial shadow also restores Composure.
+- Changed files: `dist/first-hearth/index.html`, `dist/first-hearth/playtest.mjs`, and this handoff. The entry cache is now `playtest.mjs?v=118`.
+- Source was reviewed for the updated interface strings, destination footing, and each shadow defeat path. No tests or new live gameplay check were run for this batch. The push to `main` triggers the configured deployment; completion is unverified.
+- Code commit: this checkpoint commit, recorded in Git history.

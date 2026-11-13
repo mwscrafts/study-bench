@@ -374,6 +374,12 @@ function applySharedSleep(offset, rested = false) {
   }
 }
 
+function restoreShadowComposure(x, y) {
+  const before = composure;
+  composure = Math.min(100, composure + 5);
+  if (composure > before) floater(floaters, x, y - 145, '+5 Composure');
+}
+
 function applySharedShadowState(message) {
   if (!message || message.region !== region || message.cycle !== publicClockCycle || !Number.isInteger(message.index)) return;
   const id = region + ':' + nightIndex + ':' + message.index;
@@ -386,6 +392,7 @@ function applySharedShadowState(message) {
     creatures = creatures.filter(creature => creature.index !== message.index);
     if (message.rewarded) {
       shadowStock++;
+      restoreShadowComposure(x,y);
       floater(floaters, x, y - 116, '+1 shadow');
     }
     updateNotes(); saveCamp();
@@ -683,6 +690,7 @@ function updateAlvinCombat() {
             defeatedShadows.add(id);
             creatures = creatures.filter(item => item !== target);
             shadowStock++;
+            restoreShadowComposure(target.x,target.y);
             floater(floaters,target.x,target.y-116,'+1 shadow');
             updateNotes(); saveCamp();
           }
@@ -969,7 +977,7 @@ function getSavedCamp() {
   try {
     const save = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (save?.avatar === 'boy' || save?.avatar === 'girl') return save;
-  } catch { /* A blocked or damaged save can be replaced by a new playtest. */ }
+  } catch { /* A blocked or damaged save can be replaced by a new journey. */ }
   return null;
 }
 
@@ -2260,7 +2268,7 @@ function openDialogue(id) {
 function openAdminRing() {
   if (!adminRing || !playing) return;
   openDialogue('admin-ring');
-  setDialogue('The ring hums softly. Choose where to go or open the test tools.', [
+  setDialogue('The ring hums softly. Choose where to go or open the admin tools.', [
     ['Admin tools', () => openAdminPanel(true)],
     ['Teleport to a region', adminTeleportDialogue]
   ]);
@@ -2274,6 +2282,7 @@ function adminTeleportDialogue() {
     ['Rootdeep Mine', 'rootdeep', { x: 110, ground: 'rootdeep-level-1' }],
     ['Driftwood Cove', 'beach', { x: 300, ground: 'shore-sand' }],
     ['Hidden First Hearth', 'hearth', { x: 300, ground: 'hearth-floor' }],
+    ['Open Sea', 'rowboat', { x: 960, ground: 'rowboat-deck' }],
     ['King’s Grounds', 'king', { x: 2315, ground: 'king-floor' }],
     ['Lantern Village', 'village', { x: 170, ground: 'village-road' }],
     ['Alder Camp Hut', 'hut', { x: 480, ground: 'hut-floor' }]
@@ -2291,19 +2300,19 @@ function openAdminPanel(fromRing = false) {
   adminPanelFromRing = fromRing;
   openDialogue('admin-tools');
   el('line').textContent = fromRing
-    ? 'Use the test tools here, or return to your ring to teleport.'
-    : 'Claim your ring or choose a test action.';
+    ? 'Use the admin tools here, or return to your ring to teleport.'
+    : 'Claim your ring or choose an admin action.';
   el('admin-copy').textContent = testRun
-    ? 'This saved adventure is marked as a test run. Its time will not go on the public board.'
-    : 'Claiming the ring and teleporting leave your score eligible. Using item grants or boss-test tools marks the run as a test.';
+    ? 'Admin changes were used. This adventure’s time will not appear on the public board.'
+    : 'Claiming the ring and teleporting leave your score eligible. Item grants or the King encounter setup disable its public score.';
   el('noticeboard-panel').hidden = false;
   el('notice-form').hidden = true;
   el('notice-list').hidden = true;
   el('admin-panel').hidden = false;
   el('admin-claim-ring').hidden = adminRing;
   el('notice-status').textContent = testRun
-    ? 'This adventure is marked as a test run.'
-    : 'Ring access is ready. No test tools have been used.';
+    ? 'Admin changes were used; this adventure’s time is off the public board.'
+    : 'Ring access is ready. The public score is still eligible.';
 }
 
 function isStrikeTool(id) {
@@ -2345,7 +2354,7 @@ function inventoryItems() {
   if (specialRewards.has('mobile')) items.push(['✧', 'Star mobile', 1, 'Hangs in your camp hut and village home.']);
   if (specialRewards.has('garland-recipe')) items.push(['▤', 'Glowcap garland recipe', 1,
     hutDecorations.has('glowcap-garland') ? 'Crafted and hanging at home.' : 'Craft at the camp workbench with one spare wood and one Glowcap.']);
-  if (adminRing) items.push(['◉', 'Admin Ring', 1, 'Open test tools and regional teleports from your backpack.']);
+  if (adminRing) items.push(['◉', 'Admin Ring', 1, 'Open admin tools and regional teleports from your backpack.']);
   return items;
 }
 
@@ -2496,7 +2505,14 @@ function updateSwing(dt) {
   if (swingCombat) {
     swingCombat = false;
     let result;
-    if (trial) result = attackTrial(trial, { ...player, direction: swingDirection }, equipped, composureDamageFactor());
+    if (trial) {
+      const shadowsBefore = trial.stage === 'shadows' ? trial.shadows.length : 0;
+      result = attackTrial(trial, { ...player, direction: swingDirection }, equipped, composureDamageFactor());
+      if (shadowsBefore > trial.shadows.length) {
+        restoreShadowComposure(result.x,result.y);
+        updateNotes(); saveCamp();
+      }
+    }
     else {
       const goblin = tunnelGoblins.filter(enemy => Math.abs(enemy.x - player.x) < 115 &&
         Math.abs(enemy.y - player.y) < 78 && (enemy.x - player.x) * swingDirection >= -22)
@@ -2537,6 +2553,7 @@ function updateSwing(dt) {
               defeatedShadows.add(id);
               creatures = creatures.filter(creature => creature !== target);
               shadowStock++;
+              restoreShadowComposure(target.x,target.y);
               floater(floaters, target.x, target.y - 78, '+1 shadow');
               updateNotes(); saveCamp();
             }
@@ -3037,7 +3054,7 @@ function altarDialogue() {
 
 function showScores() {
   if (testRun) {
-    setDialogue('This is a test run, so its time stays off the public high-score board.', []);
+    setDialogue('Admin changes were used, so this time is not eligible for the public high-score board.', []);
     return;
   }
   setDialogue(endings[victory.ending].text + ' I’m proud of you. Time ' +
@@ -3505,8 +3522,8 @@ function debugStatus(message) {
   updateNotes();
   saveCamp();
   updatePrompt();
-  el('admin-copy').textContent = 'This saved adventure is marked as a test run. Its time will not go on the public board.';
-  el('notice-status').textContent = message + ' · Test run; no high score will be posted.';
+  el('admin-copy').textContent = 'Admin changes were used. This adventure’s time will not appear on the public board.';
+  el('notice-status').textContent = message + ' · Public score disabled.';
 }
 
 function grantTestItem(kind, amount = 1) {
@@ -3594,8 +3611,8 @@ el('admin-close').addEventListener('click', () => {
   el('notice-form').hidden = false;
   el('notice-list').hidden = false;
   el('notice-status').textContent = testRun
-    ? 'This adventure remains marked as a test run.'
-    : 'Ring access is ready. No test tools have been used.';
+    ? 'Admin changes were used; this adventure’s time is off the public board.'
+    : 'Ring access is ready. The public score is still eligible.';
 });
 el('pause').addEventListener('click', () => setPause(!paused));
 el('resume').addEventListener('click', () => setPause(false));
