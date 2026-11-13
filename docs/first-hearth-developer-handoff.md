@@ -1,6 +1,6 @@
 # First Hearth developer handoff
 
-Updated: 2026-11-12
+Updated: 2026-11-13
 Repository: `mwscrafts/study-bench`  
 Live site: <https://love.ashquack.workers.dev/>  
 Game: <https://love.ashquack.workers.dev/first-hearth/>
@@ -9,11 +9,13 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
-### Beach graphical concept preview
+### Beach graphical rework
 
-- Added the painted coastal concept as a camera-cropped backdrop beneath the existing beach terrain and landmarks. The live horizon and its day/night behavior remain visible; collision surfaces, interaction coordinates, rowboat state, and draw order for foreground props are unchanged.
-- The image is stored as `dist/first-hearth/beach-concept.webp` (about 500 KB). `beach-art.mjs?v=5` draws it and entry `playtest.mjs?v=88` loads the updated renderer.
-- Source commit: `f51d5ab`. JavaScript syntax checks and `git diff --check` passed. No in-game playthrough or live deployment verification has been performed yet.
+- Replaced the entire old beach art canvas with the approved complete beach-map concept. The former concept-as-backdrop overlay was removed; the new art includes the distant coast and a separately detailed playable shore, Lantern Dock, and Tide Arch foreground.
+- The map image is `dist/first-hearth/beach-map.webp` (1920 × 445, about 171 KB) and is drawn to the beach world canvas (3840 × 890). `beach-art.mjs?v=6` loads it; `playtest.mjs?v=89` and `index.html` load the updated scene. The obsolete `beach-concept.webp` overlay was deleted.
+- Beach terrain, collision surfaces, landmarks, fishing progression, rowboat ownership/save state, and casting effects were not changed. The concept uses a fixed sunset sky; the existing night tint still applies, but the old beach sky's full phase-specific scenery is no longer visible beneath the new full-scene art.
+- The approved image was checked as a static map preview; JavaScript syntax checks and `git diff --check` passed. Codex did not open or play the public game. Commit `24ed33dfa56263c8755c143fb4ac7a7c155ca282` is on `main`; the Cloudflare deployment was triggered, but live visual behavior was not checked.
+- The owner and Ash can confirm the mobile scene, player footing against the unchanged shoreline/dock interactions, and the constructed-rowboat overlay in the live game.
 
 ### King’s Bridge, fishing levels, and rowboat
 
