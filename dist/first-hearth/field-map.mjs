@@ -1,7 +1,7 @@
 // A schematic of discovered routes. Coordinates are for the map display, not world travel.
 export const mapRegionIds = [
   'camp','crownwood','mine','beach','rootdeep','hearth','king','village',
-  'hut','lyss-cabin','village-home','house','rowboat',
+  'hut','lyss-cabin','village-home','house',
   'rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common','barry-home'
 ];
 
@@ -16,7 +16,6 @@ const nodes = [
   { id:'crownwood', x:250, y:245, lines:['Crownwood','Canopy'] },
   { id:'mine', x:95, y:415, lines:['Embervein','Mine'] },
   { id:'beach', x:95, y:555, lines:['Driftwood','Cove'] },
-  { id:'rowboat', x:95, y:635, lines:['Rowboat','Offshore'] },
   { id:'rootdeep', x:250, y:410, lines:['Rootdeep','Mine'] },
   { id:'hearth', x:400, y:85, lines:['First','Hearth'] },
   { id:'king', x:400, y:245, lines:['King’s','Grounds'] },
@@ -27,7 +26,6 @@ const links = [
   { from:'camp', to:'crownwood', hint:'Canopy trail' },
   { from:'camp', to:'mine', hint:'Mine entrance' },
   { from:'camp', to:'beach', hint:'Shore trail' },
-  { from:'beach', to:'rowboat', hint:'Offshore' },
   { from:'crownwood', to:'rootdeep', hint:'Rootbound entrance' },
   { from:'crownwood', to:'hearth', hint:'Waterfall passage' },
   { from:'crownwood', to:'king', hint:'King’s trail' },
@@ -54,7 +52,7 @@ export function renderFieldMap({ discovered, region, player, terrain, location, 
   const xPercent=mapParent[region] ? 50 : Math.max(0,Math.min(100,Math.round(player.x/terrain.width*100)));
   const found = new Set(discovered);
   found.add(main);
-  drawing.append(svg('rect',{x:0,y:0,width:480,height:690,rx:20,fill:'#132b27'}));
+  drawing.append(svg('rect',{x:0,y:0,width:480,height:625,rx:20,fill:'#132b27'}));
   for(const edge of links) {
     if (!found.has(edge.from) || !found.has(edge.to) || edge.tunnel && !tunnelOpen) continue;
     const start=nodes.find(node=>node.id===edge.from), end=nodes.find(node=>node.id===edge.to);
