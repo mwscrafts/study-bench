@@ -21,11 +21,11 @@ export function fishingLevel(xp = 0) {
 }
 
 const sand = { id: 'shore-sand', points: [
-  [0,435],[430,435],[625,495],[785,565],[940,621],[1130,650],[1460,660],[1700,630],
+  [0,435],[430,475],[625,515],[785,580],[940,621],[1130,650],[1460,660],[1700,630],
   [1910,623],[2640,623],[2810,606],[2980,558],[3180,528],[3520,536],[3840,539]
 ] };
-const drift = { id: 'drift-ledge', points: [[925,601],[1030,585],[1255,582],[1460,594],[1650,610],[1760,624]] };
-const lookout = { id: 'lookout-rock', points: [[3040,473],[3160,460],[3350,460],[3440,483]] };
+const drift = { id: 'drift-ledge', points: [[925,601],[1030,585],[1255,618],[1460,624],[1650,624],[1760,624]] };
+const lookout = { id: 'lookout-rock', points: [[3040,485],[3160,488],[3350,488],[3440,500]] };
 export const beachTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout]);
 
 function at(surface, id, x, label, radius = 74) {
