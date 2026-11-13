@@ -15,7 +15,7 @@ import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
 import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=16';
 import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=1';
 import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=1';
-import { startRowboatAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=1';
+import { startRowboatAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=2';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -2113,6 +2113,8 @@ function startNetCast(offshore) {
 }
 
 function rowboatDialogue(result) {
+  // The builder prompt belongs at Tide Arch; suppress stale or misrouted calls offshore.
+  if (region !== 'beach') { closeDialogue(); return; }
   openDialogue('rowboat');
   const progress = fishingProgress(fishing.xp);
   const level = progress.level;
