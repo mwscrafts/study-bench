@@ -65,6 +65,12 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - The owner reported that the player could walk beyond both visible hull edges and appear suspended. The rowboat movement limits were wider than the drawn skiff. Commit `1f91d3749b762df601000d83c50be31bc3584377` narrows the horizontal stop range to x=720–1200; boat art, deck height, terrain surface, and interactions are unchanged.
 - Source and cache references were checked. No gameplay or live mobile check was performed; the owner should verify both boat edges in play.
 
+### Open Sea background reuse
+
+- The owner asked to reuse Sandy Cove’s existing art while keeping its shore and dock out of Open Sea. The existing `beach-map.webp` is a complete scene, so `rowboat-art.mjs` now draws only its upper sky and distant horizon; the sea below uses a color sampled from that same asset. The skiff sprite, draw position, deck height, terrain, and collision are unchanged.
+- Code commit `b38b065c6e4a6ed766e9149c91b58ad0b776535b` is on `main`; cache versions are `rowboat-art.mjs?v=2`, `world-data.mjs?v=25`, and entry `playtest.mjs?v=109`.
+- Static source review only. The live mobile view and boat-to-water appearance have not been checked; the owner should verify the result in-game.
+
 ### King’s Bridge, fishing levels, and rowboat
 
 - Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.
