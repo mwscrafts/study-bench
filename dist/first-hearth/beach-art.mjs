@@ -1,5 +1,5 @@
 import { random, poly, path, orb } from './camp-art.mjs';
-import { beachTerrain } from './beach.mjs?v=5';
+import { beachTerrain } from './beach.mjs?v=6';
 
 const { width, height } = beachTerrain;
 const colors = {
