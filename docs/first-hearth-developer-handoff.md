@@ -12,7 +12,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 ### Beach graphical rework
 
 - Replaced the entire old beach art canvas with the approved complete beach-map concept. The former concept-as-backdrop overlay was removed; the new art includes the distant coast and a separately detailed playable shore, Lantern Dock, and Tide Arch foreground.
-- The map image is `dist/first-hearth/beach-map.webp` (1920 × 445, about 171 KB) and is drawn to the beach world canvas (3840 × 890). `beach-art.mjs?v=6` loads it; `playtest.mjs?v=89` and `index.html` load the updated scene. The obsolete `beach-concept.webp` overlay was deleted.
+- The map image is `dist/first-hearth/beach-map.webp` (1920 × 445, about 171 KB) and is drawn to the beach world canvas (3840 × 890). `world-data.mjs?v=16` imports `beach-art.mjs?v=6`; `playtest.mjs?v=90` and `index.html` load the updated scene. The obsolete `beach-concept.webp` overlay was deleted.
 - Beach terrain, collision surfaces, landmarks, fishing progression, rowboat ownership/save state, and casting effects were not changed. The concept uses a fixed sunset sky; the existing night tint still applies, but the old beach sky's full phase-specific scenery is no longer visible beneath the new full-scene art.
 - The approved image was checked as a static map preview; JavaScript syntax checks and `git diff --check` passed. Codex did not open or play the public game. Commit `24ed33dfa56263c8755c143fb4ac7a7c155ca282` is on `main`; the Cloudflare deployment was triggered, but live visual behavior was not checked.
 - The owner and Ash can confirm the mobile scene, player footing against the unchanged shoreline/dock interactions, and the constructed-rowboat overlay in the live game.
