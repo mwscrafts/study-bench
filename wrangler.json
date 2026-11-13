@@ -1,0 +1,22 @@
+{
+  "name": "love",
+  "main": "worker/hearth-times.mjs",
+  "compatibility_date": "2026-10-04",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/first-hearth/api/times", "/first-hearth/api/presence", "/first-hearth/api/noticeboard"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "HEARTH_TIMES", "class_name": "HearthTimes" },
+      { "name": "HEARTH_PRESENCE", "class_name": "HearthPresence" },
+      { "name": "HEARTH_BOARD", "class_name": "HearthBoard" }
+    ]
+  },
+  "migrations": [
+    { "tag": "hearth-times-v1", "new_sqlite_classes": ["HearthTimes"] },
+    { "tag": "hearth-presence-v1", "new_sqlite_classes": ["HearthPresence"] },
+    { "tag": "hearth-board-v1", "new_sqlite_classes": ["HearthBoard"] }
+  ]
+}
