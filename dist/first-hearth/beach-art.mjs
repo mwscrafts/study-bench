@@ -1,6 +1,6 @@
 import { random, poly, path, orb } from './camp-art.mjs';
 import { drawSprite } from './canvas-art.mjs?v=4';
-import { beachTerrain } from './beach.mjs?v=8';
+import { beachTerrain, ROWBOAT_X, ROWBOAT_Y } from './beach.mjs?v=8';
 
 const { width, height } = beachTerrain;
 const colors = {
