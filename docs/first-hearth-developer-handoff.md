@@ -306,4 +306,11 @@ The level-10 build now costs exactly 20 Driftwood, 5 spare wood, and 2 iron. Off
 
 Changed files: `beach.mjs`, `beach-art.mjs`, `rowboat.mjs`, `rowboat-art.mjs`, `rowboat-ambience.mjs`, `world-data.mjs`, `field-map.mjs`, `playtest.mjs`, `index.html`, and `AGENTS.md`. Main gameplay source commit: `eafa31acaca93118f08b2ca8ad68abbe5a2a3571`; entrypoint update: `80aed6f1fad50a1767b0fcf6a3e1bcd25c7a9a01`. Cache versions on the branch: beach v9, beach-art v16, world-data v24, field-map v3, entry playtest v103.
 
-No tests, syntax checks, or live gameplay checks were run. The change is on the feature branch and is not deployed; owner review/merge is the next step.
+PR #3 was squash merged into `main` as `fc1f6b23bb101168bb772ab9b302b4067102d6fb`. No tests, syntax checks, or live gameplay checks were run. The merge triggered the configured deployment; completion was not checked.
+
+
+## Offshore chair prompt and surf audibility — 2026-11-13
+
+The owner reported the rowboat-ready prompt appearing after arriving offshore and sitting in the chair, and asked for louder surf. The rowboat builder dialogue now closes instead of displaying outside the beach region, preventing stale or misrouted calls from reopening it aboard the boat. The synthesized surf swell envelope is approximately three times higher; occasional gull calls are unchanged. `playtest.mjs` now imports `rowboat-ambience.mjs?v=2`, and the page entry is `playtest.mjs?v=104` for cache refresh.
+
+Prepared in PR `codex/rowboat-dialogue-surf-fix`. Static source review only; no tests, syntax check, live gameplay, or deployment check was run. Once merged, the commit to `main` should trigger the configured deployment. The owner should verify the chair interaction and surf level on a phone.

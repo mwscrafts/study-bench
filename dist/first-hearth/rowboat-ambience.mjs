@@ -29,7 +29,7 @@ export function startRowboatAmbience() {
   const wave=()=>{
     if(ambience!==state)return;
     const now=context.currentTime;
-    const curve=new Float32Array([.001,.004,.011,.027,.048,.039,.024,.012,.004,.001]);
+    const curve=new Float32Array([.003,.012,.033,.081,.144,.117,.072,.036,.012,.003]);
     surfGain.gain.cancelScheduledValues(now);
     surfGain.gain.setValueCurveAtTime(curve,now,4.4);
     state.timers.push(setTimeout(wave,6100+Math.random()*3200));
