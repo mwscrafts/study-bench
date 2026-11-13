@@ -353,4 +353,4 @@ Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mj
 
 The owner reported intermittent fall-through at the repaired King’s Bridge, especially when returning from the King’s Grounds. The repaired overlook now uses one continuous collision surface from the west ledge, across the bridge span, and onto the east ledge. Legacy footing IDs map to that route on saved-game load. Bridge artwork, costs, and the unrepaired gate remain unchanged.
 
-Changed files: `dist/first-hearth/crownwood.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Source commit SHA: pending. Static geometry/source review only; no tests or live traversal were run. The commit to `main` triggers the configured deployment; completion is not verified.
+Changed files: `dist/first-hearth/crownwood.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Source commit: `533aafc3d0ccae789f10603e24943c05adb8cd41`. Static geometry/source review only; no tests or live traversal were run. The commit to `main` triggers the configured deployment; completion is not verified.
