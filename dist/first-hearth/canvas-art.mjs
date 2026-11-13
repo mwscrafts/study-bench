@@ -89,6 +89,13 @@ export function drawSprite(context, sprite, x, y, height, direction = 1, bob = 0
   context.restore();
 }
 
+export function paintIronHelmet(context, helmet, x, y, direction = 1, bob = 0, tilt = 0, avatarHeight = 97) {
+  if (!helmet) return;
+  const scale = avatarHeight / 97;
+  // The avatar's crown sits above its eyes; keep the helmet centered over the head, not the ground anchor.
+  drawSprite(context, helmet, x + direction * 6 * scale, y - 74 * scale, 28 * scale, direction, bob, tilt);
+}
+
 export function drawPortrait(canvas, sprite) {
   const context = canvas.getContext('2d');
   context.clearRect(0, 0, canvas.width, canvas.height);
