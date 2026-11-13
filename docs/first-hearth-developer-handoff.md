@@ -354,3 +354,12 @@ Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mj
 The owner reported intermittent fall-through at the repaired King’s Bridge, especially when returning from the King’s Grounds. The repaired overlook now uses one continuous collision surface from the west ledge, across the bridge span, and onto the east ledge. Legacy footing IDs map to that route on saved-game load. Bridge artwork, costs, and the unrepaired gate remain unchanged.
 
 Changed files: `dist/first-hearth/crownwood.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Source commit: `533aafc3d0ccae789f10603e24943c05adb8cd41`. Static geometry/source review only; no tests or live traversal were run. The commit to `main` triggers the configured deployment; completion is not verified.
+
+
+## Root-wisp night spectre — 2026-11-13
+
+The owner selected the middle root-wisp concept and asked for it to be implemented as the night spectre. The selected central design was isolated into `dist/first-hearth/night-root-wisp.webp`. The existing night-creature spawn, movement, collision, combat, and progression logic remain unchanged; `playtest.mjs` loads the sprite and passes it to the existing `paintCrownwoodShadow` draw path in `crownwood-art.mjs`, which now renders the drifting root-wisp. The separate low-Composure pressure wraith is unchanged.
+
+Changed files: `dist/first-hearth/night-root-wisp.webp`, `crownwood-art.mjs`, `playtest.mjs`, `index.html`, and this handoff. Cache versions: Crownwood art v17; playtest entry v113. Source commit: `f11a0e581dfbb7c22ed4749ee0be6662e87224fa`.
+
+Static source review only; no tests were run, and the live game was not opened or played. The final commit to `main` triggers the configured deployment; deployment completion remains unverified.
