@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#233a32">
+  <title>Alder Camp · The First Hearth playtest</title>
+  <link rel="stylesheet" href="./playtest.css?v=22">
+</head>
+<body>
+  <main class="page">
+    <header class="mast">
+      <a href="/" class="home">← Back home</a>
+      <span class="mast-mark">✦ &nbsp; The First Hearth</span>
+      <span class="edition">Playtest 14</span>
+    </header>
+    <div class="title">
+      <div>
+        <p class="eyebrow">THE FIRST HEARTH / PLAYTEST 14</p>
+        <h1 id="region-title">Alder <em>Camp</em></h1>
+      </div>
+      <p id="region-intro">Follow Reedbank Trail to camp, meet Lyss, and take Alvin up into the branches.</p>
+    </div>
+    <section id="game" class="game" aria-label="The First Hearth playtest">
+      <div class="game-bar">
+        <div class="game-location"><span class="spark">✦</span> <strong id="location-name">Reedbank Trail</strong><span class="divider">/</span><span id="time-label">Daylight</span></div>
+        <div class="game-actions">
+          <button id="presence-toggle" type="button" aria-pressed="true" title="Switch between public and solo play">Public</button>
+          <button id="sky-toggle" type="button" title="Preview the sky at different times">Sky: Auto</button>
+          <button id="pause" type="button" aria-label="Pause or resume">Pause</button>
+          <button id="fullscreen" type="button" aria-label="Toggle fullscreen">⛶</button>
+        </div>
+      </div>
+      <div class="scene">
+        <canvas id="world" tabindex="0" aria-label="Alder Camp game world. Move with arrows or A and D, jump with Space, and interact with E."></canvas>
+        <div class="hud">
+          <div id="health-notes" class="vitals" hidden>
+            <div>
+              <span aria-hidden="true">♥ <b id="hpText">100</b></span>
+              <div id="healthMeter" class="meter" role="meter" aria-label="Health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="hpBar"></i></div>
+            </div>
+            <div class="composure-vital">
+              <span>✦ <b>Composure</b> · <b id="composureText">100</b></span>
+              <div id="composureMeter" class="meter" role="meter" aria-label="Composure" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="composureBar"></i></div>
+            </div>
+          </div>
+          <div class="scene-notes">
+            <div id="quest-tracker" class="quest-tracker" aria-live="polite" hidden></div>
+            <div id="tool-notes" class="quest-tracker" aria-live="polite" hidden></div>
+          </div>
+        </div>
+        <div id="trial-hud" class="trial-hud" hidden>
+          <div><strong>The Hollow King</strong><span id="trial-time"></span></div>
+          <div id="king-meter" class="king-meter" hidden><i id="king-fill"></i><span id="king-hp"></span></div>
+          <p id="trial-hint" aria-live="polite"></p>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+        <div id="startup" class="overlay">
+          <div class="start-card loading-card">
+            <p id="startup-message" role="status">Preparing Alder Camp…</p>
+            <p id="load-error" class="error" role="alert" hidden>Camp art didn’t load. Refresh to try again.</p>
+          </div>
+        </div>
+        <div id="start" class="overlay" hidden>
+          <div class="start-card">
+            <div id="continue-section" class="continue-section" hidden>
+              <button id="continue" type="button" class="secondary">Continue Journey →</button>
+              <p class="continue-note">Starting a new journey below will overwrite your saved journey on this device.</p>
+            </div>
+            <section class="new-journey" aria-labelledby="new-journey-title">
+              <p class="eyebrow">START A NEW JOURNEY</p>
+              <h2 id="new-journey-title">Choose your <em>adventurer.</em></h2>
+              <p>Alvin’s coming either way.</p>
+              <div class="characters" role="group" aria-label="Adventurer sprite">
+                <button class="character" id="choose-boy" type="button" data-avatar="boy" aria-pressed="true"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Boy</span></button>
+                <button class="character" id="choose-girl" type="button" data-avatar="girl" aria-pressed="false"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Girl</span></button>
+              </div>
+              <div class="difficulty" role="group" aria-label="Difficulty">
+                <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
+                <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+              </div>
+              <label class="player-name" for="player-name">Name shown to other players <input id="player-name" type="text" maxlength="16" autocomplete="nickname" placeholder="Adventurer"></label>
+              <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
+            </section>
+            
+          </div>
+        </div>
+        <div id="dialogue" class="overlay" hidden>
+          <section class="dialogue" role="dialog" aria-modal="true" aria-labelledby="speaker">
+            <canvas id="portrait" width="110" height="136" aria-hidden="true"></canvas>
+            <div>
+              <p class="eyebrow" id="speaker-role"></p>
+              <h2 id="speaker"></h2>
+              <p id="line"></p>
+              <div id="choices" class="choices"></div>
+              <div id="time-board" class="time-board" hidden>
+                <form id="time-form">
+                  <label for="time-name">Name on the public board</label>
+                  <input id="time-name" name="player" maxlength="20" required autocomplete="off">
+                  <button id="time-submit" class="primary" type="submit">Post time</button>
+                </form>
+                <p id="time-status" role="status"></p>
+                <ol id="time-list"></ol>
+              </div>
+              <div id="noticeboard-panel" class="noticeboard-panel" hidden>
+                <form id="notice-form">
+                  <label for="notice-text">Leave a note for the next visitor</label>
+                  <textarea id="notice-text" maxlength="140" rows="2" placeholder="Leave a little note…" required></textarea>
+                  <button id="notice-submit" class="primary" type="submit">Pin note</button>
+                </form>
+                <div id="admin-panel" class="admin-panel" hidden>
+                  <p class="eyebrow">LOCAL TEST PANEL</p>
+                  <p id="admin-copy" class="admin-copy">This saved adventure is marked as a test run. Its time will not go on the public board.</p>
+                  <button id="admin-claim-ring" class="secondary" type="button">Claim Admin Ring</button>
+                  <label for="admin-item">Give an item</label>
+                  <div class="admin-grant-row">
+                    <select id="admin-item">
+                      <option value="berries">Berries</option><option value="wood">Wood</option>
+                      <option value="flint">Flint</option><option value="iron">Iron ore</option>
+                      <option value="rootglass">Rootglass</option><option value="glowcaps">Glowcaps</option>
+                      <option value="shadows">Shadow essence</option><option value="crystals">Crystals</option>
+                      <option value="dusklilies">Dusklilies</option><option value="fish">Fish</option>
+                      <option value="driftwood">Driftwood</option><option value="berrySeeds">Berry seeds</option>
+                      <option value="catnipSeed">Catnip seed</option><option value="net">Casting net</option>
+                      <option value="soakedBook">Soaked book</option><option value="tideglass">Tideglass</option>
+                      <option value="godslayer">Godslayer</option><option value="hatchet">Hatchet</option>
+                      <option value="pickaxe">Pickaxe</option><option value="ironSword">Iron sword</option>
+                      <option value="shadowBlade">Shadow blade</option><option value="helmet">Iron helmet</option>
+                      <option value="charm">Shockwave charm</option><option value="flowerCrown">Flower crown</option>
+                      <option value="brassKey">Brass key</option><option value="rootKey">Root Key</option>
+                    </select>
+                    <input id="admin-amount" type="number" min="1" max="99" value="1" aria-label="Amount">
+                  </div>
+                  <button id="admin-grant" class="primary" type="button">Give selected</button>
+                  <div class="admin-actions">
+                    <button id="admin-godslayer" class="secondary" type="button">Give and equip Godslayer</button>
+                    <button id="admin-boss-test" class="secondary" type="button">Start boss test</button>
+                    <button id="admin-restore" class="secondary" type="button">Restore health and Composure</button>
+                    <button id="admin-close" class="secondary" type="button">Close test panel</button>
+                  </div>
+                </div>
+                <p id="notice-status" role="status"></p>
+                <ol id="notice-list" aria-live="polite"></ol>
+              </div>
+              <button id="close-dialogue" type="button" class="secondary">Keep exploring →</button>
+            </div>
+          </section>
+        </div>
+        <div id="inventoryOverlay" class="overlay" hidden>
+          <section class="backpack-panel" role="dialog" aria-modal="true" aria-labelledby="bagTitle">
+            <div class="panel-head">
+              <div><p class="eyebrow">EVERYTHING YOU HAVE EARNED</p><h2 id="bagTitle">Your backpack.</h2></div>
+              <button id="closeInventory" class="secondary bag-close" type="button" aria-label="Close backpack">×</button>
+            </div>
+            <p id="bagHealth" class="bag-health"></p>
+            <button class="bag-eat" id="bagEat" type="button">Eat a berry</button>
+            <button class="bag-eat" id="bagFeed" type="button">Feed Alvin a fish</button>
+            <button class="bag-eat" id="bagAdminRing" type="button" hidden>Use Admin Ring · Tools and teleports</button>
+            <h3 class="bag-heading">Equipment</h3>
+            <div id="weaponRack"></div>
+            <h3 class="bag-heading">Supplies</h3>
+            <div class="bag-grid" id="bagItems"></div>
+            <small>Tap a tool to equip it. Gear, materials, and berries save with your adventure.</small>
+          </section>
+        </div>
+        <div id="journalOverlay" class="overlay" hidden>
+          <section class="journal-panel" role="dialog" aria-modal="true" aria-labelledby="journalTitle">
+            <div class="panel-head">
+              <div><p class="eyebrow">NOTES FROM THE TRAIL</p><h2 id="journalTitle">Field journal</h2></div>
+              <button id="closeJournal" class="secondary bag-close" type="button" aria-label="Close journal">×</button>
+            </div>
+            <div class="journal-layout">
+              <nav id="journalEntryList" class="journal-list" aria-label="Journal entries"></nav>
+              <article class="journal-entry" aria-live="polite">
+                <p id="journalTopic" class="eyebrow">FIELD NOTE</p>
+                <h3 id="journalEntryTitle"></h3>
+                <p id="journalEntryBody"></p>
+              </article>
+            </div>
+            <small>New notes are recorded as you discover things. Press J to close.</small>
+          </section>
+        </div>
+        <div id="mapOverlay" class="overlay" hidden>
+          <section class="map-panel" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+            <div class="panel-head">
+              <div><p class="eyebrow">PATHS YOU HAVE WALKED</p><h2 id="mapTitle">Field map</h2></div>
+              <button id="closeMap" class="secondary bag-close" type="button" aria-label="Close map">×</button>
+            </div>
+            <p id="mapHere" class="map-here" aria-live="polite"></p>
+            <svg id="fieldMap" class="field-map" viewBox="0 0 480 690" role="img" aria-label="Visited regions and your current location"></svg>
+            <h3>Paths from here</h3>
+            <ul id="mapRoutes" class="map-routes"></ul>
+            <small>Only places you have reached appear here. M closes the map.</small>
+          </section>
+        </div>
+        <div id="paused" class="overlay" hidden>
+          <div class="pause-card">
+            <p class="eyebrow">A MOMENT TO BREATHE</p>
+            <h2>Taking a break.</h2>
+            <button id="resume" type="button" class="primary">Keep exploring →</button>
+            <button id="leave-trial" type="button" class="secondary" hidden>Return to Lantern Rest</button>
+          </div>
+        </div>
+      </div>
+      <div class="game-bottom">
+        <div class="inventory">
+          <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>▣ Backpack <kbd>I</kbd></button>
+          <button id="quickBerry" class="inventory-button" type="button" aria-label="Eat a berry" disabled>● Berry <span id="berryCount">3</span></button>
+          <button id="journalButton" class="inventory-button" type="button" aria-label="Open field journal" title="Open field journal (J)" disabled>✎ Journal <kbd>J</kbd></button>
+          <button id="mapButton" class="inventory-button" type="button" aria-label="Open field map" title="Open field map (M)" disabled>◇ Map <kbd>M</kbd></button>
+        </div>
+        <div class="control-deck">
+          <div class="move-controls">
+            <button class="pad" id="left" type="button" aria-label="Move left">←</button>
+            <button class="pad" id="right" type="button" aria-label="Move right">→</button>
+            <button class="pad" id="down" type="button" aria-label="Drop down through a ledge" title="Drop through ledge">↓</button>
+          </div>
+          <span class="key-guide"><kbd>A</kbd> <kbd>D</kbd> Move &nbsp; <kbd>↓</kbd> Drop through ledge &nbsp; <kbd>Space</kbd> Double-jump &nbsp; <kbd>E</kbd> Action &nbsp; <kbd>G</kbd> Wave &nbsp; <kbd>I</kbd> Bag</span>
+          <div class="act-controls">
+            <button class="pad wave" id="wave" type="button" disabled aria-label="Wave to other players"><span>👋</span><small>Wave</small></button>
+            <button class="pad action" id="interact" type="button" disabled aria-label="Interact or swing tool"><span>⚒</span><small id="action-label">Interact</small></button>
+            <button class="pad jump" id="jump" type="button" aria-label="Jump"><span>↑</span><small>Jump</small></button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer>
+      <span id="trail-notes">Trail entrances found · 0 / 3</span>
+      <span>The First Hearth · saves on this device</span>
+    </footer>
+  </main>
+  <script type="module" src="./playtest.mjs?v=109"></script>
+</body>
+</html>

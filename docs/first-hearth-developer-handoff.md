@@ -333,3 +333,10 @@ PR #4 and PR #5 merges triggered the configured deployment. Static source and di
 The owner clarified that the original helmet graphic was acceptable and only its placement needed correction. The faceted replacement art introduced in PR #6 was unrequested and has been removed. The original dome-and-band drawing is restored and moved from across the face up onto the crown. It follows the avatar's facing, bob, tilt, and seated scale in both local and multiplayer rendering. The temporary `iron-helmet.png` asset is removed; current cache versions are `canvas-art.mjs?v=6` and entry `playtest.mjs?v=107`.
 
 PR #7 was squash merged to `main` as `6e592bdea5b461436d65a4847149ab4fa92df144`, triggering the configured deployment. Static source/diff review only; no tests, syntax checks, live gameplay checks, or deployment completion check were run. The owner should confirm the original helmet graphic now sits correctly on both character choices.
+
+
+## Reuse the Sandy Cove sea background offshore — 2026-11-13
+
+The owner asked to use the existing Sandy Cove background art in Open Sea. Replaced the cropped dock-scene plus sampled-blue fill with the existing background-only **First Hearth: Teal Sea Horizons** artwork, exported to WebP for the game. The full image now fills the rowboat view; its existing cloud and gull motion remains. No boat sprite, player, terrain, deck bounds, floor, or collision files were changed.
+
+Changed files: `dist/first-hearth/rowboat-sea-background.webp`, `rowboat-art.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Commit: pending. Source review only; no tests or live gameplay check performed. A commit to `main` triggers the configured deployment; completion will not be claimed without checking it.

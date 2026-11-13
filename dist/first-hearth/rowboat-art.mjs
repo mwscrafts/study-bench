@@ -3,19 +3,15 @@ import {
   rowboatTerrain, ROWBOAT_CENTER_X, ROWBOAT_BASELINE_Y, ROWBOAT_DECK_Y, ROWBOAT_CHAIR_X
 } from './rowboat.mjs?v=1';
 
-let sandyCoveWaterColor = '#4c8790';
 const sandyCoveBackdrop = new Image();
-sandyCoveBackdrop.addEventListener('load', () => {
-  const sampleCanvas = document.createElement('canvas');
-  sampleCanvas.width = 1;
-  sampleCanvas.height = 1;
-  const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
-  const sampleY = Math.round(sandyCoveBackdrop.naturalHeight * .60);
-  sampleCtx.drawImage(sandyCoveBackdrop, 0, sampleY, sandyCoveBackdrop.naturalWidth, 1, 0, 0, 1, 1);
-  const [r, g, b] = sampleCtx.getImageData(0, 0, 1, 1).data;
-  sandyCoveWaterColor = `rgb(${r}, ${g}, ${b})`;
-});
-sandyCoveBackdrop.src = new URL('./beach-map.webp', import.meta.url).href;
+sandyCoveBackdrop.src = new URL('./rowboat-sea-background.webp', import.meta.url).href;
+
+function drawSandyCoveBackdrop(ctx, image, x, y, width, height) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
 
 export function buildRowboatArt() {
   const canvas = document.createElement('canvas');
@@ -31,15 +27,17 @@ export function paintRowboatSky(ctx, view, phase, alpha, clock) {
   const wrap = value => ((value % (width + 260)) + (width + 260)) % (width + 260);
   ctx.save();
   ctx.globalAlpha *= alpha;
-  ctx.fillStyle = sandyCoveWaterColor;
+  ctx.fillStyle = phase === 'night' ? '#1b2945' : '#4c8790';
   ctx.fillRect(x, y, width, height);
   if (sandyCoveBackdrop.complete && sandyCoveBackdrop.naturalWidth) {
-    const sourceHorizon = Math.round(sandyCoveBackdrop.naturalHeight * .56);
-    ctx.drawImage(
-      sandyCoveBackdrop,
-      0, 0, sandyCoveBackdrop.naturalWidth, sourceHorizon,
-      x, y, width, Math.max(0, horizon - y)
-    );
+    drawSandyCoveBackdrop(ctx, sandyCoveBackdrop, x, y, width, height);
+    const tint = phase === 'night' ? 'rgba(12, 20, 51, .46)'
+      : phase === 'dusk' ? 'rgba(91, 60, 74, .13)'
+      : phase === 'dawn' ? 'rgba(115, 97, 113, .10)' : null;
+    if (tint) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(x, y, width, height);
+    }
   }
   for (let i=0;i<5;i++) {
     const base = i * (width + 260) / 5 + i * 83;
