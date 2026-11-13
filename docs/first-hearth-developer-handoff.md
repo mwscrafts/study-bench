@@ -60,12 +60,6 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - At the time of the alignment patch, beach imports were v8/v14, world-data v22, and entry playtest v101. The offshore scene version update is recorded in the current checkpoint below.
 - Screenshot and source coordinates were reviewed. No syntax check, live gameplay check, or deployment completion check was performed. The owner should verify the lodestone footing, boat waterline, and separate boat interaction in-game.
 
-### Open Sea background correction
-
-- The owner caught that Open Sea still used the earlier flat procedural horizon after Sandy Cove had been reworked. Commit `aa1986cc779414480ac86bdaf48e642da126b0f2` replaces that horizon with a sky-and-open-water crop from `beach-map.webp`, preserving the drifting clouds, gulls, and water movement.
-- The change is limited to the background painter and cache refreshes (`rowboat-art.mjs?v=2`, `world-data.mjs?v=25`, entry `playtest.mjs?v=108`). Boat art, chair, terrain, movement, and footing were left alone.
-- Static source review only; no syntax check, live gameplay or mobile visual check, or deployment completion check was performed. The commit to `main` triggered the configured Cloudflare deployment. The owner should check the Open Sea backdrop on a phone, especially the crop and its water continuity.
-
 ### King’s Bridge, fishing levels, and rowboat
 
 - Replaced the ineffective optional Cove Bridge with the Crownwood bridge that gates access to the King. The overlook has a 380-pixel broken gap; movement is blocked across it while unrepaired, so jumping cannot skip the bridge. The lower trail to Rootdeep stays open. Repair costs 5 spare wood and 2 iron.

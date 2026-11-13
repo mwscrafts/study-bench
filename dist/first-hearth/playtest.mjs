@@ -14,7 +14,7 @@ import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
   ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=9';
 import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=16';
 import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=1';
-import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=2';
+import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=1';
 import { startRowboatAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=2';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
@@ -33,7 +33,7 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=25';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=24';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow, paintIronHelmet } from './canvas-art.mjs?v=6';
