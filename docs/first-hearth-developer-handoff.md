@@ -304,7 +304,7 @@ The owner asked for boarding the Tide Arch rowboat to enter a real offshore scen
 
 The level-10 build now costs exactly 20 Driftwood, 5 spare wood, and 2 iron. Offshore casts keep the existing two-fish shoal behavior and 1-in-1,000 Godslayer roll; there is also a 1-in-100 Rootglass bonus catch, counted toward Dorrin’s winch. Existing built boats and their saves remain valid.
 
-Changed files: `beach.mjs`, `beach-art.mjs`, `rowboat.mjs`, `rowboat-art.mjs`, `rowboat-ambience.mjs`, `world-data.mjs`, `field-map.mjs`, `playtest.mjs`, `index.html`, and `AGENTS.md`. Main gameplay source commit: `eafa31acaca93118f08b2ca8ad68abbe5a2a3571`; entrypoint update: `80aed6f1fad50a1767b0fcf6a3e1bcd25c7a9a01`. Cache versions on the branch: beach v9, beach-art v16, world-data v24, field-map v3, entry playtest v103.
+Changed files: `beach.mjs`, `beach-art.mjs`, `rowboat.mjs`, `rowboat-art.mjs`, `rowboat-ambience.mjs`, `world-data.mjs`, `field-map.mjs`, `playtest.mjs`, `index.html`, and `AGENTS.md`. PR #3 was squash merged to `main` as `fc1f6b23bb101168bb772ab9b302b4067102d6fb`. Cache versions on main: beach v9, beach-art v16, world-data v24, field-map v3, entry playtest v103.
 
 PR #3 was squash merged into `main` as `fc1f6b23bb101168bb772ab9b302b4067102d6fb`. No tests, syntax checks, or live gameplay checks were run. The merge triggered the configured deployment; completion was not checked.
 
@@ -313,4 +313,4 @@ PR #3 was squash merged into `main` as `fc1f6b23bb101168bb772ab9b302b4067102d6fb
 
 The owner reported the rowboat-ready prompt appearing after arriving offshore and sitting in the chair, and asked for louder surf. The rowboat builder dialogue now closes instead of displaying outside the beach region, preventing stale or misrouted calls from reopening it aboard the boat. The synthesized surf swell envelope is approximately three times higher; occasional gull calls are unchanged. `playtest.mjs` now imports `rowboat-ambience.mjs?v=2`, and the page entry is `playtest.mjs?v=104` for cache refresh.
 
-Prepared in PR `codex/rowboat-dialogue-surf-fix`. Static source review only; no tests, syntax check, live gameplay, or deployment check was run. Once merged, the commit to `main` should trigger the configured deployment. The owner should verify the chair interaction and surf level on a phone.
+PR #4 was squash merged to `main` as `a03886574255eabedd69715cc471d4ae11c683a1`, triggering the configured deployment. Static source and PR diff review only; no tests, syntax checks, live gameplay checks, or deployment completion check were run. The owner should verify the chair interaction and surf level on a phone.
