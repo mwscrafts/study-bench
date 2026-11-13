@@ -1,6 +1,6 @@
 import { random, poly, path, orb } from './camp-art.mjs';
 import { drawSprite } from './canvas-art.mjs?v=4';
-import { beachTerrain } from './beach.mjs?v=7';
+import { beachTerrain } from './beach.mjs?v=8';
 
 const { width, height } = beachTerrain;
 const colors = {
@@ -141,7 +141,7 @@ export function paintDockLanding(ctx, image) {
 }
 export function paintRowboat(ctx, sprite) {
   if (!sprite) return;
-  drawSprite(ctx, sprite, 3725, 585, 64);
+  drawSprite(ctx, sprite, ROWBOAT_X, ROWBOAT_Y, 64);
 }
 
 export function paintBeachDetails(ctx, view, clock, night, casting) {

@@ -11,8 +11,8 @@ import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, g
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
-  ROWBOAT_WOOD_COST } from './beach.mjs?v=7';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=13';
+  ROWBOAT_WOOD_COST } from './beach.mjs?v=8';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=14';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -30,7 +30,7 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=4';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=21';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=22';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=2';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=4';
@@ -2098,7 +2098,7 @@ function startNetCast(offshore) {
 }
 
 function rowboatDialogue(result) {
-  openDialogue('tide-arch');
+  openDialogue('rowboat');
   const progress = fishingProgress(fishing.xp);
   const level = progress.level;
   if (!fishing.rowboat) {
@@ -2498,7 +2498,7 @@ const interactionHandlers = {
   barry: barryDialogue,
   workbench: workbenchDialogue,
   dock: dockDialogue,
-  'tide-arch': rowboatDialogue,
+  rowboat: rowboatDialogue,
   'ember-box': emberBoxDialogue,
   'request-board': requestBoardDialogue,
   'player-board': openPlayerNoticeboard,

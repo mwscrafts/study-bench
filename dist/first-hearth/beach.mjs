@@ -3,6 +3,8 @@ import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs';
 export const MAX_FISHING_LEVEL = 10;
 export const MAX_FISHING_XP = ((MAX_FISHING_LEVEL - 1) * (3 + 11)) / 2;
 export const ROWBOAT_WOOD_COST = 8;
+export const LODESTONE_SHORE_X = 3380;
+export const ROWBOAT_X = 3725;
 
 export function fishingProgress(xp = 0) {
   let remaining = clamp(Number.isSafeInteger(xp) ? xp : 0, 0, MAX_FISHING_XP);
@@ -27,6 +29,7 @@ const sand = { id: 'shore-sand', points: [
 ] };
 const drift = { id: 'drift-ledge', points: [[925,601],[1030,585],[1150,605],[1255,650],[1460,650],[1650,634],[1760,617]] };
 const lookout = { id: 'lookout-rock', points: [[3040,489],[3160,489],[3350,499],[3440,514]] };
+export const ROWBOAT_Y = surfaceAt(sand, ROWBOAT_X);
 export const beachTerrain = defineTerrain(3840, 890, 267, [sand, drift, lookout]);
 
 function at(surface, id, x, label, radius = 74) {
@@ -36,8 +39,9 @@ export const dock = at(sand,'dock',2265,'Fish at Lantern Dock',107);
 export const beachLandmarks = [
   at(sand,'shore-return',165,'Return to Alder Camp',88),
   dock,
-  at(lookout,'lodestone-shore',3260,'Inspect the old lodestone',70),
-  at(sand,'tide-arch',3525,'Look out from Tide Arch',90)
+  at(lookout,'lodestone-shore',LODESTONE_SHORE_X,'Inspect the old lodestone',70),
+  at(sand,'tide-arch',3525,'Look out from Tide Arch',90),
+  at(sand,'rowboat',ROWBOAT_X,'Rowboat',100)
 ];
 export const beachFlower = at(drift,'beach',1420,'Pick Driftwood Cove dusklily',58);
 
