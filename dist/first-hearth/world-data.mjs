@@ -1,6 +1,6 @@
 import { campTerrain, landmarks, flowers } from './terrain.mjs?v=17';
 import { buildCampArt } from './camp-art.mjs?v=15';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=15';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodFlower, crownwoodLocation, crownwoodShadows } from './crownwood.mjs?v=16';
 import { buildCrownwoodArt } from './crownwood-art.mjs?v=16';
 import { mineTerrain, mineLandmarks, mineLocation, mineShadows } from './mine.mjs?v=16';
 import { buildMineArt } from './mine-art.mjs?v=06';

@@ -18,9 +18,23 @@ export const crownwoodTerrain = defineTerrain(5760, 935, 273, [
   { id: 'east-rise', points: [[4470,207],[4540,197],[4840,189]] },
   kingBridgeWest, kingBridgeEast
 ]);
+// One continuous collision surface keeps the repaired overlook from dropping players at segment seams.
+const kingBridgeRoute = {
+  id: 'king-bridge-route',
+  points: [
+    ...kingBridgeWest.points,
+    ...kingBridgeSpan.points.slice(1),
+    ...kingBridgeEast.points.slice(1)
+  ]
+};
 export const crownwoodKingBridgeTerrain = defineTerrain(5760, 935, 273, [
-  ...crownwoodTerrain.surfaces, kingBridgeSpan
+  ...crownwoodTerrain.surfaces.filter(surface =>
+    surface.id !== kingBridgeWest.id && surface.id !== kingBridgeEast.id),
+  kingBridgeRoute
 ]);
+for (const legacyId of [kingBridgeWest.id, kingBridgeSpan.id, kingBridgeEast.id]) {
+  crownwoodKingBridgeTerrain.byId.set(legacyId, kingBridgeRoute);
+}
 export const KING_BRIDGE_START = 5070;
 export const KING_BRIDGE_END = 5450;
 export const KING_BRIDGE_WOOD_COST = 5;

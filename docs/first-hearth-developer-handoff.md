@@ -347,3 +347,10 @@ Changed files: `dist/first-hearth/rowboat-sea-background.webp`, `rowboat-art.mjs
 The owner asked for the net throw to travel left and twice as far. The beach and offshore cast animation now draws its arc, line endpoint, and splash 144 pixels left of the player (twice the previous 72-pixel endpoint). Catch timing and fishing outcomes are unchanged.
 
 Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Source commit: `8763bd349c463c5ba6a58f6a5cfe84a19109217d`. Source diff review only; no tests or gameplay check were run. A commit to `main` triggers the configured deployment; completion is not yet verified.
+
+
+## King’s Bridge landing continuity — 2026-11-13
+
+The owner reported intermittent fall-through at the repaired King’s Bridge, especially when returning from the King’s Grounds. The repaired overlook now uses one continuous collision surface from the west ledge, across the bridge span, and onto the east ledge. Legacy footing IDs map to that route on saved-game load. Bridge artwork, costs, and the unrepaired gate remain unchanged.
+
+Changed files: `dist/first-hearth/crownwood.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Source commit SHA: pending. Static geometry/source review only; no tests or live traversal were run. The commit to `main` triggers the configured deployment; completion is not verified.
