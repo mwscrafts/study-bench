@@ -12,7 +12,7 @@ import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
   ROWBOAT_WOOD_COST } from './beach.mjs?v=7';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=11';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=12';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
