@@ -3719,7 +3719,7 @@ async function boot() {
     el('begin').disabled = false;
     el('begin').textContent = 'Enter Alder Camp →';
     const saved = getSavedCamp();
-    el('continue').hidden = !saved;
+    el('continue-section').hidden = !saved;
     if (saved?.publicName) el('player-name').value = saved.publicName;
     updatePresenceButton();
     resize();

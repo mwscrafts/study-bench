@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth playtest</title>
-  <link rel="stylesheet" href="./playtest.css?v=19">
+  <link rel="stylesheet" href="./playtest.css?v=20">
 </head>
 <body>
   <main class="page">
@@ -58,20 +58,25 @@
         <div id="status" class="status" role="status" aria-live="polite" hidden></div>
         <div id="start" class="overlay">
           <div class="start-card">
-            <p class="eyebrow">THE ALDER CAMP TRAILS</p>
-            <h2>Choose your <em>adventurer.</em></h2>
-            <p>Alvin’s coming either way.</p>
-            <div class="characters" role="group" aria-label="Adventurer sprite">
-              <button class="character" id="choose-boy" type="button" data-avatar="boy" aria-pressed="true"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Boy</span></button>
-              <button class="character" id="choose-girl" type="button" data-avatar="girl" aria-pressed="false"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Girl</span></button>
+            <div id="continue-section" class="continue-section" hidden>
+              <button id="continue" type="button" class="secondary">Continue Journey →</button>
+              <p class="continue-note">Starting a new journey below will overwrite your saved journey on this device.</p>
             </div>
-            <div class="difficulty" role="group" aria-label="Difficulty">
-              <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
-              <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
-            </div>
-            <label class="player-name" for="player-name">Name shown to other players <input id="player-name" type="text" maxlength="16" autocomplete="nickname" placeholder="Adventurer"></label>
-            <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
-            <button id="continue" type="button" class="secondary" hidden>Continue saved playtest →</button>
+            <section class="new-journey" aria-labelledby="new-journey-title">
+              <p class="eyebrow">START A NEW JOURNEY</p>
+              <h2 id="new-journey-title">Choose your <em>adventurer.</em></h2>
+              <p>Alvin’s coming either way.</p>
+              <div class="characters" role="group" aria-label="Adventurer sprite">
+                <button class="character" id="choose-boy" type="button" data-avatar="boy" aria-pressed="true"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Boy</span></button>
+                <button class="character" id="choose-girl" type="button" data-avatar="girl" aria-pressed="false"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Girl</span></button>
+              </div>
+              <div class="difficulty" role="group" aria-label="Difficulty">
+                <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
+                <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+              </div>
+              <label class="player-name" for="player-name">Name shown to other players <input id="player-name" type="text" maxlength="16" autocomplete="nickname" placeholder="Adventurer"></label>
+              <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
+            </section>
             <p id="load-error" class="error" role="alert" hidden>Camp art didn’t load. Refresh to try again.</p>
           </div>
         </div>
@@ -219,6 +224,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=96"></script>
+  <script type="module" src="./playtest.mjs?v=97"></script>
 </body>
 </html>
