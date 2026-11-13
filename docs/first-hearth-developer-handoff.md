@@ -363,3 +363,11 @@ The owner selected the middle root-wisp concept and asked for it to be implement
 Changed files: `dist/first-hearth/night-root-wisp.webp`, `crownwood-art.mjs`, `playtest.mjs`, `index.html`, and this handoff. Cache versions: Crownwood art v17; playtest entry v113. Source commit: `f11a0e581dfbb7c22ed4749ee0be6662e87224fa`.
 
 Static source review only; no tests were run, and the live game was not opened or played. The final commit to `main` triggers the configured deployment; deployment completion remains unverified.
+
+## Root-wisp facing correction — 2026-11-13
+
+The owner reported that the newly implemented root-wisp always faced left, so it showed its back when approaching from the player's right. Night-creature drawing now mirrors the sprite according to the player's horizontal side. The same facing rule applies to Crownwood's King-trial shadows. Spawn timing, movement, collision, damage, and rewards are unchanged.
+
+Changed files: `dist/first-hearth/crownwood-art.mjs`, `playtest.mjs`, `index.html`, and this handoff. Cache versions: Crownwood art v18; playtest entry v114. Source commit: `0959d6c2d3e6c409528787d375a1470aa45cedf5`.
+
+Static source review only; no tests or live gameplay check were run. The live game was not opened. The commit to `main` triggers the configured deployment; completion remains unverified.
