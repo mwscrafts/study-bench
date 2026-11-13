@@ -10,7 +10,7 @@ import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=9';
 import { rowboatTerrain, rowboatLandmarks, rowboatLocation } from './rowboat.mjs?v=1';
 import { buildRowboatArt } from './rowboat-art.mjs?v=3';
-import { buildBeachArt } from './beach-art.mjs?v=16';
+import { buildBeachArt } from './beach-art.mjs?v=17';
 import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=10';
 import { buildHearthArt } from './hearth-art.mjs';

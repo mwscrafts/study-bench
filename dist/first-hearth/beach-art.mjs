@@ -155,9 +155,9 @@ export function paintBeachDetails(ctx, view, clock, night, casting) {
   if(!casting) return;
   const t=clock-casting.start;
   const {x,y}=casting;
-  const splash=x+72;
+  const splash=x-144;
   if(t<.42) {
-    const dx=10+Math.max(0,t)*148;
+    const dx=-(20+Math.max(0,t)*296);
     const dy=-69-Math.sin(Math.min(1,t/.42)*Math.PI)*42;
     path(ctx,[[x,y-53],[x+dx,y+dy]],'#d7c8a2',2);
     orb(ctx,x+dx,y+dy,8,'#d7c8a2');

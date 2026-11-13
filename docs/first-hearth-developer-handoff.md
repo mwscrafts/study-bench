@@ -340,3 +340,10 @@ PR #7 was squash merged to `main` as `6e592bdea5b461436d65a4847149ab4fa92df144`,
 The owner asked to use the existing Sandy Cove background art in Open Sea. Replaced the cropped dock-scene plus sampled-blue fill with the existing background-only **First Hearth: Teal Sea Horizons** artwork, exported to WebP for the game. The full image now fills the rowboat view; its existing cloud and gull motion remains. No boat sprite, player, terrain, deck bounds, floor, or collision files were changed.
 
 Changed files: `dist/first-hearth/rowboat-sea-background.webp`, `rowboat-art.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Final code and repository-root restoration commit on `main`: `37ef762d88ad9ede12ab09181aded1419b7c071e`. Source review confirmed the bad crop is gone and the new image loads from the published asset path. No tests or in-game Open Sea visual check were performed. The commit to `main` triggered deployment; the asset URL is reachable, but deployment completion and boat-waterline alignment were not checked.
+
+
+## Fishing cast direction and distance — 2026-11-13
+
+The owner asked for the net throw to travel left and twice as far. The beach and offshore cast animation now draws its arc, line endpoint, and splash 144 pixels left of the player (twice the previous 72-pixel endpoint). Catch timing and fishing outcomes are unchanged.
+
+Changed files: `dist/first-hearth/beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, `index.html`, and this handoff. Commit SHA: pending. Source diff review only; no tests or gameplay check were run. A commit to `main` triggers the configured deployment; completion is not yet verified.
