@@ -89,11 +89,17 @@ export function drawSprite(context, sprite, x, y, height, direction = 1, bob = 0
   context.restore();
 }
 
-export function paintIronHelmet(context, helmet, x, y, direction = 1, bob = 0, tilt = 0, avatarHeight = 97) {
-  if (!helmet) return;
+export function paintIronHelmet(context, x, y, direction = 1, bob = 0, tilt = 0, avatarHeight = 97) {
   const scale = avatarHeight / 97;
-  // The avatar's crown sits above its eyes; keep the helmet centered over the head, not the ground anchor.
-  drawSprite(context, helmet, x + direction * 6 * scale, y - 74 * scale, 28 * scale, direction, bob, tilt);
+  // Keep the original dome-and-band drawing; move it from the face up onto the crown.
+  context.save();
+  context.translate(x + direction * 6 * scale, y + bob - 89 * scale);
+  context.scale(direction * scale, scale);
+  context.rotate(tilt);
+  context.fillStyle = '#a3b9b5';
+  context.beginPath(); context.ellipse(0, 0, 19, 10, 0, Math.PI, 0); context.fill();
+  context.fillRect(-21, -1, 42, 4);
+  context.restore();
 }
 
 export function drawPortrait(canvas, sprite) {
