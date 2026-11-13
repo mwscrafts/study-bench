@@ -12,7 +12,7 @@ import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
   ROWBOAT_WOOD_COST } from './beach.mjs?v=7';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=12';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=13';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -545,7 +545,7 @@ function paint() {
     if(hughStiltsRevealed) paintDiscardedStilts(ctx,1955,hugh.y);
     drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, hughStiltsRevealed ? 64 : 105);
   } else if (region === 'beach') {
-    if (fishing.rowboat) paintRowboat(ctx);
+    if (fishing.rowboat) paintRowboat(ctx, sprites.rowboat);
     paintBeachDetails(ctx, camera, animationClock, night, casting);
     paintRegionalLodestones();
   } else if (region === 'hearth') {
@@ -3698,8 +3698,8 @@ new ResizeObserver(resize).observe(world);
 
 async function boot() {
   try {
-    const [party, keepers, lodestoneSheet] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp')
+    const [party, keepers, lodestoneSheet, rowboatImage] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png')
     ]);
     backgrounds.camp = buildCampArt();
     sprites = {
@@ -3708,6 +3708,7 @@ async function boot() {
         canopy: spriteBounds(lodestoneSheet, 1 / 3, 2 / 3, .5),
         mine: spriteBounds(lodestoneSheet, 2 / 3, 1, .5)
       },
+      rowboat: spriteBounds(rowboatImage, 0, 1, .5),
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
       alvin: spriteBounds(party, 2 / 3, 1, .65),

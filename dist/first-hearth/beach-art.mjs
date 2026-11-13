@@ -1,4 +1,5 @@
 import { random, poly, path, orb } from './camp-art.mjs';
+import { drawSprite } from './canvas-art.mjs?v=4';
 import { beachTerrain } from './beach.mjs?v=7';
 
 const { width, height } = beachTerrain;
@@ -138,41 +139,9 @@ export function paintDockLanding(ctx, image) {
   }
   ctx.restore();
 }
-export function paintRowboat(ctx) {
-  const x=3725, y=552;
-  ctx.save();
-  ctx.lineJoin='round';
-  ctx.lineCap='round';
-
-  // Dark clinker-built hull silhouette.
-  poly(ctx,[[x-80,y-2],[x-68,y+15],[x-54,y+27],[x-39,y+33],[x+39,y+33],[x+54,y+27],[x+68,y+15],[x+80,y-2],[x+51,y+5],[x-51,y+5]],'#4f392d');
-  poly(ctx,[[x-74,y-1],[x-63,y+13],[x-50,y+23],[x-36,y+28],[x+36,y+28],[x+50,y+23],[x+63,y+13],[x+74,y-1],[x+49,y+4],[x-49,y+4]],'#80563a');
-
-  // Overlapping plank strakes, visible at the small in-game scale.
-  path(ctx,[[x-69,y+7],[x-59,y+14],[x-45,y+19],[x-29,y+22],[x+29,y+22],[x+45,y+19],[x+59,y+14],[x+69,y+7]],'#bd8a57',2);
-  path(ctx,[[x-60,y+17],[x-49,y+23],[x-34,y+27],[x+34,y+27],[x+49,y+23],[x+60,y+17]],'#593e2f',2);
-  path(ctx,[[x-53,y+11],[x-37,y+16],[x-18,y+18]],'#d0a06b',2);
-  path(ctx,[[x+53,y+11],[x+37,y+16],[x+18,y+18]],'#d0a06b',2);
-
-  // Open interior with two short cross-benches.
-  poly(ctx,[[x-54,y-5],[x-43,y+3],[x+43,y+3],[x+54,y-5],[x+37,y-9],[x-37,y-9]],'#49362b');
-  poly(ctx,[[x-39,y-5],[x-5,y-5],[x-1,y-1],[x-35,y-1]],'#c39a68');
-  poly(ctx,[[x+5,y-5],[x+39,y-5],[x+35,y-1],[x+1,y-1]],'#b88958');
-  path(ctx,[[x-34,y+2],[x+34,y+2]],'#694a34',2);
-
-  // A pair of resting oars and small oarlocks.
-  poly(ctx,[[x-47,y-3],[x-42,y-5],[x-38,y-1],[x-44,y+1]],'#4b392d');
-  poly(ctx,[[x+38,y-1],[x+42,y-5],[x+47,y-3],[x+44,y+1]],'#4b392d');
-  path(ctx,[[x-40,y-4],[x-76,y-32]],'#d6b783',4);
-  path(ctx,[[x+40,y-4],[x+76,y-32]],'#d6b783',4);
-  poly(ctx,[[x-83,y-37],[x-75,y-33],[x-68,y-24],[x-74,y-22],[x-84,y-29]],'#b78957');
-  poly(ctx,[[x+83,y-37],[x+75,y-33],[x+68,y-24],[x+74,y-22],[x+84,y-29]],'#b78957');
-
-  // Raised gunwale catches the sunset along the hull.
-  path(ctx,[[x-78,y-2],[x-55,y+4],[x+55,y+4],[x+78,y-2]],'#d4b17a',4);
-  path(ctx,[[x-72,y+2],[x-61,y+16]],'#e0bd82',2);
-  path(ctx,[[x+72,y+2],[x+61,y+16]],'#e0bd82',2);
-  ctx.restore();
+export function paintRowboat(ctx, sprite) {
+  if (!sprite) return;
+  drawSprite(ctx, sprite, 3725, 585, 64);
 }
 
 export function paintBeachDetails(ctx, view, clock, night, casting) {
