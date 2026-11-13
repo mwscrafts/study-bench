@@ -29,6 +29,13 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - The continue button still loads the existing save; the new journey action still starts a fresh adventure and saves to the existing device key. Cache versions are `playtest.css?v=20` and entry `playtest.mjs?v=97`. Code commit `1fa1bfdbd20f4f3d60e176234888d82db8197ec3` is on `main`.
 - No syntax, gameplay, or live deployment check was performed. The `main` commit triggered the configured Cloudflare deployment; completion and mobile appearance are unverified. The owner should check that Continue appears first, the warning text is readable, and the new journey controls are clearly separated. The rowboat art update is recorded below.
 
+### Startup screen transition
+
+- The owner reported that the default new-journey form appeared briefly before JavaScript revealed the saved-journey layout. The start overlay is now hidden in the initial HTML; a neutral “Preparing Alder Camp…” card is shown while boot reads the device save and loads sprites.
+- Once save state and character images are ready, the correct start screen is revealed. This preserves the existing Continue Journey first, overwrite warning, and separated new-journey controls. If loading fails, the startup card shows the error instead of exposing a misleading or incomplete start form.
+- Cache versions are `playtest.css?v=22` and entry `playtest.mjs?v=100`. Code commit `48d371923237286bd616c77b88c6958b6553fbf4` is on `main`.
+- Source was reviewed only. No syntax check or live mobile visual check was performed; gameplay and save behavior were not changed. The `main` commit triggers the configured Cloudflare deployment, but completion and the first-paint transition remain unverified.
+
 ### Mobile touch-control reach
 
 - The owner asked for the bottom-left movement controls and bottom-right Wave / Interact / Jump controls to sit slightly farther from the phone corners for comfort, while keeping the rest of the HUD intact.
