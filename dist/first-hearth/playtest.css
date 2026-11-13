@@ -178,7 +178,7 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
     align-items: center;
     gap: 8px;
     min-height: 57px;
-    padding: 4px max(13px, env(safe-area-inset-right)) 4px max(13px, env(safe-area-inset-left));
+    padding: 4px max(27px, calc(env(safe-area-inset-right) + 14px)) 4px max(27px, calc(env(safe-area-inset-left) + 14px));
   }
   .control-deck { display: contents; }
   .move-controls { grid-area: 1 / 1; justify-self: start; gap: 12px; }
