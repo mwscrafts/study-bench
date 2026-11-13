@@ -13,7 +13,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 - The approved complete beach map is `dist/first-hearth/beach-map.webp` (1920 × 445, drawn over world coordinates 3840 × 890). It includes the distant coast and playable foreground. The earlier concept-as-backdrop overlay was removed.
 - Owner screenshots revealed that the initial terrain correction (`45c0329`) still placed the western Salt Pines player on the fence railing and left the Tide Arch lookout a little low. Using feature matching, the four phone screenshots were mapped back to world coordinates, and the collision lines were overlaid on the screenshots. Commit `239896a585ff89ee625f60f5ac8ca7b3bb4c1bd8` lowers the western floor onto the dirt path and raises the Tide Arch lookout ledge onto its visible deck. The existing surface IDs, routes, landmark IDs, fishing progression, rowboat ownership/save state, and casting effects are unchanged. The owner later clarified that photo 4 was an art transition: boards should visibly extend from shore into the dock, with no floor change.
-- Current cache imports: `beach.mjs?v=7`, `beach-art.mjs?v=11`, `world-data.mjs?v=21`, entry `playtest.mjs?v=95`. The concept uses a fixed sunset sky; night tint applies, but phase-specific scenery is not visible beneath the full-scene art.
+- Current cache imports: `beach.mjs?v=8`, `beach-art.mjs?v=14`, `world-data.mjs?v=22`, entry `playtest.mjs?v=101`. The concept uses a fixed sunset sky; night tint applies, but phase-specific scenery is not visible beneath the full-scene art.
 - The first two screenshot overlays showed the old Salt Pines floor following the railing about 40–50 screen pixels above the path. The corrected line follows the path in both frames. The third screenshot overlay showed the Tide Arch ledge a little below the deck; the corrected line follows the deck. The owner’s before/after screenshots showed the landing shape was close, but its smooth tan boards did not match the dock’s painted texture. Commit `8b72b5626ad5f3b2d61169341fbf120025c7801b` now draws each landing plank from clear strips of the existing dock texture, with subtle edge shading and nail heads. It preserves the board layout and leaves beach terrain unchanged. The updated source has not yet had a live mobile visual check.
 - No syntax, gameplay, or live deployment check was performed for the texture revision. The commit to `main` triggered the configured Cloudflare deployment; deployment completion and mobile appearance remain unverified.
 
@@ -48,9 +48,17 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - After comparing three concept directions, the owner selected the classic clinker skiff for the Tide Arch rowboat.
 - The first implementation used hand-drawn vector shapes, but the owner flagged that its older flat look did not fit Driftwood Cove’s painterly background or the detailed lodestone sprites. The revised, boat-only transparent PNG is `dist/first-hearth/tide-arch-rowboat.png` (1994 × 789). It has a warm, hand-painted clinker hull with visible plank grain and seams, two benches, and paired oars, using the approved screenshot and lodestone sprite as style references.
 - `playtest.mjs` loads and crops the PNG through the existing `loadImage` / `spriteBounds` pipeline; `paintRowboat()` draws it at the existing Tide Arch position. The build/unlock behavior and fishing state are unchanged.
-- Cache versions are `beach-art.mjs?v=13` and entry `playtest.mjs?v=99`. Code commit `9b31061401aa9f2194a65f03b136ec24324898db` is on `main`.
+- Cache versions at the time of sprite integration were `beach-art.mjs?v=13` and entry `playtest.mjs?v=99`. Code commit `9b31061401aa9f2194a65f03b136ec24324898db` is on `main`.
 - Source and image dimensions were reviewed. No syntax check, live mobile visual check, gameplay check, or deployment completion check was performed. The commit to `main` triggers the configured Cloudflare deployment; the owner should verify the boat in context at Tide Arch.
 - The next requested work is the owner’s in-game visual check of the rowboat.
+
+### Tide Arch screenshot alignment
+
+- In the owner’s first screenshot, the player’s standing point maps to approximately world x=3380 on the raised lookout. The shore lodestone now uses x=3380; its base is derived from that ledge surface (y≈504), keeping it planted on the slope.
+- In the second screenshot, the rowboat hull floated above the shoreline. It remains at x=3725, but its draw baseline now comes from the sand surface at that x (y≈606.4), lowering it about 21 world pixels.
+- The boat now has its own `rowboat` landmark and interaction target at the boat. `tide-arch` remains at x=3525 for the lookout dialogue. This moves the boat’s prompt toward the boat without changing its level-10 unlock, 8-wood build cost, save state, or offshore fishing.
+- Current shared beach module versions are `beach.mjs?v=8`, `beach-art.mjs?v=14`, `world-data.mjs?v=22`, and entry `playtest.mjs?v=101`. Code commit `a99195e3ee26868288eaf0cabf43c2130a299740` is on `main`.
+- Screenshot and source coordinates were reviewed. No syntax check, live gameplay check, or deployment completion check was performed. The owner should verify the lodestone footing, boat waterline, and separate boat interaction in-game.
 
 ### King’s Bridge, fishing levels, and rowboat
 
