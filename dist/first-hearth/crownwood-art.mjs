@@ -1,6 +1,7 @@
 import { surfaceAt } from './terrain.mjs';
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs?v=15';
 import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=15';
+import { drawSprite } from './canvas-art.mjs?v=6';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;
 const bridge = crownwoodTerrain.byId.get('rope-bridge');
@@ -275,11 +276,10 @@ export function paintCrystal(ctx, node, clock) {
   if(twinkle>.55) orb(ctx,x+22,y-49,2*twinkle,pale);
 }
 
-export function paintCrownwoodShadow(ctx, creature, clock) {
-  const {x,y,index}=creature;
-  orb(ctx,x,y-20,30,'#b399e932');
-  poly(ctx,[[x-28,y-2],[x-23,y-23],[x-15,y-36],[x-11,y-50],[x,y-38],[x+12,y-52],[x+17,y-38],[x+25,y-22],[x+29,y-2],[x+12,y-7],[x+1,y],[x-12,y-5]],'#221f3d');
-  const glow = Math.sin(clock*4+index)>.7?'#f5d2ff':'#d6a9ed';
-  orb(ctx,x-8,y-26,2.7,glow);
-  orb(ctx,x+8,y-26,2.7,glow);
+export function paintCrownwoodShadow(ctx, creature, clock, sprite) {
+  const { x, y, index } = creature;
+  const sway = Math.sin(clock * 1.7 + index) * 2;
+  const bob = Math.sin(clock * 2.4 + index) * 1.5;
+  orb(ctx, x + sway, y - 31 + bob, 30, '#b399e932');
+  drawSprite(ctx, sprite, x + sway, y - 2, 72, 1, bob);
 }

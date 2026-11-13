@@ -4,7 +4,7 @@ import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, 
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes, crownwoodTerrain, crownwoodKingBridgeTerrain,
   KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=16';
 import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow,
-  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=16';
+  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=17';
 import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
 import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=07';
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
@@ -576,7 +576,7 @@ function paint() {
     ? clamp((NIGHT_END - phaseClock) / (NIGHT_END - NIGHT_FADE_START), 0, 1) : 1;
   ctx.save();
   ctx.globalAlpha *= shadowFade;
-  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock));
+  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock, sprites.nightWisp));
   ctx.restore();
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
@@ -3778,11 +3778,12 @@ async function boot() {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
     if (saved?.publicName) el('player-name').value = saved.publicName;
-    const [party, keepers, lodestoneSheet, rowboatImage] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png')
+    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp')
     ]);
     backgrounds.camp = buildCampArt();
     sprites = {
+      nightWisp: spriteBounds(rootWispImage, 0, 1, .5),
       lodestones: {
         shore: spriteBounds(lodestoneSheet, 0, 1 / 3, .5),
         canopy: spriteBounds(lodestoneSheet, 1 / 3, 2 / 3, .5),
