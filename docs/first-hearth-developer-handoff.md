@@ -371,3 +371,13 @@ The owner reported that the newly implemented root-wisp always faced left, so it
 Changed files: `dist/first-hearth/crownwood-art.mjs`, `playtest.mjs`, `index.html`, and this handoff. Cache versions: Crownwood art v18; playtest entry v114. Source commit: `0959d6c2d3e6c409528787d375a1470aa45cedf5`.
 
 Static source review only; no tests or live gameplay check were run. The live game was not opened. The commit to `main` triggers the configured deployment; completion remains unverified.
+
+## Hidden First Hearth cave rework — 2026-11-13
+
+The owner approved the complete left-hand cave concept. The region now uses the full scene: teal cavern walls, waterfalls, crown alcove, both side entrances, ember shrine, and sloped stone floor. Animated water streaks and ember/latch lighting remain as subtle details. The old water-only treatment was rolled back before this implementation.
+
+The art asset is `dist/first-hearth/hidden-hearth-background.webp` (2880 × 900), fitted to the existing cave floor contour. `hearth.mjs` and its terrain/collision points, ledge, landmark IDs, and interactions are unchanged. Artwork rendering is in `hearth-art.mjs`. Cache references are `hearth-art.mjs?v=1`, `world-data.mjs?v=29`, and entry `playtest.mjs?v=115`.
+
+The scene was rendered locally and visually checked against the exact authored floor line. No tests were run. The live game was not opened or played, as required by the owner’s playtest rule. The commit to `main` triggers the configured Cloudflare deployment; deployment completion and the live appearance remain unverified.
+
+Code commit: `9f882cf25ffd5d1d19c8902de32ee5ddf76c74cf`.
