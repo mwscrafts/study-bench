@@ -1,6 +1,6 @@
 # First Hearth developer handoff
 
-Updated: 2026-11-13
+Updated: 2026-11-14
 Repository: `mwscrafts/study-bench`  
 Live site: <https://love.ashquack.workers.dev/>  
 Game: <https://love.ashquack.workers.dev/first-hearth/>
@@ -398,3 +398,14 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 - Changed files: `dist/first-hearth/index.html`, `dist/first-hearth/playtest.mjs`, and this handoff. The entry cache is now `playtest.mjs?v=118`.
 - Source was reviewed for the updated interface strings, destination footing, and each shadow defeat path. No tests or new live gameplay check were run for this batch. The push to `main` triggers the configured deployment; completion is unverified.
 - Code commit: this checkpoint commit, recorded in Git history.
+
+
+## Public in-game chat — 2026-11-14
+
+- Added a chat button and compact in-game chat window. The window keeps the latest 60 messages for the current browser session, including while the player changes regions; it does not save chat across a page reload.
+- Public chat messages are relayed to connected players across the world. A message bubble appears over its sender only for players currently in the same region and remains for nine seconds.
+- Chat uses the existing Public presence connection. Solo mode can show the session history but cannot send. Message text is displayed literally. There is no send rate limit; individual messages are capped at 180 characters.
+- Changed files: `dist/first-hearth/index.html`, `dist/first-hearth/playtest.css`, `dist/first-hearth/playtest.mjs`, `dist/first-hearth/presence.mjs`, `worker/hearth-times.mjs`, and this handoff. Cache references are `playtest.css?v=23`, `presence.mjs?v=5`, and entry `playtest.mjs?v=119`.
+- Reviewed the source changes and cache references. No tests were run and the public game was not opened. Deployment completion and live appearance are unverified.
+- Code commit: `f2451266c71debcb536efae1b936130a52b54c83`.
+- Next check: the owner and Ash can verify sending, session history, and same-region bubbles on their phones.
