@@ -422,8 +422,8 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 
 ## Home respawn after defeat — 2026-11-14
 
-- Every death route wakes the player at the Alder Camp hut, beside the bed, regardless of whether the village home has been built. Health and Composure restore to full; inventory, quest progress, and world time remain intact.
-- The wake-up notice reads “Alvin licks your face. You had a bad dream. Time to go adventuring.” A brief heart effect appears beside Alvin.
-- Changed files: `dist/first-hearth/playtest.mjs`, `dist/first-hearth/index.html`, and this handoff. Entry cache is now `playtest.mjs?v=122`.
-- The owner clarified that respawn must always use the Alder Camp hut; the earlier village-home fallback was removed. Reviewed all death paths, the hut spawn, save behavior, and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
-- Code commit: this correction checkpoint, recorded in Git history.
+- Every death route wakes the player at the Alder Camp hut bed. Health and Composure restore to full; inventory, quest progress, and world time remain intact.
+- The wake-up is a persistent dialogue scene: Alvin leaves his own bed, moves beside the player, and licks their face until they choose “Get up.” The scene explains that it was a bad dream and invites them to go adventuring.
+- Changed files: `dist/first-hearth/playtest.mjs`, `dist/first-hearth/index.html`, and this handoff. Entry cache is now `playtest.mjs?v=123`.
+- Source reviewed for the wake dialogue, Alvin’s temporary position/animation, all death paths, save behavior, and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
+- Code commit: this wake-up scene checkpoint, recorded in Git history.

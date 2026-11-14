@@ -152,6 +152,7 @@ let catnipReadyAt = 0;
 let catnipShowUntil = 0;
 let catnipLeap = null;
 let petHeartsUntil = 0;
+let wakeSceneActive = false;
 let minecartOre = 0;
 let minecartUpdatedAt = Date.now();
 let minecartCapacity = 8;
@@ -707,11 +708,14 @@ function paint() {
   }
   if (playing && (!alvinResting || region === 'hut')) {
     const indoor = region === 'hut';
-    const catX = indoor ? 665 : cat.x;
-    const catY = indoor ? 596 : cat.y;
+    const waking = indoor && wakeSceneActive;
+    const catX = indoor ? (waking ? player.x + 30 : 665) : cat.x;
+    const catY = indoor ? (waking ? player.y - 42 + Math.sin(animationClock * 14) * 2.4 : 596) : cat.y;
     paintShadow(ctx, catX, catY, 17);
-    drawSprite(ctx, sprites.alvin, catX, catY, (indoor ? 37 : 44) * (1 + fishFed / 4), indoor ? 1 : cat.direction,
-      indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2, indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
+    drawSprite(ctx, sprites.alvin, catX, catY, (indoor ? 37 : 44) * (1 + fishFed / 4),
+      indoor ? (waking ? -1 : 1) : cat.direction,
+      waking ? -Math.abs(Math.sin(animationClock * 14)) * 2.2 : indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2,
+      waking ? 0 : indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
     if (specialRewards.has('bell')) paintAlvinBell(ctx,catX,catY,1 + fishFed / 4,indoor);
     if ((indoor || region === 'village-home') && petHeartsUntil > animationClock) {
       const left = petHeartsUntil-animationClock;
@@ -3075,6 +3079,8 @@ function interact() {
 
 function closeDialogue() {
   talking = false;
+  if (wakeSceneActive) petHeartsUntil = 0;
+  wakeSceneActive = false;
   el('dialogue').hidden = true;
   el('time-board').hidden = true;
   el('noticeboard-panel').hidden = true;
@@ -3207,12 +3213,14 @@ function wakeAtHomeAfterDeath() {
   composure = 100;
   composureDamageClock = 0;
   enterRegion('hut', { x: 410, ground: 'hut-floor' });
-  petHeartsUntil = animationClock + 2.2;
-  notice = 'Alvin licks your face. You had a bad dream. Time to go adventuring.';
-  noticeUntil = animationClock + 4;
-  updatePrompt();
-  updateNotes();
-  saveCamp();
+  wakeSceneActive = true;
+  petHeartsUntil = animationClock + 4;
+  openDialogue('hut-bed');
+  el('speaker').textContent = 'Alder Camp';
+  el('speaker-role').textContent = 'MORNING AFTER A BAD DREAM';
+  setDialogue('Alvin has climbed out of his little bed and is licking your face. You had a bad dream. Time to go adventuring.', [
+    ['Get up', closeDialogue]
+  ]);
 }
 
 function retreatFromTrial(defeated = false) {
