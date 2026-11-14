@@ -410,3 +410,11 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 - Code commit: `f2451266c71debcb536efae1b936130a52b54c83`.
 - Follow-up from the owner’s screenshot: the message field enabled when Public connected, but Send stayed disabled because its initial HTML state was never updated. Send now follows the same availability state as the field; the entry cache was bumped to v120. Source reviewed only; no test or live check. Fix commit: `b3ad302268459b90e2f030b6352ad067505d4606`.
 - Next check: the owner and Ash can verify sending, session history, and same-region bubbles on their phones.
+
+
+## Journal navigation on mobile — 2026-11-14
+
+- Replaced the phone-sized journal’s horizontally scrolling section tabs with a full-width vertical entry list. The selected note remains below the list, and the journal panel continues to scroll when the list is taller than the screen.
+- Changed files: `dist/first-hearth/playtest.css`, `dist/first-hearth/index.html`, and this handoff. CSS cache reference is now `playtest.css?v=24`; gameplay module cache is unchanged.
+- Reviewed the targeted mobile CSS and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
+- Code commit: this checkpoint commit, recorded in Git history.

@@ -264,8 +264,8 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 @media (max-width: 640px) {
   .journal-panel { padding: 14px; }
   .journal-layout { grid-template-columns: 1fr; gap: 9px; }
-  .journal-list { display: flex; overflow-x: auto; padding-bottom: 4px; }
-  .journal-entry-button { flex: 0 0 auto; max-width: 70vw; }
+  .journal-list { display: grid; grid-template-columns: minmax(0, 1fr); overflow: visible; padding-bottom: 0; }
+  .journal-entry-button { width: 100%; max-width: none; }
   .journal-entry { min-height: 130px; }
 }
 
