@@ -248,9 +248,10 @@ const CHAT_MESSAGE_LIMIT = 180;
 const CHAT_BUBBLE_MS = 9000;
 
 function updateChatAvailability() {
-  const button = el('chat-toggle'), input = el('chat-input');
+  const button = el('chat-toggle'), input = el('chat-input'), send = el('chat-send');
   button.disabled = !playing;
   input.disabled = !playing || !onlineEnabled || !presence.isConnected();
+  send.disabled = input.disabled;
   el('chat-status').textContent = !onlineEnabled
     ? 'Switch to Public to send a message.'
     : presence.isConnected() ? 'Messages reach players across the Public world.'
