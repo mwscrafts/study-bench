@@ -418,3 +418,12 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 - Changed files: `dist/first-hearth/playtest.css`, `dist/first-hearth/index.html`, and this handoff. CSS cache reference is now `playtest.css?v=24`; gameplay module cache is unchanged.
 - Reviewed the targeted mobile CSS and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
 - Code commit: this checkpoint commit, recorded in Git history.
+
+
+## Home respawn after defeat — 2026-11-14
+
+- All player death routes now wake the player at home. If the village home is built, respawn beside its bed; otherwise use the always-available Alder Camp hut bed. Health and Composure restore to full, while inventory, quest progress, and world time remain intact.
+- The wake-up notice reads “Alvin licks your face. You had a bad dream. Time to go adventuring.” A brief heart effect appears beside Alvin.
+- Changed files: `dist/first-hearth/playtest.mjs`, `dist/first-hearth/index.html`, and this handoff. Entry cache is now `playtest.mjs?v=121`.
+- Reviewed each death path (Composure, King trial, cave goblins, and shadows), the home-bed spawn points, save behavior, and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
+- Code commit: this checkpoint commit, recorded in Git history.

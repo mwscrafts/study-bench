@@ -713,10 +713,11 @@ function paint() {
     drawSprite(ctx, sprites.alvin, catX, catY, (indoor ? 37 : 44) * (1 + fishFed / 4), indoor ? 1 : cat.direction,
       indoor ? 0 : -Math.abs(Math.sin(cat.gait)) * 2.2, indoor ? -Math.PI / 2 : Math.sin(cat.gait) * .035);
     if (specialRewards.has('bell')) paintAlvinBell(ctx,catX,catY,1 + fishFed / 4,indoor);
-    if (indoor && petHeartsUntil > animationClock) {
+    if ((indoor || region === 'village-home') && petHeartsUntil > animationClock) {
       const left = petHeartsUntil-animationClock;
       ctx.fillStyle = 'rgba(244,170,198,'+Math.min(.95,left)+')'; ctx.font='15px system-ui';
-      ctx.fillText('♥',642,565-(2.2-left)*12); ctx.fillText('♥',680,557-(2.2-left)*15);
+      ctx.fillText('♥',catX-23,catY-31-(2.2-left)*12);
+      ctx.fillText('♥',catX+15,catY-39-(2.2-left)*15);
     }
     if (region === 'king' && victory && fireworksElapsed < 1.8) {
       ctx.strokeStyle = '#462d26';
@@ -3198,13 +3199,35 @@ function endingDialogue() {
   setDialogue('Alvin lands the last hit and winks. I’m proud of you.' + time, choices);
 }
 
-function retreatFromTrial(defeated = false) {
+function wakeAtHomeAfterDeath() {
   paused = false;
   el('paused').hidden = true;
   el('pause').textContent = 'Pause';
-  if (defeated) health = 100;
+  health = 100;
+  composure = 100;
+  composureDamageClock = 0;
+  const atVillageHome = villageHomeQuest === 'complete';
+  enterRegion(atVillageHome ? 'village-home' : 'hut', atVillageHome
+    ? { x: 1080, ground: 'village-home-floor' }
+    : { x: 410, ground: 'hut-floor' });
+  petHeartsUntil = animationClock + 2.2;
+  notice = 'Alvin licks your face. You had a bad dream. Time to go adventuring.';
+  noticeUntil = animationClock + 4;
+  updatePrompt();
+  updateNotes();
+  saveCamp();
+}
+
+function retreatFromTrial(defeated = false) {
+  if (defeated) {
+    wakeAtHomeAfterDeath();
+    return;
+  }
+  paused = false;
+  el('paused').hidden = true;
+  el('pause').textContent = 'Pause';
   enterRegion('king', { x: REST_X, ground: 'king-floor' });
-  notice = defeated ? 'Alvin led you back to Lantern Rest.' : 'The altar goes quiet.';
+  notice = 'The altar goes quiet.';
   noticeUntil = animationClock + 2.4;
 }
 
@@ -3260,12 +3283,7 @@ function updateComposure(dt) {
       healthChanged = true;
       if (!health) {
         if (trial) retreatFromTrial(true);
-        else {
-          health = 100;
-          enterRegion(region);
-          notice = 'Alvin led you back to safety.';
-          noticeUntil = animationClock + 2;
-        }
+        else wakeAtHomeAfterDeath();
         break;
       }
     }
@@ -3321,12 +3339,12 @@ function updateTunnelGoblins(dt) {
       health=Math.max(0,health-damage);
       hitUntil=animationClock+1.5;
       if(!health) {
-        health=100;
-        enterRegion('rootdeep',{x:1660,ground:'rootdeep-level-8'});
-        notice='Alvin led you away from the cave goblins.';
-      } else notice='Cave goblin hit · '+health+' health left';
-      noticeUntil=animationClock+2;
-      updateNotes(); saveCamp();
+        wakeAtHomeAfterDeath();
+      } else {
+        notice='Cave goblin hit · '+health+' health left';
+        noticeUntil=animationClock+2;
+        updateNotes(); saveCamp();
+      }
       break;
     }
   }
@@ -3398,15 +3416,13 @@ function updateShadows(dt = 0) {
   health = Math.max(0, health - (tools.helmet ? Math.ceil(composureHit * .75) : composureHit));
   hitUntil = animationClock + 1.8;
   if (health === 0) {
-    health = 100;
-    enterRegion(region);
-    notice = 'Alvin led you back to ' + area.retreat + '.';
+    wakeAtHomeAfterDeath();
   } else {
     notice = 'Shadow hit · ' + health + ' health left';
+    noticeUntil = animationClock + 1.7;
     updateNotes();
     saveCamp();
   }
-  noticeUntil = animationClock + 1.7;
 }
 
 function frame(time) {
