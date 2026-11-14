@@ -31,7 +31,7 @@ import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, L
   BARRY_HOME_WOOD_COST, BARRY_HOME_IRON_COST } from './home-projects.mjs?v=2';
 import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, paintBarryHomeExterior } from './home-projects-art.mjs?v=2';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
-import { createPresence } from './presence.mjs?v=4';
+import { createPresence } from './presence.mjs?v=5';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=31';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
@@ -234,12 +234,122 @@ const presence = createPresence({
   onDoorsChange: () => { updatePrompt(); updateNotes(); },
   onNotesChange: () => { if (playing) updateNotes(); },
   onShadowState: applySharedShadowState,
+  onChatMessage: applyChatMessage,
   onSleepStatus: updateSleepVoteStatus,
   onSleepComplete: applySharedSleep,
   onClockOffset: applyClockOffset
 });
 const peers = presence.peers;
 const sharedDoors = presence.sharedDoors;
+let chatWindowOpen = false;
+const chatHistory = [];
+const chatBubbles = new Map();
+const CHAT_MESSAGE_LIMIT = 180;
+const CHAT_BUBBLE_MS = 9000;
+
+function updateChatAvailability() {
+  const button = el('chat-toggle'), input = el('chat-input');
+  button.disabled = !playing;
+  input.disabled = !playing || !onlineEnabled || !presence.isConnected();
+  el('chat-status').textContent = !onlineEnabled
+    ? 'Switch to Public to send a message.'
+    : presence.isConnected() ? 'Messages reach players across the Public world.'
+      : 'Connecting to the Public world…';
+}
+
+function applyChatMessage(message) {
+  if (!message || typeof message.senderId !== 'string' || typeof message.text !== 'string' ||
+      typeof message.region !== 'string') return;
+  const text = message.text.trim().slice(0, CHAT_MESSAGE_LIMIT);
+  if (!text) return;
+  const now = performance.now();
+  for (const [id, bubble] of chatBubbles) if (bubble.expiresAt <= now) chatBubbles.delete(id);
+  const log = el('chat-log');
+  const wasNearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 28;
+  const row = document.createElement('li');
+  const sender = document.createElement('strong');
+  sender.textContent = String(message.senderName || 'Adventurer').slice(0, 16) + ': ';
+  row.append(sender, document.createTextNode(text));
+  log.append(row);
+  chatHistory.push(row);
+  if (chatHistory.length > 60) {
+    chatHistory.shift();
+    log.firstElementChild?.remove();
+  }
+  if (wasNearBottom) log.scrollTop = log.scrollHeight;
+  chatBubbles.set(message.mine ? 'self' : message.senderId, {
+    text, region: message.region, expiresAt: performance.now() + CHAT_BUBBLE_MS
+  });
+}
+
+function toggleChat() {
+  chatWindowOpen = !chatWindowOpen;
+  el('chat-panel').hidden = !chatWindowOpen;
+  el('chat-toggle').setAttribute('aria-expanded', String(chatWindowOpen));
+  if (chatWindowOpen) {
+    const log = el('chat-log');
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function closeChat() {
+  if (!chatWindowOpen) return;
+  chatWindowOpen = false;
+  el('chat-panel').hidden = true;
+  el('chat-toggle').setAttribute('aria-expanded', 'false');
+  el('chat-toggle').focus({ preventScroll: true });
+}
+
+function paintChatBubble(x, y, entry) {
+  if (!entry || entry.region !== region) return;
+  const remaining = entry.expiresAt - performance.now();
+  if (remaining <= 0) return;
+  ctx.save();
+  ctx.font = '13px system-ui, sans-serif';
+  const maxTextWidth = 228;
+  const tokens = [];
+  for (const word of entry.text.split(/\s+/)) {
+    if (ctx.measureText(word).width <= maxTextWidth) { tokens.push(word); continue; }
+    let piece = '';
+    for (const character of word) {
+      if (piece && ctx.measureText(piece + character).width > maxTextWidth) {
+        tokens.push(piece); piece = character;
+      } else piece += character;
+    }
+    if (piece) tokens.push(piece);
+  }
+  const lines = [];
+  let line = '';
+  for (const token of tokens) {
+    const next = line ? line + ' ' + token : token;
+    if (line && ctx.measureText(next).width > maxTextWidth) {
+      lines.push(line); line = token;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  const width = Math.min(maxTextWidth + 20, Math.max(70, ...lines.map(value => ctx.measureText(value).width + 20)));
+  const lineHeight = 17, height = lines.length * lineHeight + 13;
+  const left = x - width / 2, top = y - 147 - height;
+  ctx.globalAlpha *= Math.min(1, remaining / 1000);
+  ctx.fillStyle = '#102923f2';
+  ctx.strokeStyle = '#edc889';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(left, top, width, height, 8);
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - 7, top + height - 1);
+  ctx.lineTo(x, top + height + 8);
+  ctx.lineTo(x + 7, top + height - 1);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff1d5';
+  ctx.textAlign = 'center';
+  lines.forEach((value, index) => ctx.fillText(value, x, top + 18 + index * lineHeight, maxTextWidth));
+  ctx.restore();
+}
+
+
 
 function startWave() {
   if (!controlsActive()) return;
@@ -257,6 +367,7 @@ function updatePresenceButton() {
   button.textContent = onlineEnabled ? connected ? 'Public · ' + (peers.size + 1) : 'Public…' : 'Solo';
   button.setAttribute('aria-pressed', String(onlineEnabled));
   button.title = onlineEnabled ? 'Public world. Switch to solo play.' : 'Solo play. Switch to the public world.';
+  updateChatAvailability();
 }
 
 function disconnectPresence(reason = 'Leaving world') {
@@ -310,6 +421,7 @@ function paintPeers() {
     ctx.fillStyle = '#142b25df'; ctx.fillRect(peer.x-width/2,peer.y-121,width,19);
     ctx.fillStyle = '#fff1d5'; ctx.textAlign = 'center';
     ctx.fillText(label,peer.x,peer.y-107,150);
+    paintChatBubble(peer.x, peer.y, chatBubbles.get(id));
     ctx.restore();
   }
 }
@@ -627,6 +739,7 @@ function paint() {
   if (tools.helmet && playing) paintIronHelmet(ctx,player.x,player.y,facing,bob,tilt,avatarHeight);
   if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
   if (playing) paintWave(ctx, player.x, player.y, player.direction, wave, bob);
+  if (playing) paintChatBubble(player.x, player.y, chatBubbles.get('self'));
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
@@ -3642,6 +3755,20 @@ el('bagAdminRing').addEventListener('click', () => {
   openAdminRing();
 });
 el('quickBerry').addEventListener('click', eatBerry);
+el('chat-toggle').addEventListener('click', toggleChat);
+el('chat-close').addEventListener('click', closeChat);
+el('chat-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const input = el('chat-input');
+  const text = input.value.trim().slice(0, CHAT_MESSAGE_LIMIT);
+  if (!text) return;
+  if (!presence.sendChat(text)) {
+    updateChatAvailability();
+    return;
+  }
+  input.value = '';
+});
+
 el('wave').addEventListener('click', startWave);
 
 const moveKeys = new Set(['a', 'd', 'arrowleft', 'arrowright']);
@@ -3649,6 +3776,11 @@ const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (event.target instanceof Element && event.target.closest('#chat-input')) {
+    if (key === 'escape') { closeChat(); event.preventDefault(); }
+    return;
+  }
+  if (key === 'escape' && chatWindowOpen) { closeChat(); return; }
   if (mapOpen) {
     if (key === 'escape' || key === 'm') closeMap();
     return;

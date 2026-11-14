@@ -32,6 +32,19 @@ h2 em { color: #f0cb8d; }
 .game-actions button { padding: 6px 10px; border: 0; color: #f4e8cc; background: transparent; border-radius: 6px; min-height: 34px; }
 .game-actions button:hover { background: #fff2; }
 #fullscreen { font-size: 17px; min-width: 32px; }
+#chat-toggle { width: 34px; padding: 4px !important; font-size: 16px; }
+.chat-panel { position: absolute; z-index: 8; right: 12px; bottom: 14px; display: flex; flex-direction: column; gap: 7px; width: min(340px, calc(100% - 24px)); max-height: min(360px, 54%); padding: 10px; border: 1px solid #edc88988; border-radius: 10px; background: #102923f5; color: #fff1d5; box-shadow: 0 8px 26px #07140f88; }
+.chat-panel[hidden] { display: none; }
+.chat-heading { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.chat-heading button { width: 30px; height: 28px; border: 0; border-radius: 6px; background: #ffffff16; color: #fff1d5; font-size: 20px; }
+.chat-log { display: flex; flex: 1 1 auto; flex-direction: column; gap: 5px; min-height: 76px; max-height: 225px; overflow: auto; list-style: none; margin: 0; padding: 0; }
+.chat-log li { padding: 6px 8px; border-radius: 6px; background: #294438d9; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+.chat-log strong { color: #edc889; }
+.chat-status { margin: 0; color: #d0d6c0; font-size: 10px; }
+.chat-form { display: flex; gap: 6px; }
+.chat-form input { flex: 1 1 auto; min-width: 0; padding: 8px; border: 1px solid #c9bea477; border-radius: 6px; background: #f5efdd; color: #23382f; font: inherit; font-size: 13px; }
+.chat-form button { min-width: 52px; padding: 6px 9px; border: 1px solid #e7c885; border-radius: 6px; background: #edc889; color: #23372e; font-weight: 650; }
+
 .scene { height: clamp(350px, 42vw, 570px); position: relative; background: #172c29; isolation: isolate; }
 #world { display: block; width: 100%; height: 100%; touch-action: none; }
 .status { position: absolute; left: 50%; bottom: 15px; transform: translateX(-50%); padding: 8px 12px; background: #122923ee; border: 1px solid #ede0bd44; border-radius: 8px; color: #fff6df; font-size: 12px; max-width: 90%; white-space: nowrap; pointer-events: none; }
@@ -93,6 +106,9 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   .game-bar { padding: 0 8px; gap: 3px; min-height: 40px; }
   .game-location, .game-actions { gap: 4px; font-size: 10px; }
   .game-actions button { padding: 5px; }
+  #chat-toggle { width: 29px; padding: 3px !important; font-size: 14px; }
+  .chat-panel { right: 6px; bottom: 8px; width: min(320px, calc(100% - 12px)); max-height: 56%; }
+  .chat-log { max-height: 180px; }
   .scene { height: clamp(320px, 52dvh, 510px); }
   .status { white-space: normal; width: max-content; text-align: center; }
   .key-guide { display: none; }

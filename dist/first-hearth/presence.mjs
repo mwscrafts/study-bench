@@ -1,7 +1,7 @@
 const SHARED_DOORS = new Set(['mine-lift', 'village-gate']);
 
 export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidden,
-  onChange, onDoorsChange, onNotesChange, onShadowState, onSleepStatus, onSleepComplete, onClockOffset }) {
+  onChange, onDoorsChange, onNotesChange, onShadowState, onChatMessage, onSleepStatus, onSleepComplete, onClockOffset }) {
   const peers = new Map();
   const sharedDoors = new Set();
   let socket = null;
@@ -71,6 +71,8 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
       } else if (message.type === 'door-open' && SHARED_DOORS.has(message.door)) {
         sharedDoors.add(message.door);
         onDoorsChange();
+      } else if (message.type === 'chat') {
+        onChatMessage?.({ ...message, mine: message.senderId === playerId() });
       } else if (message.type === 'shadow-state') {
         onShadowState({ ...message, rewarded: message.winnerId === playerId() });
       } else if (message.type === 'shadow-snapshot' && Array.isArray(message.states)) {
@@ -135,6 +137,12 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     return true;
   }
 
+  function sendChat(text) {
+    if (socket?.readyState !== WebSocket.OPEN || !isOnline() || !isPlaying()) return false;
+    socket.send(JSON.stringify({ type: 'chat-send', text }));
+    return true;
+  }
+
   function voteForSleep() {
     if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(JSON.stringify({ type: 'sleep-vote' }));
@@ -143,7 +151,7 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
 
   return {
     peers, sharedDoors, connect, disconnect, sendPose, openDoor, hitShadow, voteForSleep,
-    clearPeers: () => peers.clear(),
+    sendChat, clearPeers: () => peers.clear(),
     isConnected: () => socket?.readyState === WebSocket.OPEN
   };
 }

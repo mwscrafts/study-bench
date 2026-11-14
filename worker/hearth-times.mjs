@@ -289,6 +289,18 @@ export class HearthPresence extends DurableObject {
       }
       return;
     }
+    if (data?.type === 'chat-send') {
+      const peer = socket.deserializeAttachment();
+      const text = typeof data.text === 'string' ? data.text.trim() : '';
+      if (!peer?.pose || !text || text.length > 180) return;
+      const payload = JSON.stringify({ type: 'chat', messageId: crypto.randomUUID(),
+        senderId: peer.id, senderName: peer.pose.name, region: peer.pose.region, text, sentAt: Date.now() });
+      for (const recipient of this.ctx.getWebSockets()) {
+        if (!recipient.deserializeAttachment()?.pose) continue;
+        try { recipient.send(payload); } catch { /* A disconnected peer will reconnect. */ }
+      }
+      return;
+    }
     if (data?.type === 'shadow-hit') {
       await this.applyShadowHit(socket, data);
       return;
