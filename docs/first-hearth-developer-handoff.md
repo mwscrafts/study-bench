@@ -422,8 +422,8 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 
 ## Home respawn after defeat — 2026-11-14
 
-- All player death routes now wake the player at home. If the village home is built, respawn beside its bed; otherwise use the always-available Alder Camp hut bed. Health and Composure restore to full, while inventory, quest progress, and world time remain intact.
+- Every death route wakes the player at the Alder Camp hut, beside the bed, regardless of whether the village home has been built. Health and Composure restore to full; inventory, quest progress, and world time remain intact.
 - The wake-up notice reads “Alvin licks your face. You had a bad dream. Time to go adventuring.” A brief heart effect appears beside Alvin.
-- Changed files: `dist/first-hearth/playtest.mjs`, `dist/first-hearth/index.html`, and this handoff. Entry cache is now `playtest.mjs?v=121`.
-- Reviewed each death path (Composure, King trial, cave goblins, and shadows), the home-bed spawn points, save behavior, and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
-- Code commit: this checkpoint commit, recorded in Git history.
+- Changed files: `dist/first-hearth/playtest.mjs`, `dist/first-hearth/index.html`, and this handoff. Entry cache is now `playtest.mjs?v=122`.
+- The owner clarified that respawn must always use the Alder Camp hut; the earlier village-home fallback was removed. Reviewed all death paths, the hut spawn, save behavior, and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
+- Code commit: this correction checkpoint, recorded in Git history.

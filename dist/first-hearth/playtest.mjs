@@ -3206,10 +3206,7 @@ function wakeAtHomeAfterDeath() {
   health = 100;
   composure = 100;
   composureDamageClock = 0;
-  const atVillageHome = villageHomeQuest === 'complete';
-  enterRegion(atVillageHome ? 'village-home' : 'hut', atVillageHome
-    ? { x: 1080, ground: 'village-home-floor' }
-    : { x: 410, ground: 'hut-floor' });
+  enterRegion('hut', { x: 410, ground: 'hut-floor' });
   petHeartsUntil = animationClock + 2.2;
   notice = 'Alvin licks your face. You had a bad dream. Time to go adventuring.';
   noticeUntil = animationClock + 4;
