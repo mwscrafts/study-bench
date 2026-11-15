@@ -186,7 +186,7 @@ let creatures = [];
 let creatureCycleKey = '';
 let player = createPlayer();
 let avatar = 'boy';
-let appearance = { skin: 'peach', build: 'slim', height: 'tall', hairStyle: 'regular', hairColor: 'brown' };
+let appearance = { skin: 'warm', build: 'slim', height: 'tall', hairStyle: 'ponytail', hairColor: 'brown' };
 let appearanceDraft = { ...appearance };
 let avatarAtlasImage = null;
 let activeDialogueId = null;
@@ -1299,7 +1299,7 @@ const APPEARANCE_SKINS = [
 ];
 const APPEARANCE_STYLES = ['regular','ponytail','buzzcut','afro','mohawk'];
 const APPEARANCE_HAIR_COLORS = ['black','brown','blonde','auburn','pink','purple','green','blue','rainbow'];
-const DEFAULT_APPEARANCE = { skin:'peach', build:'slim', height:'tall', hairStyle:'regular', hairColor:'brown' };
+const DEFAULT_APPEARANCE = { skin:'warm', build:'slim', height:'tall', hairStyle:'ponytail', hairColor:'brown' };
 
 function defaultAppearanceFor(legacyAvatar = avatar) {
   return { ...DEFAULT_APPEARANCE, hairStyle: legacyAvatar === 'girl' ? 'ponytail' : 'regular' };
@@ -1443,6 +1443,33 @@ function makeAvatarSprite(value) {
   return sprite;
 }
 
+function drawFullBodyPreview(canvas, sprite) {
+  const context=canvas.getContext('2d');
+  context.clearRect(0,0,canvas.width,canvas.height);
+  if (!sprite?.image || !sprite.width || !sprite.height) return;
+  context.imageSmoothingEnabled=true;
+  context.imageSmoothingQuality='high';
+  const padX=12, padY=14;
+  const scale=Math.min((canvas.width-padX*2)/sprite.width,(canvas.height-padY*2)/sprite.height);
+  const width=sprite.width*scale, height=sprite.height*scale;
+  const x=(canvas.width-width)/2, y=canvas.height-padY-height;
+  context.drawImage(sprite.image,sprite.left,sprite.top,sprite.width,sprite.height,x,y,width,height);
+}
+
+function drawHairStylePreview(canvas, sprite, style) {
+  const context=canvas.getContext('2d');
+  context.clearRect(0,0,canvas.width,canvas.height);
+  if (!sprite?.image || !sprite.width || !sprite.height) return;
+  context.imageSmoothingEnabled=true;
+  context.imageSmoothingQuality='high';
+  const cropHeight=Math.min(sprite.height,Math.round(sprite.height*(style==='ponytail'?.62:.54)));
+  const pad=4;
+  const scale=Math.min((canvas.width-pad*2)/sprite.width,(canvas.height-pad*2)/cropHeight);
+  const width=sprite.width*scale,height=cropHeight*scale;
+  context.drawImage(sprite.image,sprite.left,sprite.top,sprite.width,cropHeight,
+    (canvas.width-width)/2,(canvas.height-height)/2,width,height);
+}
+
 function updateAppearanceEditor() {
   const root=el('appearance-editor');
   if (!root) return;
@@ -1452,10 +1479,13 @@ function updateAppearanceEditor() {
     button.setAttribute('aria-pressed',String(active));
   }
   const preview=el('appearance-preview');
-  if (preview&&avatarAtlasImage) drawPortrait(preview,makeAvatarSprite(look));
+  if (preview&&avatarAtlasImage) drawFullBodyPreview(preview,makeAvatarSprite(look));
+  const exampleHairColors={regular:'brown',ponytail:'brown',buzzcut:'pink',afro:'purple',mohawk:'green'};
   for (const button of root.querySelectorAll('.hair-choice')) {
     const canvas=button.querySelector('canvas');
-    if (canvas&&avatarAtlasImage) drawPortrait(canvas,makeAvatarSprite({...look,hairStyle:button.dataset.value}));
+    const style=button.dataset.value;
+    const example=normalizeAppearance({...look,skin:'warm',hairStyle:style,hairColor:exampleHairColors[style]||'brown'},DEFAULT_APPEARANCE);
+    if (canvas&&avatarAtlasImage) drawHairStylePreview(canvas,makeAvatarSprite(example),style);
   }
 }
 
@@ -3939,7 +3969,7 @@ el('continue').addEventListener('click', () => begin(getSavedCamp()));
 el('create-new-journey').addEventListener('click', () => {
   el('start').hidden = true;
   el('characterCreation').hidden = false;
-  el('characterCreation').querySelector('.character-creation-card').scrollTop = 0;
+  el('characterCreation').scrollTop = 0;
   el('back-to-journey-choice').focus({ preventScroll: true });
 });
 el('back-to-journey-choice').addEventListener('click', () => {
@@ -4313,7 +4343,7 @@ async function boot() {
       hugh: spriteBounds(keepers, 0, .5, .52)
     };
     updateAppearanceEditor();
-    el('begin').textContent = 'Enter Alder Camp →';
+    el('begin').textContent = 'Enter Alder Camp';
     updateNewJourneyButton();
     updatePresenceButton();
     resize();
