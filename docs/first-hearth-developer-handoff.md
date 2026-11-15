@@ -7,6 +7,11 @@ Game: <https://love.ashquack.workers.dev/first-hearth/>
 
 This is the durable continuity note for future Codex/dev conversations. Read it together with the root `AGENTS.md`. The repository is the source of truth; do not ask the owner to resend source files, identify the repository, or recreate a recap that can be recovered from these files and Git history.
 
+## Mandatory continuity log
+
+**No implementation attempt ends without a handoff note.** Record every attempt, including failures, partial results, reversions, and fixes; do not log only successful features. Each concise entry should state what was requested, what changed, what failed and why, the commit/push and deployment state, what was actually verified, what remains unchecked, and the next step. Add the note before ending the task or transferring context. This history is how future maintainers avoid repeating mistakes as the game grows.
+
+
 ## Do-not-repeat: source transfer and release checks
 
 - **Owner reports this is the fourth time careless truncation has broken the game.** In this turn, the full local `playtest.mjs` (201,623 bytes) was accidentally replaced in the live build with a 160,110-byte truncated copy because output-capped shell text—including its truncation warning—was reused as source. The game stayed on “Preparing Alder Camp.” The exact full file was restored; details and verification are in the latest checkpoint below.

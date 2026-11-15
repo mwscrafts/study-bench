@@ -4,7 +4,7 @@
 
 Read [the First Hearth developer handoff](docs/first-hearth-developer-handoff.md) before making game changes. It records the active implementation state, subsystem ownership, deployment path, and the last handoff checkpoint.
 
-Update that handoff when a meaningful feature or fix lands, and before an interrupted task or conversation handoff. Include what changed, the commit, what was actually checked, what remains, and the next useful step. Do not write “tested,” “deployed,” “fixed,” or “disconnected” unless that state was verified.
+Update the handoff after **every implementation attempt**, including failed, partial, reverted, or aborted work—not only meaningful successes. Record the requested scope, what actually changed, errors and their causes, commit/push state, what was verified, what remains unverified, and the next step. Leave the note before ending the task or handing off context. Keep it concise, but never omit a failure because it seems small or embarrassing. Do not write “tested,” “deployed,” “fixed,” or “disconnected” unless that state was verified.
 
 ## Project layout
 
