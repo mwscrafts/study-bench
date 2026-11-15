@@ -1649,6 +1649,7 @@ function begin(save) {
   let footing = save && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(save.version) ? { x: CAMP_X, ground: 'trail' } : save?.footing;
   playing = true;
   el('start').hidden = true;
+  el('characterCreation').hidden = true;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
   if (savedRegion === 'crownwood' && footing?.ground === 'overlook') {
     const ground = footing.x < KING_BRIDGE_START ? 'king-bridge-west'
@@ -3935,6 +3936,17 @@ el('player-name').addEventListener('input', () => {
 });
 el('begin').addEventListener('click', () => begin());
 el('continue').addEventListener('click', () => begin(getSavedCamp()));
+el('create-new-journey').addEventListener('click', () => {
+  el('start').hidden = true;
+  el('characterCreation').hidden = false;
+  el('characterCreation').querySelector('.character-creation-card').scrollTop = 0;
+  el('back-to-journey-choice').focus({ preventScroll: true });
+});
+el('back-to-journey-choice').addEventListener('click', () => {
+  el('characterCreation').hidden = true;
+  el('start').hidden = false;
+  el('create-new-journey').focus({ preventScroll: true });
+});
 el('presence-toggle').addEventListener('click', () => {
   onlineEnabled = !onlineEnabled;
   try { localStorage.setItem(PRESENCE_KEY, onlineEnabled ? 'public' : 'solo'); } catch { /* Session toggle still works. */ }
@@ -4279,6 +4291,7 @@ async function boot() {
   try {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
+    el('new-journey-warning').hidden = !saved;
     const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage, avatarAtlas] = await Promise.all([
       loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp'), loadImage('./adventurer-atlas.webp')
     ]);
