@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth</title>
-  <link rel="stylesheet" href="./playtest.css?v=40">
+  <link rel="stylesheet" href="./playtest.css?v=41">
 </head>
 <body>
   <main class="page">
@@ -34,6 +34,24 @@
       <div class="scene">
         <canvas id="world" tabindex="0" aria-label="Alder Camp game world. Move with arrows or A and D, jump with Space, and interact with E."></canvas>
         <button id="telescope-exit" type="button" aria-label="Stop looking through the telescope" hidden>Stop looking</button>
+        <section id="fishing-panel" class="fishing-panel" aria-labelledby="fishing-title" hidden>
+          <header class="fishing-heading">
+            <h2 id="fishing-title">Fishing</h2>
+            <span data-fishing="level"></span>
+            <button id="fishing-close" type="button" aria-label="Stop fishing">×</button>
+          </header>
+          <div class="fishing-xp" data-fishing="xp" role="progressbar" aria-label="Fishing XP toward the next level" aria-valuemin="0"><i></i></div>
+          <div class="fishing-xp-label" data-fishing="xp-label"></div>
+          <div class="fishing-track" role="img" aria-label="Red: miss. Yellow: reduced catch. Green: full catch.">
+            <div class="fishing-zones"></div>
+            <div class="fishing-marker" data-fishing="marker" hidden></div>
+          </div>
+          <div class="fishing-scale" aria-hidden="true"><span>Miss</span><span>Full catch</span><span>Miss</span></div>
+          <p class="fishing-result" data-fishing="result" role="status"></p>
+          <button id="fishing-action" data-fishing="action" class="fishing-action" type="button">Cast line</button>
+          <button id="fishing-book" data-fishing="book" class="fishing-book" type="button" hidden>Read the soaked book</button>
+        </section>
+        <aside id="godslayer-catch" class="godslayer-catch" role="status" hidden></aside>
         <div class="hud">
           <div id="health-notes" class="vitals" hidden>
             <div>
@@ -345,6 +363,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=148"></script>
+  <script type="module" src="./playtest.mjs?v=149"></script>
 </body>
 </html>

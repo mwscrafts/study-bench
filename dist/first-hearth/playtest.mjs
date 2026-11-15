@@ -13,17 +13,17 @@ import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel,
 import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=10';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=15';
-import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
-  ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=11';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=19';
+import { beachFlower, readFishing, catchFish, fishingLevel, fishingProgress,
+  ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=12';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=20';
 import { paintTelescopeView } from './telescope-art.mjs?v=2';
 import { ROWBOAT_FISH_X, ROWBOAT_BASELINE_Y, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=3';
 import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=4';
 import { startRowboatAmbience, startBeachAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=3';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
-  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintFishingRod, paintBerryBush } from './equipment.mjs?v=10';
-import { renderInventory } from './backpack.mjs?v=10';
+  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintFishingRod, paintBerryBush } from './equipment.mjs?v=11';
+import { renderInventory } from './backpack.mjs?v=11';
 import { hearthNote } from './hearth.mjs?v=12';
 import { paintHearthDetails } from './hearth-art.mjs?v=1';
 import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
@@ -37,14 +37,17 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=6';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=33';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=34';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=4';
+import { createFishingPanel, castMarker, catchQuality } from './fishing-panel.mjs?v=1';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=6';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const allIronNodes = [...oreNodes, ...rootdeepOreNodes];
 const el = id => document.getElementById(id);
+const fishingPanel = createFishingPanel(el('fishing-panel'));
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const world = el('world');
 const ctx = world.getContext('2d');
 const SAVE_KEY = 'first-hearth:alder-camp:v1';
@@ -132,6 +135,7 @@ let rowboatRelaxing = false;
 let telescopeViewing = false;
 let alvinPetCount = 0;
 let casting = null;
+let godslayerCaughtAt = -Infinity;
 let nightIndex = 0;
 let health = 100;
 let composure = 100;
@@ -771,6 +775,7 @@ function paint() {
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
+  if (!reduceMotion.matches) paintFireworks(ctx, camera, animationClock - godslayerCaughtAt);
   if (telescopeViewing) paintTelescopeView(ctx, camera, animationClock, sprites.telescopeView);
 }
 
@@ -889,7 +894,7 @@ function updateCatnipLeap() {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting && !inventoryOpen && !journalOpen && !mapOpen && !telescopeViewing &&
+  return playing && !paused && !talking && !fishingPanel.active && !inventoryOpen && !journalOpen && !mapOpen && !telescopeViewing &&
     trial?.stage !== 'alvin' && finaleDelay <= 0 && !endingScene;
 }
 
@@ -1019,7 +1024,7 @@ function updatePrompt() {
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = telescopeViewing ? ''
-    : casting ? 'Casting the line…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
+    : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   const jumpCaption = el('jump').querySelector('small');
   if (jumpCaption && jumpCaption.textContent !== (onLadder ? 'Climb' : 'Jump')) jumpCaption.textContent = onLadder ? 'Climb' : 'Jump';
@@ -1624,6 +1629,9 @@ function enterRegion(next, footing) {
   hitUntil = 0;
   creatures = [];
   casting = null;
+  fishingPanel.close();
+  godslayerCaughtAt = -Infinity;
+  el('godslayer-catch').hidden = true;
   savedFooting = { x: player.x, ground: player.ground };
   cat.x = clamp(player.x - 62, 19, terrain.width - 19);
   cat.y = player.y;
@@ -2377,40 +2385,48 @@ function workbenchDialogue() {
 }
 const bookClue = 'The water blurred most of the writing. One sketch shows a rope bridge with a gap in its railing, a ledge beneath it, and a light behind the waterfall.';
 
-function dockDialogue(result) {
+function openFishing(offshore) {
+  const location = offshore ? 'rowboat-fish' : 'dock';
   if (!hasNet) {
+    openDialogue(location);
     setDialogue('You need a fishing rod. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
     return;
   }
-  const choices = [['Cast the line', () => startRodCast(false)]];
-  if (fishing.book) {
-    choices.push(['Read the soaked book', () => setDialogue(bookClue, [['Back', () => dockDialogue()]])]);
-  }
-  setDialogue(result ?? 'The water is calm here. Cast the line from the end of the pier.', choices);
+  if (offshore && !fishing.rowboat) return;
+  clearControls();
+  player.moving = false;
+  fishingPanel.open(fishingProgress(fishing.xp), fishing.book && !offshore);
+  updatePrompt();
 }
 
-function startRodCast(offshore) {
-  if (!hasNet) {
-    setDialogue('You need a fishing rod. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
+function closeFishing() {
+  casting = null;
+  fishingPanel.close();
+  updatePrompt();
+  world.focus({ preventScroll: true });
+}
+
+function fishAction() {
+  if (!fishingPanel.active || paused) return;
+  if (casting) {
+    const position = castMarker(animationClock - casting.start, casting.fromLeft);
+    fishingPanel.showMarker(position);
+    finishCast(catchQuality(position));
     return;
   }
-  if (offshore && !fishing.rowboat) {
-    setDialogue('You need the rowboat from Tide Arch to fish offshore.');
-    return;
-  }
+  const offshore = region === 'rowboat';
   equipped = 'net';
-  updateNotes();
-  saveCamp();
   player.direction = -1;
   casting = {
     start: animationClock,
+    fromLeft: Math.random() < .5,
     offshore,
     landingX: (offshore ? Math.min(player.x, ROWBOAT_FISH_X) : player.x) - 144,
     landingY: offshore ? ROWBOAT_BASELINE_Y + 12 : player.y - 108
   };
-  closeDialogue();
-  clearControls();
-  updatePrompt();
+  fishingPanel.begin(castMarker(0, casting.fromLeft));
+  updateNotes();
+  saveCamp();
 }
 
 function rowboatDialogue(result) {
@@ -2468,19 +2484,6 @@ function boardRowboat() {
   saveCamp();
 }
 
-function rowboatFishingDialogue(result) {
-  openDialogue('rowboat-fish');
-  const line = (result ? result + ' ' : '') + 'The water is deep enough for a good cast.';
-  if (!hasNet) {
-    setDialogue(line + ' You still need Hugh Mungus’s fishing rod from Embervein Mine.');
-    return;
-  }
-  setDialogue(line, [
-    ['Cast the line', () => startRodCast(true)],
-    ['Back to the boat', closeDialogue]
-  ]);
-}
-
 function rowboatChairDialogue() {
   if (rowboatRelaxing) {
     rowboatRelaxing = false;
@@ -2507,26 +2510,34 @@ function returnFromRowboat() {
   saveCamp();
 }
 
-function finishCast() {
-  const offshore = casting.offshore === true;
-  const oldLevel = fishingLevel(fishing.xp);
-  const result = castNet(fishing, Math.random, offshore);
-  fishing = result.fishing;
-  fishingCastCount = Math.min(1000000, fishingCastCount + 1);
+function finishCast(quality) {
+  const { offshore } = casting;
   casting = null;
+  fishingCastCount = Math.min(1000000, fishingCastCount + 1);
+  const previousXp = fishing.xp;
+  const previousLevel = fishingLevel(previousXp);
+  let message = 'Missed cast · No XP';
+  if (quality !== 'miss') {
+    const result = catchFish(fishing, Math.random, offshore, quality === 'full');
+    fishing = result.fishing;
+    message = result.catchName;
+    if (result.catchName === 'Tideglass gemstone') message += ' · Bring it to Hugh Mungus';
+    const gainedXp = fishing.xp - previousXp;
+    if (gainedXp) message += gainedXp === .5 ? ' · +½ XP' : ' · +1 XP';
+    if (result.rootglass) message += ' · Rootglass';
+    if (result.rare) {
+      message += ' · Godslayer!';
+      godslayerCaughtAt = animationClock;
+      el('godslayer-catch').hidden = false;
+      el('godslayer-catch').innerHTML = '<strong>✦ Godslayer caught!</strong><small>Added to your backpack</small>';
+    }
+    recordJournalEntry('fishing', { quiet: true });
+  }
+  const progress = fishingProgress(fishing.xp);
+  if (progress.level > previousLevel) message += ' · Level ' + progress.level + '!';
+  fishingPanel.settle(message, progress, fishing.book && !offshore);
+  updateNotes();
   saveCamp();
-  recordJournalEntry('fishing', { quiet: true });
-  openDialogue(offshore ? (region === 'rowboat' ? 'rowboat-fish' : 'rowboat') : 'dock');
-  let message = 'You caught ' + result.catchName.toLowerCase() + '.';
-  if (result.catchName === 'Soaked book') message = 'You reel in a soaked book. There’s still a legible sketch inside.';
-  if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Hugh Mungus to repair the lift.';
-  const newLevel = fishingLevel(fishing.xp);
-  if (newLevel > oldLevel) message += ' Fishing reached level ' + newLevel + '!';
-  if (result.rootglass) message += ' You reeled in a piece of Rootglass too.';
-  if (result.rare) message += ' You also hooked the Godslayer!';
-  if (offshore && region === 'rowboat') rowboatFishingDialogue(message);
-  else if (offshore) rowboatDialogue(message);
-  else dockDialogue(message);
 }
 
 function emberBoxDialogue() {
@@ -2879,9 +2890,7 @@ const interactionHandlers = {
   hugh: hughDialogue,
   barry: barryDialogue,
   workbench: workbenchDialogue,
-  dock: dockDialogue,
   rowboat: rowboatDialogue,
-  'rowboat-fish': rowboatFishingDialogue,
   'rowboat-chair': rowboatChairDialogue,
   'rowboat-return': returnFromRowboat,
   'ember-box': emberBoxDialogue,
@@ -3271,6 +3280,10 @@ function interact() {
   }
   if (id === 'rowboat-chair') {
     rowboatChairDialogue();
+    return;
+  }
+  if (id === 'dock' || id === 'rowboat-fish') {
+    openFishing(id === 'rowboat-fish');
     return;
   }
   openDialogue(id);
@@ -3669,7 +3682,8 @@ function frame(time) {
   if (playing) refreshSharedShadows();
   if (wave > 0) wave = Math.max(0, wave - dt);
   if (!paused && !talking && !inventoryOpen && !mapOpen) animationClock += dt;
-  if (casting && animationClock - casting.start >= .92) finishCast();
+  if (casting) fishingPanel.showMarker(castMarker(animationClock - casting.start, casting.fromLeft));
+  if (animationClock - godslayerCaughtAt >= 4.3 && !el('godslayer-catch').hidden) el('godslayer-catch').hidden = true;
   if (fireworksElapsed < 8) fireworksElapsed += dt;
   if (trial?.stage === 'alvin' && !paused) updateKingTrial(dt);
   if (trial?.stage === 'alvin' && !paused) updateCamera(false, dt);
@@ -4090,6 +4104,9 @@ el('chat-form').addEventListener('submit', event => {
 
 el('wave').addEventListener('click', startWave);
 el('telescope-exit').addEventListener('click', leaveTelescope);
+el('fishing-action').addEventListener('click', fishAction);
+el('fishing-close').addEventListener('click', closeFishing);
+el('fishing-book').addEventListener('click', () => fishingPanel.readBook(bookClue));
 
 const moveKeys = new Set(['a', 'd', 'arrowleft', 'arrowright']);
 const jumpKeys = new Set([' ', 'w', 'arrowup']);
@@ -4119,6 +4136,14 @@ window.addEventListener('keydown', event => {
     return;
   }
   if (key === 'escape' && chatWindowOpen) { closeChat(); return; }
+  if (fishingPanel.active && !paused) {
+    if (key === 'escape' || key === 'e' && !event.repeat) {
+      event.preventDefault();
+      if (key === 'escape') closeFishing();
+      else fishAction();
+    }
+    return;
+  }
   if (mapOpen) {
     if (key === 'escape' || key === 'm') closeMap();
     return;

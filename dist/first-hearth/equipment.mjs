@@ -156,8 +156,9 @@ export function paintFishingRod(ctx, x, y, direction, bob, tilt, avatarHeight = 
   ctx.stroke();
   orb(ctx, lineX, lineY, 3.7, '#d47651');
   orb(ctx, lineX, lineY - 1.9, 2.2, '#f9e7be');
-  if (flight === 1) {
+  if (flight === 1 && afloat < .45) {
     ctx.strokeStyle = '#f6e8b9ac';
+    ctx.globalAlpha *= 1 - afloat / .45;
     ctx.beginPath();
     ctx.ellipse(lineX, lineY + 3, 5 + afloat * 46, 2 + afloat * 12, 0, 0, Math.PI * 2);
     ctx.stroke();

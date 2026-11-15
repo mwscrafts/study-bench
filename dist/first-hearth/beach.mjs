@@ -9,7 +9,7 @@ export const LODESTONE_SHORE_X = 3380;
 export const ROWBOAT_X = 3725;
 
 export function fishingProgress(xp = 0) {
-  let remaining = clamp(Number.isSafeInteger(xp) ? xp : 0, 0, MAX_FISHING_XP);
+  let remaining = clamp(typeof xp === 'number' && Number.isSafeInteger(xp * 2) ? xp : 0, 0, MAX_FISHING_XP);
   let level = 1;
   while (level < MAX_FISHING_LEVEL) {
     const required = level + 2;
@@ -68,7 +68,7 @@ export function readFishing(save, legacyCasts = 0) {
     misses: Number.isInteger(save?.misses) ? clamp(save.misses,0,3) : 0,
     fish: Number.isSafeInteger(save?.fish) ? Math.max(0,save.fish) : 0,
     driftwood: Number.isSafeInteger(save?.driftwood) ? Math.max(0,save.driftwood) : 0,
-    xp: Number.isSafeInteger(save?.xp) ? clamp(save.xp,0,MAX_FISHING_XP)
+    xp: typeof save?.xp === 'number' && Number.isSafeInteger(save.xp * 2) ? clamp(save.xp,0,MAX_FISHING_XP)
       : clamp(Number.isSafeInteger(legacyCasts) ? legacyCasts : 0,0,MAX_FISHING_XP),
     rowboat: save?.rowboat === true,
     rootglass: Number.isSafeInteger(save?.rootglass) ? Math.max(0,save.rootglass) : 0,
@@ -76,12 +76,12 @@ export function readFishing(save, legacyCasts = 0) {
   };
 }
 
-export function castNet(state, roll = Math.random, offshore = false) {
+export function catchFish(state, roll = Math.random, offshore = false, fullCatch = true) {
+  const fishing = { ...state, xp: Math.min(MAX_FISHING_XP, (state.xp ?? 0) + (fullCatch ? 1 : .5)) };
   if (!state.book) {
-    return { fishing: { ...state, book: true, xp: Math.min(MAX_FISHING_XP,(state.xp ?? 0)+1) }, catchName: 'Soaked book', rare: false };
+    fishing.book = true;
+    return { fishing, catchName: 'Soaked book', rare: false };
   }
-  const fishing = { ...state };
-  fishing.xp = Math.min(MAX_FISHING_XP,(state.xp ?? 0)+1);
   let catchName;
   if (state.tideglass === 'seeking' && (state.misses === 3 || roll() < .25)) {
     fishing.tideglass = 'caught';
@@ -90,8 +90,8 @@ export function castNet(state, roll = Math.random, offshore = false) {
   } else {
     if (state.tideglass === 'seeking') fishing.misses++;
     if (offshore && roll() < .65) {
-      fishing.fish += 2;
-      catchName = 'A deepwater shoal · 2 fish';
+      fishing.fish += fullCatch ? 2 : 1;
+      catchName = fullCatch ? 'A deepwater shoal · 2 fish' : 'Deepwater fish';
     } else if (roll() < .55) {
       fishing.fish++;
       catchName = offshore ? 'Deepwater fish' : 'Fish';
@@ -100,9 +100,9 @@ export function castNet(state, roll = Math.random, offshore = false) {
       catchName = 'Driftwood';
     }
   }
-  const rootglassFound = offshore && roll() < .01;
+  const rootglassFound = fullCatch && offshore && roll() < .01;
   if (rootglassFound) fishing.rootglass = (fishing.rootglass ?? 0) + 1;
-  const rare = !state.godslayer && roll() < .001;
+  const rare = fullCatch && !state.godslayer && roll() < .001;
   if (rare) fishing.godslayer = true;
   return { fishing, catchName, rare, rootglass: rootglassFound };
 }
