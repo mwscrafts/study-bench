@@ -9,6 +9,13 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Approved character creator
+
+- The creator was rebuilt from the two-screen journey flow at `0721887`. The intact approved artwork is `dist/first-hearth/adventurer-creator.jpg`. The landscape creator uses that full image and positions native controls over it. Narrow portrait screens use a stacked form.
+- The default portrait and hairstyle illustrations are part of the approved artwork. The changed-appearance preview fits the existing playable sprite inside the frame with space above the head and below the feet. Hugh shares the appearance controls and uses the live preview.
+- Opening the creator only switches screens. The existing device save is replaced by the normal new journey flow after a valid name and explicit Enter Alder Camp action. Cache versions are `playtest.css?v=37` and `playtest.mjs?v=142`.
+- JavaScript syntax, the exact image bytes, and whitespace were checked locally. The executor blocked Chromium startup. Rendered mobile appearance and Cloudflare publication still require confirmation.
+
 ### Beach graphical rework
 
 - The approved complete beach map is `dist/first-hearth/beach-map.webp` (1920 × 445, drawn over world coordinates 3840 × 890). It includes the distant coast and playable foreground. The earlier concept-as-backdrop overlay was removed.

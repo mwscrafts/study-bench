@@ -186,8 +186,9 @@ let creatures = [];
 let creatureCycleKey = '';
 let player = createPlayer();
 let avatar = 'boy';
-let appearance = { skin: 'warm', build: 'slim', height: 'tall', hairStyle: 'ponytail', hairColor: 'brown' };
-let appearanceDraft = { ...appearance };
+const DEFAULT_APPEARANCE = { skin: 'warm', build: 'slim', height: 'tall', hairStyle: 'ponytail', hairColor: 'brown' };
+let appearance = { ...DEFAULT_APPEARANCE };
+let appearanceDraft = { ...DEFAULT_APPEARANCE };
 let avatarAtlasImage = null;
 let activeDialogueId = null;
 let appearanceEditorOpen = false;
@@ -1299,10 +1300,9 @@ const APPEARANCE_SKINS = [
 ];
 const APPEARANCE_STYLES = ['regular','ponytail','buzzcut','afro','mohawk'];
 const APPEARANCE_HAIR_COLORS = ['black','brown','blonde','auburn','pink','purple','green','blue','rainbow'];
-const DEFAULT_APPEARANCE = { skin:'warm', build:'slim', height:'tall', hairStyle:'ponytail', hairColor:'brown' };
 
 function defaultAppearanceFor(legacyAvatar = avatar) {
-  return { ...DEFAULT_APPEARANCE, hairStyle: legacyAvatar === 'girl' ? 'ponytail' : 'regular' };
+  return { ...DEFAULT_APPEARANCE, skin: 'peach', hairStyle: legacyAvatar === 'girl' ? 'ponytail' : 'regular' };
 }
 
 function normalizeAppearance(value, fallback = DEFAULT_APPEARANCE) {
@@ -1443,33 +1443,6 @@ function makeAvatarSprite(value) {
   return sprite;
 }
 
-function drawFullBodyPreview(canvas, sprite) {
-  const context=canvas.getContext('2d');
-  context.clearRect(0,0,canvas.width,canvas.height);
-  if (!sprite?.image || !sprite.width || !sprite.height) return;
-  context.imageSmoothingEnabled=true;
-  context.imageSmoothingQuality='high';
-  const padX=12, padY=14;
-  const scale=Math.min((canvas.width-padX*2)/sprite.width,(canvas.height-padY*2)/sprite.height);
-  const width=sprite.width*scale, height=sprite.height*scale;
-  const x=(canvas.width-width)/2, y=canvas.height-padY-height;
-  context.drawImage(sprite.image,sprite.left,sprite.top,sprite.width,sprite.height,x,y,width,height);
-}
-
-function drawHairStylePreview(canvas, sprite, style) {
-  const context=canvas.getContext('2d');
-  context.clearRect(0,0,canvas.width,canvas.height);
-  if (!sprite?.image || !sprite.width || !sprite.height) return;
-  context.imageSmoothingEnabled=true;
-  context.imageSmoothingQuality='high';
-  const cropHeight=Math.min(sprite.height,Math.round(sprite.height*(style === 'ponytail' ? 0.62 : 0.54)));
-  const pad=4;
-  const scale=Math.min((canvas.width-pad*2)/sprite.width,(canvas.height-pad*2)/cropHeight);
-  const width=sprite.width*scale,height=cropHeight*scale;
-  context.drawImage(sprite.image,sprite.left,sprite.top,sprite.width,cropHeight,
-    (canvas.width-width)/2,(canvas.height-height)/2,width,height);
-}
-
 function updateAppearanceEditor() {
   const root=el('appearance-editor');
   if (!root) return;
@@ -1478,15 +1451,21 @@ function updateAppearanceEditor() {
     const active=look[button.dataset.appearanceField]===button.dataset.value;
     button.setAttribute('aria-pressed',String(active));
   }
-  const preview=el('appearance-preview');
-  if (preview&&avatarAtlasImage) drawFullBodyPreview(preview,makeAvatarSprite(look));
-  const exampleHairColors={regular:'brown',ponytail:'brown',buzzcut:'pink',afro:'purple',mohawk:'green'};
-  for (const button of root.querySelectorAll('.hair-choice')) {
-    const canvas=button.querySelector('canvas');
-    const style=button.dataset.value;
-    const example=normalizeAppearance({...look,skin:'warm',hairStyle:style,hairColor:exampleHairColors[style]||'brown'},DEFAULT_APPEARANCE);
-    if (canvas&&avatarAtlasImage) drawHairStylePreview(canvas,makeAvatarSprite(example),style);
-  }
+  root.dataset.referenceLook = String(Object.keys(DEFAULT_APPEARANCE)
+    .every(field => look[field] === DEFAULT_APPEARANCE[field]));
+  if (!avatarAtlasImage) return;
+  const canvas = el('appearance-preview');
+  const context = canvas.getContext('2d');
+  const sprite = makeAvatarSprite(look);
+  const height = Math.min(canvas.height * 0.91, canvas.width * 0.88 * sprite.height / sprite.width)
+    * (look.height === 'short' ? 0.84 : 1);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  const baseline = canvas.height * 0.94;
+  context.fillStyle = '#0005';
+  context.beginPath();
+  context.ellipse(canvas.width / 2, baseline, height * 0.23, height * 0.019, 0, 0, Math.PI * 2);
+  context.fill();
+  drawSprite(context, sprite, canvas.width / 2, baseline, height);
 }
 
 function openMakeover() {
@@ -1514,7 +1493,7 @@ function closeMakeover(apply) {
   el('dialogue').hidden=false;
   appearanceEditorOpen=false;
   el('appearance-editor-home').append(el('appearance-editor'));
-  el('appearance-editor-title').textContent='Choose your adventurer.';
+  el('appearance-editor-title').textContent='Choose your adventurer';
   el('appearance-editor-actions').hidden=true;
   updateAppearanceEditor();
   setDialogue(apply
@@ -4160,6 +4139,13 @@ const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (!el('characterCreation').hidden) {
+    if (key === 'escape') {
+      el('back-to-journey-choice').click();
+      event.preventDefault();
+    }
+    return;
+  }
   if (appearanceEditorOpen) {
     if (key === 'escape') { closeMakeover(false); event.preventDefault(); }
     return;
@@ -4343,7 +4329,6 @@ async function boot() {
       hugh: spriteBounds(keepers, 0, .5, .52)
     };
     updateAppearanceEditor();
-    el('begin').textContent = 'Enter Alder Camp';
     updateNewJourneyButton();
     updatePresenceButton();
     resize();

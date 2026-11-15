@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth</title>
-  <link rel="stylesheet" href="./playtest.css?v=29">
+  <link rel="stylesheet" href="./playtest.css?v=37">
 </head>
 <body>
   <main class="page">
@@ -83,64 +83,65 @@
           </section>
         </div>
         <div id="characterCreation" class="overlay character-creation-overlay" hidden>
-          <section class="start-card character-creation-card" role="dialog" aria-modal="true" aria-labelledby="appearance-editor-title">
-            <button id="back-to-journey-choice" type="button" class="secondary">← Back to journey choices</button>
+          <section class="character-creation-card" role="dialog" aria-modal="true" aria-labelledby="appearance-editor-title">
+            <img class="creator-art" src="./adventurer-creator.jpg" width="1536" height="864" alt="">
+            <button id="back-to-journey-choice" type="button" class="secondary">← Back</button>
             <section class="new-journey" aria-labelledby="appearance-editor-title">
               <div id="appearance-editor-home">
                 <section class="appearance-editor" id="appearance-editor" aria-labelledby="appearance-editor-title">
                   <h2 id="appearance-editor-title">Choose your adventurer</h2>
                   <div class="appearance-layout">
                     <div class="appearance-preview-frame">
-                      <canvas id="appearance-preview" width="280" height="360" aria-label="Live adventurer preview"></canvas>
+                      <canvas id="appearance-preview" width="432" height="514" aria-label="Live adventurer preview"></canvas>
                     </div>
                     <div class="appearance-options">
                       <div class="appearance-option">
                         <h3>Skin</h3>
                         <div class="appearance-swatches" role="group" aria-label="Skin tone">
-                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="light" aria-label="Light skin tone" title="Light" style="--swatch:#f3d3b4"></button>
-                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="peach" aria-label="Peach skin tone" title="Peach" style="--swatch:#e9b991"></button>
-                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="warm" aria-label="Warm tan skin tone" title="Warm tan" style="--swatch:#d79a6c"></button>
-                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="bronze" aria-label="Bronze skin tone" title="Bronze" style="--swatch:#b87553"></button>
-                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="deep" aria-label="Deep brown skin tone" title="Deep brown" style="--swatch:#8b563f"></button>
-                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="dark" aria-label="Dark brown skin tone" title="Dark brown" style="--swatch:#59382e"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="light" aria-label="Light skin tone" title="Light" style="--x:49.154%;--y:17.940%;--w:4.036%;--h:7.292%;--swatch:#f3d3b4"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="peach" aria-label="Peach skin tone" title="Peach" style="--x:53.841%;--y:17.940%;--w:4.036%;--h:7.292%;--swatch:#e9b991"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="warm" aria-label="Warm tan skin tone" title="Warm tan" style="--x:58.594%;--y:17.940%;--w:4.036%;--h:7.292%;--swatch:#d79a6c" data-reference-selected></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="bronze" aria-label="Bronze skin tone" title="Bronze" style="--x:63.346%;--y:17.940%;--w:4.036%;--h:7.292%;--swatch:#b87553"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="deep" aria-label="Deep brown skin tone" title="Deep brown" style="--x:68.034%;--y:17.940%;--w:4.036%;--h:7.292%;--swatch:#8b563f"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="dark" aria-label="Dark brown skin tone" title="Dark brown" style="--x:72.786%;--y:17.940%;--w:4.036%;--h:7.292%;--swatch:#59382e"></button>
                         </div>
                       </div>
                       <div class="appearance-option">
                         <h3>Build</h3>
                         <div class="appearance-buttons" role="group" aria-label="Build">
-                          <button type="button" class="appearance-choice" data-appearance-field="build" data-value="slim">Slim</button>
-                          <button type="button" class="appearance-choice" data-appearance-field="build" data-value="stocky">Stocky</button>
+                          <button type="button" class="appearance-choice" data-appearance-field="build" data-value="slim" style="--x:49.284%;--y:28.125%;--w:11.068%;--h:5.787%" data-reference-selected>Slim</button>
+                          <button type="button" class="appearance-choice" data-appearance-field="build" data-value="stocky" style="--x:60.938%;--y:28.125%;--w:11.198%;--h:5.787%">Stocky</button>
                         </div>
                       </div>
                       <div class="appearance-option">
                         <h3>Height</h3>
                         <div class="appearance-buttons" role="group" aria-label="Height">
-                          <button type="button" class="appearance-choice" data-appearance-field="height" data-value="short">Short</button>
-                          <button type="button" class="appearance-choice" data-appearance-field="height" data-value="tall">Tall</button>
+                          <button type="button" class="appearance-choice" data-appearance-field="height" data-value="short" style="--x:49.284%;--y:36.458%;--w:11.068%;--h:5.903%">Short</button>
+                          <button type="button" class="appearance-choice" data-appearance-field="height" data-value="tall" style="--x:61.003%;--y:36.458%;--w:11.133%;--h:5.903%" data-reference-selected>Tall</button>
                         </div>
                       </div>
                       <div class="appearance-option">
                         <h3>Hairstyle</h3>
                         <div class="hair-style-grid" role="group" aria-label="Hairstyle">
-                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="regular"><canvas width="96" height="84" aria-hidden="true"></canvas><span>Regular</span></button>
-                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="ponytail"><canvas width="96" height="84" aria-hidden="true"></canvas><span>Ponytail</span></button>
-                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="buzzcut"><canvas width="96" height="84" aria-hidden="true"></canvas><span>Buzzcut</span></button>
-                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="afro"><canvas width="96" height="84" aria-hidden="true"></canvas><span>Afro</span></button>
-                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="mohawk"><canvas width="96" height="84" aria-hidden="true"></canvas><span>Mohawk</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="regular" style="--x:49.219%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Regular</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="ponytail" style="--x:57.292%;--y:44.907%;--w:7.422%;--h:15.741%" data-reference-selected><span>Ponytail</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="buzzcut" style="--x:65.690%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Buzzcut</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="afro" style="--x:74.414%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Afro</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="mohawk" style="--x:82.682%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Mohawk</span></button>
                         </div>
                       </div>
                       <div class="appearance-option">
                         <h3>Hair colour</h3>
                         <div class="appearance-swatches hair-colour-swatches" role="group" aria-label="Hair colour">
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="black" aria-label="Black hair" title="Black" style="--swatch:#32231e"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="brown" aria-label="Brown hair" title="Brown" style="--swatch:#70472f"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="blonde" aria-label="Blonde hair" title="Blonde" style="--swatch:#c99b55"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="auburn" aria-label="Auburn hair" title="Auburn" style="--swatch:#9d4930"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="pink" aria-label="Pink hair" title="Pink" style="--swatch:#d35b99"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="purple" aria-label="Purple hair" title="Purple" style="--swatch:#985cc4"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="green" aria-label="Green hair" title="Green" style="--swatch:#568e48"></button>
-                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="blue" aria-label="Blue hair" title="Blue" style="--swatch:#427bb5"></button>
-                          <button type="button" class="appearance-swatch hair-swatch rainbow-swatch" data-appearance-field="hairColor" data-value="rainbow" aria-label="Rainbow hair" title="Rainbow"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="black" aria-label="Black hair" title="Black" style="--x:49.219%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#32231e"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="brown" aria-label="Brown hair" title="Brown" style="--x:53.906%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#70472f" data-reference-selected></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="blonde" aria-label="Blonde hair" title="Blonde" style="--x:58.594%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#c99b55"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="auburn" aria-label="Auburn hair" title="Auburn" style="--x:63.346%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#9d4930"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="pink" aria-label="Pink hair" title="Pink" style="--x:68.034%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#d35b99"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="purple" aria-label="Purple hair" title="Purple" style="--x:72.786%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#985cc4"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="green" aria-label="Green hair" title="Green" style="--x:77.474%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#568e48"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="blue" aria-label="Blue hair" title="Blue" style="--x:82.096%;--y:64.699%;--w:4.036%;--h:7.292%;--swatch:#427bb5"></button>
+                          <button type="button" class="appearance-swatch hair-swatch rainbow-swatch" data-appearance-field="hairColor" data-value="rainbow" aria-label="Rainbow hair" title="Rainbow" style="--x:86.849%;--y:64.699%;--w:4.036%;--h:7.292%"></button>
                         </div>
                       </div>
                     </div>
@@ -152,12 +153,12 @@
                 </section>
               </div>
               <div class="new-journey-footer">
-                <label class="player-name" for="player-name">Adventurer name <input id="player-name" type="text" maxlength="16" autocomplete="off" placeholder="Enter a name to start" required aria-required="true"></label>
+                <label class="player-name" for="player-name"><span>Adventurer name</span> <input id="player-name" type="text" maxlength="16" autocomplete="off" required aria-required="true" style="--x:24.609%;--y:82.986%;--w:17.773%;--h:5.556%"></label>
                 <div class="difficulty" role="group" aria-label="Difficulty">
-                  <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
-                  <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+                  <button type="button" data-difficulty="easy" aria-pressed="true" style="--x:46.680%;--y:82.523%;--w:8.854%;--h:6.597%" data-reference-selected>Easy</button>
+                  <button type="button" data-difficulty="hard" aria-pressed="false" style="--x:55.859%;--y:82.523%;--w:8.919%;--h:6.597%">Hard</button>
                 </div>
-                <button id="begin" type="button" class="primary" disabled>Enter Alder Camp</button>
+                <button id="begin" type="button" class="primary" disabled style="--x:68.685%;--y:81.366%;--w:23.633%;--h:9.259%">Enter Alder Camp</button>
               </div>
             </section>
             
@@ -312,6 +313,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=134"></script>
+  <script type="module" src="./playtest.mjs?v=142"></script>
 </body>
 </html>
