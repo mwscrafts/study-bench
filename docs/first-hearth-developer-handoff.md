@@ -473,3 +473,12 @@ This is future direction, not a committed feature plan. The current setting begi
 - The new-journey name field is required and the start button stays disabled until a valid name is typed.
 - Existing save names are no longer prefilled into the new-game field, preventing a single accidental tap from overwriting a saved journey. Continue Journey keeps the saved name.
 - `begin()` validates again before creating a new journey, including for programmatic activation.
+
+
+### Character creator and Hugh makeovers — 2026-11-15
+
+- Replaced the two fixed hooded-avatar choices with a live appearance editor: six skin tones, slim/stocky builds, short/tall heights, five hairstyles, and natural plus vivid/rainbow hair colours.
+- Added a makeover conversation choice throughout Hugh’s dialogue. It opens the same editor; applying saves the look and updates multiplayer poses, while cancel keeps the old look.
+- Added a 4-by-5 base sprite atlas for the body and hairstyle combinations. Appearance settings are saved with journeys; existing saves receive a hoodless default look.
+- Updated the presence Worker to validate and relay appearance fields.
+- Character height changes are visual and remain anchored to the player’s existing ground position; collision geometry is unchanged.

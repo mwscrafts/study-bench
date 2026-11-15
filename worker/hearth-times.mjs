@@ -95,6 +95,19 @@ const DOORS = {
 };
 const numberBetween = (value,min,max) => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 
+const LOOK_SKINS = new Set(['light','peach','warm','bronze','deep','dark']);
+const LOOK_BUILDS = new Set(['slim','stocky']);
+const LOOK_HEIGHTS = new Set(['short','tall']);
+const LOOK_STYLES = new Set(['regular','ponytail','buzzcut','afro','mohawk']);
+const LOOK_HAIR_COLORS = new Set(['black','brown','blonde','auburn','pink','purple','green','blue','rainbow']);
+
+function readAppearance(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (!LOOK_SKINS.has(value.skin) || !LOOK_BUILDS.has(value.build) || !LOOK_HEIGHTS.has(value.height)
+    || !LOOK_STYLES.has(value.hairStyle) || !LOOK_HAIR_COLORS.has(value.hairColor)) return null;
+  return { skin:value.skin, build:value.build, height:value.height, hairStyle:value.hairStyle, hairColor:value.hairColor };
+}
+
 function readPose(data) {
   if (!data || typeof data !== 'object' || !AREAS.has(data.region)
     || !numberBetween(data.x,0,7000) || !numberBetween(data.y,-500,6000)
@@ -115,6 +128,7 @@ function readPose(data) {
     moving: data.moving === true, gait: data.gait, swing: data.swing,
     wave: numberBetween(data.wave,0,2) ? data.wave : 0,
     avatar: data.avatar === 'girl' ? 'girl' : 'boy',
+    appearance: readAppearance(data.appearance),
     tool: TOOLS.has(data.tool) ? data.tool : null,
     helmet: data.helmet === true,
     scarf: data.scarf === true,

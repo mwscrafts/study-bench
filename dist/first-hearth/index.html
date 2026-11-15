@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth</title>
-  <link rel="stylesheet" href="./playtest.css?v=26">
+  <link rel="stylesheet" href="./playtest.css?v=27">
 </head>
 <body>
   <main class="page">
@@ -72,25 +72,87 @@
           </div>
         </div>
         <div id="start" class="overlay" hidden>
-          <div class="start-card">
+          <div class="start-card character-start-card">
             <div id="continue-section" class="continue-section" hidden>
               <button id="continue" type="button" class="secondary">Continue Journey →</button>
               <p class="continue-note">Starting a new journey below will overwrite your saved journey on this device.</p>
             </div>
-            <section class="new-journey" aria-labelledby="new-journey-title">
+            <section class="new-journey" aria-labelledby="appearance-editor-title">
               <p class="eyebrow">START A NEW JOURNEY</p>
-              <h2 id="new-journey-title">Choose your <em>adventurer.</em></h2>
               <p>Alvin’s coming either way.</p>
-              <div class="characters" role="group" aria-label="Adventurer sprite">
-                <button class="character" id="choose-boy" type="button" data-avatar="boy" aria-pressed="true"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Boy</span></button>
-                <button class="character" id="choose-girl" type="button" data-avatar="girl" aria-pressed="false"><canvas width="88" height="90" aria-hidden="true"></canvas><span>Girl</span></button>
+              <div id="appearance-editor-home">
+                <section class="appearance-editor" id="appearance-editor" aria-labelledby="appearance-editor-title">
+                  <h2 id="appearance-editor-title">Choose your <em>adventurer.</em></h2>
+                  <div class="appearance-layout">
+                    <div class="appearance-preview-frame">
+                      <canvas id="appearance-preview" width="280" height="360" aria-label="Live adventurer preview"></canvas>
+                    </div>
+                    <div class="appearance-options">
+                      <div class="appearance-option">
+                        <h3>Skin</h3>
+                        <div class="appearance-swatches" role="group" aria-label="Skin tone">
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="light" aria-label="Light skin tone" title="Light" style="--swatch:#f3d3b4"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="peach" aria-label="Peach skin tone" title="Peach" style="--swatch:#e9b991"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="warm" aria-label="Warm tan skin tone" title="Warm tan" style="--swatch:#d79a6c"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="bronze" aria-label="Bronze skin tone" title="Bronze" style="--swatch:#b87553"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="deep" aria-label="Deep brown skin tone" title="Deep brown" style="--swatch:#8b563f"></button>
+                          <button type="button" class="appearance-swatch skin-swatch" data-appearance-field="skin" data-value="dark" aria-label="Dark brown skin tone" title="Dark brown" style="--swatch:#59382e"></button>
+                        </div>
+                      </div>
+                      <div class="appearance-option">
+                        <h3>Build</h3>
+                        <div class="appearance-buttons" role="group" aria-label="Build">
+                          <button type="button" class="appearance-choice" data-appearance-field="build" data-value="slim">Slim</button>
+                          <button type="button" class="appearance-choice" data-appearance-field="build" data-value="stocky">Stocky</button>
+                        </div>
+                      </div>
+                      <div class="appearance-option">
+                        <h3>Height</h3>
+                        <div class="appearance-buttons" role="group" aria-label="Height">
+                          <button type="button" class="appearance-choice" data-appearance-field="height" data-value="short">Short</button>
+                          <button type="button" class="appearance-choice" data-appearance-field="height" data-value="tall">Tall</button>
+                        </div>
+                      </div>
+                      <div class="appearance-option">
+                        <h3>Hairstyle</h3>
+                        <div class="hair-style-grid" role="group" aria-label="Hairstyle">
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="regular"><canvas width="60" height="70" aria-hidden="true"></canvas><span>Regular</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="ponytail"><canvas width="60" height="70" aria-hidden="true"></canvas><span>Ponytail</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="buzzcut"><canvas width="60" height="70" aria-hidden="true"></canvas><span>Buzzcut</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="afro"><canvas width="60" height="70" aria-hidden="true"></canvas><span>Afro</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="mohawk"><canvas width="60" height="70" aria-hidden="true"></canvas><span>Mohawk</span></button>
+                        </div>
+                      </div>
+                      <div class="appearance-option">
+                        <h3>Hair colour</h3>
+                        <div class="appearance-swatches hair-colour-swatches" role="group" aria-label="Hair colour">
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="black" aria-label="Black hair" title="Black" style="--swatch:#32231e"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="brown" aria-label="Brown hair" title="Brown" style="--swatch:#70472f"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="blonde" aria-label="Blonde hair" title="Blonde" style="--swatch:#c99b55"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="auburn" aria-label="Auburn hair" title="Auburn" style="--swatch:#9d4930"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="pink" aria-label="Pink hair" title="Pink" style="--swatch:#d35b99"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="purple" aria-label="Purple hair" title="Purple" style="--swatch:#985cc4"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="green" aria-label="Green hair" title="Green" style="--swatch:#568e48"></button>
+                          <button type="button" class="appearance-swatch hair-swatch" data-appearance-field="hairColor" data-value="blue" aria-label="Blue hair" title="Blue" style="--swatch:#427bb5"></button>
+                          <button type="button" class="appearance-swatch hair-swatch rainbow-swatch" data-appearance-field="hairColor" data-value="rainbow" aria-label="Rainbow hair" title="Rainbow"></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="appearance-editor-actions" id="appearance-editor-actions" hidden>
+                    <button id="makeover-cancel" type="button" class="secondary">Cancel</button>
+                    <button id="makeover-apply" type="button" class="primary">Keep this look</button>
+                  </div>
+                </section>
               </div>
-              <div class="difficulty" role="group" aria-label="Difficulty">
-                <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
-                <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+              <div class="new-journey-footer">
+                <div class="difficulty" role="group" aria-label="Difficulty">
+                  <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
+                  <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+                </div>
+                <label class="player-name" for="player-name">Name shown to other players (required) <input id="player-name" type="text" maxlength="16" autocomplete="off" placeholder="Enter a name to start" required aria-required="true"></label>
+                <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
               </div>
-              <label class="player-name" for="player-name">Name shown to other players (required) <input id="player-name" type="text" maxlength="16" autocomplete="off" placeholder="Enter a name to start" required aria-required="true"></label>
-              <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
             </section>
             
           </div>
@@ -154,6 +216,11 @@
               </div>
               <button id="close-dialogue" type="button" class="secondary">Keep exploring →</button>
             </div>
+          </section>
+        </div>
+        <div id="makeoverOverlay" class="overlay makeover-overlay" hidden>
+          <section class="start-card makeover-card" role="dialog" aria-modal="true" aria-labelledby="appearance-editor-title">
+            <div id="makeover-editor-mount"></div>
           </section>
         </div>
         <div id="inventoryOverlay" class="overlay" hidden>
@@ -239,6 +306,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=130"></script>
+  <script type="module" src="./playtest.mjs?v=131"></script>
 </body>
 </html>

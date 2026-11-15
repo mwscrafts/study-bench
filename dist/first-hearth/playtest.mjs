@@ -186,6 +186,13 @@ let creatures = [];
 let creatureCycleKey = '';
 let player = createPlayer();
 let avatar = 'boy';
+let appearance = { skin: 'peach', build: 'slim', height: 'tall', hairStyle: 'regular', hairColor: 'brown' };
+let appearanceDraft = { ...appearance };
+let avatarAtlasImage = null;
+let activeDialogueId = null;
+let appearanceEditorOpen = false;
+const avatarBaseCellCache = new Map();
+const avatarAppearanceCache = new Map();
 let playing = false;
 let paused = false;
 let talking = false;
@@ -225,7 +232,7 @@ const presence = createPresence({
     region, x: Math.round(player.x * 10) / 10, y: Math.round(player.y * 10) / 10,
     direction: player.direction, moving: controlsActive() && player.moving,
     gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100,
-    avatar, tool: equipped, helmet: tools.helmet, name: publicName,
+    avatar, appearance: { ...appearance }, tool: equipped, helmet: tools.helmet, name: publicName,
     scarf: specialRewards.has('scarf'),
     shadowSync: skyMode === 'auto',
     alvin: alvinResting && region !== 'hut' ? null : { x: cat.x, y: cat.y, direction: cat.direction, gait: cat.gait,
@@ -417,7 +424,7 @@ function paintPeers() {
     ctx.save();
     if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
     paintShadow(ctx,peer.x,peer.y,22);
-    drawSprite(ctx,sprites[pose.avatar],peer.x,peer.y,97,pose.direction,bob,tilt);
+    drawSprite(ctx,makeAvatarSprite(pose.appearance ?? defaultAppearanceFor(pose.avatar)),peer.x,peer.y,avatarHeightFor(pose.appearance ?? defaultAppearanceFor(pose.avatar)),pose.direction,bob,tilt);
     if (pose.scarf === true) paintTrailScarf(ctx,peer.x,peer.y,pose.direction,bob);
     if (pose.helmet) paintIronHelmet(ctx,peer.x,peer.y,pose.direction,bob,tilt,97);
     paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt);
@@ -756,8 +763,8 @@ function paint() {
   const bob = boatBob + (player.moving && player.ground ? -Math.abs(Math.sin(gait)) * 4 : 0);
   const tilt = (rowboatRelaxing ? -.13 : 0) + (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
   const facing = swing > 0 ? swingDirection : player.direction;
-  const avatarHeight = rowboatRelaxing ? 78 : 97;
-  drawSprite(ctx, sprites[avatar], player.x, player.y, avatarHeight, facing, bob, tilt);
+  const avatarHeight = rowboatRelaxing ? avatarHeightFor(appearance) * .8 : avatarHeightFor(appearance);
+  drawSprite(ctx, makeAvatarSprite(appearance), player.x, player.y, avatarHeight, facing, bob, tilt);
   if (specialRewards.has('scarf')) paintTrailScarf(ctx,player.x,player.y,facing,bob);
   if (tools.helmet && playing) paintIronHelmet(ctx,player.x,player.y,facing,bob,tilt,avatarHeight);
   if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
@@ -1250,7 +1257,7 @@ function saveCamp() {
     // A shared gate grants passage for this public session, not a permanent quest unlock.
     const sharedVillageVisit = (region === 'village' || region === 'house') && !victory?.ending && !adminRing;
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 22, testRun, adminRing, avatar, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
+      version: 23, testRun, adminRing, avatar, appearance, region: sharedVillageVisit ? 'king' : region, difficulty, fishFed, alvinGrowthRemaining, publicName,
       footing: sharedVillageVisit ? { x: 3670, ground: 'king-floor' }
         : trial && !victory ? { x: REST_X, ground: 'king-floor' } : savedFooting,
       phaseClock, nightIndex, health, composure, berries, equipped, pickaxeRecipeLearned,
@@ -1284,6 +1291,211 @@ function updateNewJourneyButton() {
   el('begin').disabled = !sprites || !isValidNewJourneyName(el('player-name').value);
 }
 
+
+const APPEARANCE_SKINS = [
+  { value:'light', color:'#f3d3b4' }, { value:'peach', color:'#e9b991' },
+  { value:'warm', color:'#d79a6c' }, { value:'bronze', color:'#b87553' },
+  { value:'deep', color:'#8b563f' }, { value:'dark', color:'#59382e' }
+];
+const APPEARANCE_STYLES = ['regular','ponytail','buzzcut','afro','mohawk'];
+const APPEARANCE_HAIR_COLORS = ['black','brown','blonde','auburn','pink','purple','green','blue','rainbow'];
+const DEFAULT_APPEARANCE = { skin:'peach', build:'slim', height:'tall', hairStyle:'regular', hairColor:'brown' };
+
+function defaultAppearanceFor(legacyAvatar = avatar) {
+  return { ...DEFAULT_APPEARANCE, hairStyle: legacyAvatar === 'girl' ? 'ponytail' : 'regular' };
+}
+
+function normalizeAppearance(value, fallback = DEFAULT_APPEARANCE) {
+  const source = value && typeof value === 'object' ? value : fallback;
+  const safeFallback = fallback && typeof fallback === 'object' ? fallback : DEFAULT_APPEARANCE;
+  return {
+    skin: APPEARANCE_SKINS.some(option => option.value === source.skin) ? source.skin : safeFallback.skin,
+    build: source.build === 'stocky' || source.build === 'slim' ? source.build : safeFallback.build,
+    height: source.height === 'short' || source.height === 'tall' ? source.height : safeFallback.height,
+    hairStyle: APPEARANCE_STYLES.includes(source.hairStyle) ? source.hairStyle : safeFallback.hairStyle,
+    hairColor: APPEARANCE_HAIR_COLORS.includes(source.hairColor) ? source.hairColor : safeFallback.hairColor
+  };
+}
+
+function avatarHeightFor(value) {
+  return normalizeAppearance(value, defaultAppearanceFor()).height === 'short' ? 84 : 104;
+}
+
+function rgbToHsl(red, green, blue) {
+  let r = red / 255, g = green / 255, b = blue / 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), delta = max - min;
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (delta) {
+    s = delta / (1 - Math.abs(2 * l - 1));
+    if (max === r) h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+    h = (h * 60 + 360) % 360;
+  }
+  return [h,s,l];
+}
+
+function hslToRgb(h, s, l) {
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l,1-l);
+  const channel = n => Math.round(255 * (l - a * Math.max(-1,Math.min(k(n)-3,9-k(n),1))));
+  return [channel(0),channel(8),channel(4)];
+}
+
+function parseHexColor(hex) {
+  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+}
+
+function cleanAvatarCell(canvas) {
+  const context = canvas.getContext('2d',{willReadFrequently:true});
+  const image = context.getImageData(0,0,canvas.width,canvas.height);
+  const pixels = image.data, width = canvas.width, height = canvas.height;
+  const seen = new Uint8Array(width * height);
+  for (let i=0;i<pixels.length;i+=4) {
+    if (pixels[i+3] < 48) { pixels[i+3]=0; continue; }
+    const [h,s] = rgbToHsl(pixels[i],pixels[i+1],pixels[i+2]);
+    if ((h < 7 || h > 352) && s > .82) pixels[i+3]=0;
+  }
+  const queue = [];
+  for (let start=0;start<width*height;start++) {
+    if (seen[start]) continue;
+    const alpha = pixels[start*4+3];
+    if (alpha < 80) { seen[start]=1; continue; }
+    seen[start]=1; queue.length=0; queue.push(start);
+    let head=0;
+    while (head<queue.length) {
+      const at=queue[head++], x=at%width, y=Math.floor(at/width);
+      for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) {
+        if (!dx && !dy) continue;
+        const nx=x+dx, ny=y+dy;
+        if (nx<0||ny<0||nx>=width||ny>=height) continue;
+        const next=ny*width+nx;
+        if (seen[next] || pixels[next*4+3]<80) continue;
+        seen[next]=1; queue.push(next);
+      }
+    }
+    if (queue.length < 18) for (const at of queue) pixels[at*4+3]=0;
+  }
+  context.putImageData(image,0,0);
+}
+
+function getAvatarBaseCell(column,row) {
+  const key = column+':'+row;
+  if (avatarBaseCellCache.has(key)) return avatarBaseCellCache.get(key);
+  if (!avatarAtlasImage) return null;
+  const sourceWidth=avatarAtlasImage.width/4, sourceHeight=avatarAtlasImage.height/5;
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.ceil(sourceWidth); canvas.height=Math.ceil(sourceHeight);
+  const context=canvas.getContext('2d',{willReadFrequently:true});
+  context.drawImage(avatarAtlasImage,column*sourceWidth,row*sourceHeight,sourceWidth,sourceHeight,0,0,canvas.width,canvas.height);
+  cleanAvatarCell(canvas);
+  avatarBaseCellCache.set(key,canvas);
+  return canvas;
+}
+
+function makeAvatarSprite(value) {
+  const look=normalizeAppearance(value,defaultAppearanceFor());
+  const key=[look.skin,look.build,look.height,look.hairStyle,look.hairColor].join(':');
+  if (avatarAppearanceCache.has(key)) return avatarAppearanceCache.get(key);
+  const column=(look.height==='short'?0:2)+(look.build==='stocky'?1:0);
+  const row=APPEARANCE_STYLES.indexOf(look.hairStyle);
+  const base=getAvatarBaseCell(column,row);
+  if (!base) return sprites?.[avatar] ?? sprites?.boy;
+  const canvas=document.createElement('canvas');
+  canvas.width=base.width; canvas.height=base.height;
+  const context=canvas.getContext('2d',{willReadFrequently:true});
+  context.drawImage(base,0,0);
+  const image=context.getImageData(0,0,canvas.width,canvas.height);
+  const pixels=image.data, width=canvas.width, height=canvas.height;
+  const skinOption=APPEARANCE_SKINS.find(option=>option.value===look.skin);
+  const skinHsl=rgbToHsl(...parseHexColor(skinOption.color));
+  const hairHex=({
+    black:'#32231e',brown:'#70472f',blonde:'#c99b55',auburn:'#9d4930',
+    pink:'#d35b99',purple:'#985cc4',green:'#568e48',blue:'#427bb5'
+  })[look.hairColor];
+  const hairHsl=hairHex?rgbToHsl(...parseHexColor(hairHex)):null;
+  for (let y=0;y<height;y++) for (let x=0;x<width;x++) {
+    const i=(y*width+x)*4;
+    if (pixels[i+3]<80) continue;
+    const [h,s,l]=rgbToHsl(pixels[i],pixels[i+1],pixels[i+2]);
+    const inHairArea=y/height<.27 || (y/height<.39&&(x/width<.32||x/width>.75)) ||
+      (look.hairStyle==='ponytail'&&y/height<.53&&x/width<.48);
+    const isHair=inHairArea&&h>7&&h<36&&s>.12&&l<.58;
+    if (isHair && look.hairColor!=='brown') {
+      const nextH=look.hairColor==='rainbow'
+        ? (x/width*300+y/height*55+4)%360 : hairHsl[0];
+      const nextS=look.hairColor==='rainbow'?.82:hairHsl[1];
+      const targetL=look.hairColor==='rainbow'?.53:hairHsl[2];
+      [pixels[i],pixels[i+1],pixels[i+2]]=hslToRgb(nextH,nextS,Math.max(.10,Math.min(.90,targetL+(l-.34)*.62)));
+      continue;
+    }
+    const isSkin=h>7&&h<34&&s>.16&&l>.47;
+    if (isSkin) {
+      const targetL=Math.max(.20,Math.min(.92,skinHsl[2]+(l-.72)*.72));
+      [pixels[i],pixels[i+1],pixels[i+2]]=hslToRgb(skinHsl[0],skinHsl[1],targetL);
+    }
+  }
+  context.putImageData(image,0,0);
+  const sprite=spriteBounds(canvas,0,1,.5);
+  if (avatarAppearanceCache.size>=64) avatarAppearanceCache.delete(avatarAppearanceCache.keys().next().value);
+  avatarAppearanceCache.set(key,sprite);
+  return sprite;
+}
+
+function updateAppearanceEditor() {
+  const root=el('appearance-editor');
+  if (!root) return;
+  const look=normalizeAppearance(appearanceDraft,DEFAULT_APPEARANCE);
+  for (const button of root.querySelectorAll('[data-appearance-field]')) {
+    const active=look[button.dataset.appearanceField]===button.dataset.value;
+    button.setAttribute('aria-pressed',String(active));
+  }
+  const preview=el('appearance-preview');
+  if (preview&&avatarAtlasImage) drawPortrait(preview,makeAvatarSprite(look));
+  for (const button of root.querySelectorAll('.hair-choice')) {
+    const canvas=button.querySelector('canvas');
+    if (canvas&&avatarAtlasImage) drawPortrait(canvas,makeAvatarSprite({...look,hairStyle:button.dataset.value}));
+  }
+}
+
+function openMakeover() {
+  if (!playing||activeDialogueId!=='hugh') return;
+  appearanceDraft={...appearance};
+  el('appearance-editor-title').textContent='Hugh’s Makeover';
+  el('appearance-editor-actions').hidden=false;
+  el('makeover-editor-mount').append(el('appearance-editor'));
+  el('makeoverOverlay').hidden=false;
+  appearanceEditorOpen=true;
+  clearControls();
+  updateAppearanceEditor();
+  el('makeover-cancel').focus({preventScroll:true});
+}
+
+function closeMakeover(apply) {
+  if (!appearanceEditorOpen) return;
+  if (apply) {
+    appearance=normalizeAppearance(appearanceDraft,DEFAULT_APPEARANCE);
+    sendPose(true);
+    saveCamp();
+  } else appearanceDraft={...appearance};
+  el('makeoverOverlay').hidden=true;
+  appearanceEditorOpen=false;
+  el('appearance-editor-home').append(el('appearance-editor'));
+  el('appearance-editor-title').textContent='Choose your adventurer.';
+  el('appearance-editor-actions').hidden=true;
+  updateAppearanceEditor();
+  setDialogue(apply
+    ? 'There we are. Fresh look, same adventurer. Come by whenever you fancy changing it up.'
+    : 'No change, then. Stop by whenever you fancy a different look.',
+    [['Back to Hugh',hughDialogue],['Keep exploring',closeDialogue]]);
+}
+
+function askHughMakeover() {
+  setDialogue('I’ve changed my look more times than I can count. The stilts were one experiment; hair, colour, and a few careful adjustments are another. I can give you a makeover too, and it won’t change how you move. Want to try?',
+    [['Let’s do it',openMakeover],['Maybe later',()=>setDialogue('Any time. I’ll be right here by the lamps.',[['Back to Hugh',hughDialogue]])]]);
+}
+
 function begin(save) {
   if (!sprites) return;
   const nameField = el('player-name');
@@ -1302,6 +1514,10 @@ function begin(save) {
   adminRing = save?.adminRing === true;
   adminPanelFromRing = false;
   avatar = save?.avatar ?? avatar;
+  appearance = save ? normalizeAppearance(save.appearance,defaultAppearanceFor(avatar))
+    : normalizeAppearance(appearanceDraft,DEFAULT_APPEARANCE);
+  appearanceDraft = { ...appearance };
+  updateAppearanceEditor();
   const chosenName = save?.publicName || enteredName;
   publicName = typeof chosenName === 'string' && chosenName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(chosenName)
     ? chosenName : 'Adventurer';
@@ -1523,6 +1739,9 @@ function enterRegion(next, footing) {
 }
 
 function setDialogue(line, options = []) {
+  if (activeDialogueId === 'hugh' && !options.some(([,action]) => action === askHughMakeover || action === openMakeover)) {
+    options = [...options, ['Ask Hugh about a makeover',askHughMakeover]];
+  }
   el('line').textContent = line;
   const choices = el('choices');
   choices.replaceChildren();
@@ -2409,6 +2628,7 @@ function emberBoxDialogue() {
 }
 
 function openDialogue(id) {
+  activeDialogueId = id;
   const info = conversations[id] ?? { name: 'Alder Camp', role: 'CAMP KEEPSAKE' };
   el('time-board').hidden = true;
   el('noticeboard-panel').hidden = true;
@@ -3138,6 +3358,7 @@ function interact() {
 }
 
 function closeDialogue() {
+  activeDialogueId = null;
   talking = false;
   if (wakeSceneActive) petHeartsUntil = 0;
   wakeSceneActive = false;
@@ -3689,14 +3910,6 @@ function frame(time) {
   requestAnimationFrame(frame);
 }
 
-for (const button of document.querySelectorAll('[data-avatar]')) {
-  button.addEventListener('click', () => {
-    avatar = button.dataset.avatar;
-    for (const choice of document.querySelectorAll('[data-avatar]')) {
-      choice.setAttribute('aria-pressed', String(choice === button));
-    }
-  });
-}
 for (const button of document.querySelectorAll('[data-difficulty]')) {
   button.addEventListener('click', () => {
     difficulty = button.dataset.difficulty;
@@ -3705,6 +3918,15 @@ for (const button of document.querySelectorAll('[data-difficulty]')) {
     }
   });
 }
+el('appearance-editor').addEventListener('click', event => {
+  const button=event.target.closest('button[data-appearance-field]');
+  if (!button) return;
+  const field=button.dataset.appearanceField, value=button.dataset.value;
+  appearanceDraft=normalizeAppearance({ ...appearanceDraft, [field]: value },DEFAULT_APPEARANCE);
+  updateAppearanceEditor();
+});
+el('makeover-apply').addEventListener('click',()=>closeMakeover(true));
+el('makeover-cancel').addEventListener('click',()=>closeMakeover(false));
 el('player-name').addEventListener('input', () => {
   el('player-name').setCustomValidity('');
   updateNewJourneyButton();
@@ -3894,6 +4116,10 @@ const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (appearanceEditorOpen) {
+    if (key === 'escape') { closeMakeover(false); event.preventDefault(); }
+    return;
+  }
   if (telescopeViewing) {
     if (key === 'escape' || key === 'e') {
       leaveTelescope();
@@ -4051,9 +4277,10 @@ async function boot() {
   try {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
-    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp')
+    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage, avatarAtlas] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp'), loadImage('./adventurer-atlas.webp')
     ]);
+    avatarAtlasImage = avatarAtlas;
     backgrounds.camp = buildCampArt();
     sprites = {
       nightWisp: spriteBounds(rootWispImage, 0, 1, .5),
@@ -4070,8 +4297,7 @@ async function boot() {
       lyss: spriteBounds(keepers, .5, 1, .55),
       hugh: spriteBounds(keepers, 0, .5, .52)
     };
-    drawPortrait(el('choose-boy').querySelector('canvas'), sprites.boy);
-    drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);
+    updateAppearanceEditor();
     el('begin').textContent = 'Enter Alder Camp →';
     updateNewJourneyButton();
     updatePresenceButton();
