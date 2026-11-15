@@ -9,6 +9,13 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Fishing rod and cast animation
+
+- Hugh’s chest, the backpack, and fishing dialogue now use **Fishing rod**. The saved `hasNet` field and `net` equipment ID still identify the same item, including in public poses. Older journeys that took the net already own the rod.
+- The equipped rod uses the preview’s tapered wood shape, reel, and overhead flick. At Lantern Dock and offshore, the line trails a bobber into the water and a ripple expands where it lands. The existing catch timing, XP, loot rolls, and fishing unlocks are unchanged.
+- Changed `equipment.mjs`, `backpack.mjs`, `beach-art.mjs`, `world-data.mjs`, `playtest.mjs`, and `index.html`. Cache versions are equipment v10, backpack v10, beach art v19, world data v33, and entry v148. This checkpoint is included in the fishing rod commit.
+- JavaScript syntax and whitespace checks passed. Local canvas renders were visually reviewed for the held rod, backswing, airborne bobber, and water landing at both spots, with short and tall sprites. Public gameplay was not opened. Once deployed, the owner can verify the two casts on their phone.
+
 ### Four-minute day cycle
 
 - The client and presence worker share `dist/first-hearth/day-cycle.mjs`. A full cycle lasts 240 seconds. Night runs from phase 120 through 210 (90 seconds), including the ten-second fade starting at 200. The two dusk transitions retain their 12- and 10-second durations, and dawn retains its 15 seconds.

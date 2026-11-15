@@ -144,28 +144,12 @@ export function paintRowboat(ctx, sprite) {
   drawSprite(ctx, sprite, ROWBOAT_X, ROWBOAT_Y, 64);
 }
 
-export function paintBeachDetails(ctx, view, clock, night, casting) {
+export function paintBeachDetails(ctx, view, night) {
   for(const x of [2071,2491]) {
     if(x<view.x-125 || x>view.x+view.width+125) continue;
     const light=ctx.createRadialGradient(x,533,2,x,533,114);
     light.addColorStop(0,'rgba(255,193,111,'+(.17+night*.33)+')');
     light.addColorStop(1,'#ffc16f00');
     orb(ctx,x,533,114,light);
-  }
-  if(!casting) return;
-  const t=clock-casting.start;
-  const {x,y}=casting;
-  const splash=x-144;
-  if(t<.42) {
-    const dx=-(20+Math.max(0,t)*296);
-    const dy=-69-Math.sin(Math.min(1,t/.42)*Math.PI)*42;
-    path(ctx,[[x,y-53],[x+dx,y+dy]],'#d7c8a2',2);
-    orb(ctx,x+dx,y+dy,8,'#d7c8a2');
-  } else {
-    ctx.strokeStyle='#e9ecb5b5';
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.ellipse(splash,y-13,9+(t-.42)*60,4+(t-.42)*17,0,0,Math.PI*2);
-    ctx.stroke();
   }
 }

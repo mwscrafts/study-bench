@@ -12,7 +12,8 @@ export const gear = {
   pickaxe: ['⛏', 'Pickaxe', 'Mine iron and gather crystals.'],
   ironSword: ['⚔', 'Iron sword', 'Strike down night shadows.'],
   shadowBlade: ['✦', 'Shadow blade', 'A sword forged from shadow essence.'],
-  net: ['◇', 'Casting net', 'Cast from Lantern Dock.'],
+  // Keep the original item ID used by existing saves and public poses.
+  net: ['🎣', 'Fishing rod', 'Cast from Lantern Dock or the rowboat.'],
   godslayer: ['†', 'Godslayer', 'A rare blade from the tide.']
 };
 
@@ -67,8 +68,12 @@ export function paintGatheringEffects(ctx, particles, floaters) {
   ctx.restore();
 }
 
-export function paintHeldTool(ctx, x, y, direction, equipped, swing, bob, tilt) {
+export function paintHeldTool(ctx, x, y, direction, equipped, swing, bob, tilt, avatarHeight) {
   if (!equipped) return;
+  if (equipped === 'net') {
+    paintFishingRod(ctx, x, y, direction, bob, tilt, avatarHeight);
+    return;
+  }
   ctx.save();
   ctx.translate(x,y+bob);
   ctx.scale(direction,1);
@@ -94,18 +99,6 @@ export function paintHeldTool(ctx, x, y, direction, equipped, swing, bob, tilt) 
     poly(ctx,[[0,-39],[-5,-29],[-3,0],[3,0],[5,-29]],blade);
     ctx.fillStyle = '#ddb67f';
     ctx.fillRect(-8,-3,16,3);
-  } else {
-    ctx.strokeStyle = '#dbcba2';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(0,-22,9,11,0,0,Math.PI*2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-7,-27);
-    ctx.lineTo(6,-17);
-    ctx.moveTo(6,-27);
-    ctx.lineTo(-7,-17);
-    ctx.stroke();
   }
   ctx.restore();
   if (swing > 0) {
@@ -113,6 +106,60 @@ export function paintHeldTool(ctx, x, y, direction, equipped, swing, bob, tilt) 
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(10,-3,34,-1.5,1.2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+export function paintFishingRod(ctx, x, y, direction, bob, tilt, avatarHeight = 97, cast = null, clock = 0) {
+  const scale = avatarHeight / 97;
+  const elapsed = cast ? clock - cast.start : 0;
+  const release = .28;
+  const flightTime = .29;
+  const backswing = Math.sin(Math.PI * clamp(elapsed / release, 0, 1));
+  const followThrough = Math.sin(Math.PI * clamp((elapsed - release) / .25, 0, 1));
+  const angle = -.72 - backswing * 1.26 + followThrough * .42 + tilt;
+  const handX = x + direction * (20 * Math.cos(tilt) + 35 * Math.sin(tilt)) * scale;
+  const handY = y + bob + (20 * Math.sin(tilt) - 35 * Math.cos(tilt)) * scale;
+
+  ctx.save();
+  ctx.translate(handX, handY);
+  ctx.scale(direction * scale, scale);
+  ctx.rotate(angle);
+  poly(ctx, [[-10,-2],[37,-2],[68,-4],[68,-2],[37,2],[-10,3]], '#533827');
+  ctx.strokeStyle = '#c9a272';
+  ctx.lineWidth = 1.45;
+  ctx.beginPath();
+  ctx.moveTo(1,-1);
+  ctx.lineTo(37,-1);
+  ctx.lineTo(68,-3);
+  ctx.stroke();
+  ctx.fillStyle = '#9c6946';
+  ctx.fillRect(-9,-3,15,6);
+  orb(ctx, 7, 3, 4.5, '#3b4541');
+  orb(ctx, 7, 3, 2.1, '#ceb77c');
+  ctx.restore();
+
+  if (!cast || elapsed < release) return;
+  const tipX = handX + direction * (68 * Math.cos(angle) + 3 * Math.sin(angle)) * scale;
+  const tipY = handY + (68 * Math.sin(angle) - 3 * Math.cos(angle)) * scale;
+  const flight = clamp((elapsed - release) / flightTime, 0, 1);
+  const afloat = Math.max(0, elapsed - release - flightTime);
+  const lineX = tipX + (cast.landingX - tipX) * flight;
+  const lineY = tipY + (cast.landingY - tipY) * flight - Math.sin(flight * Math.PI) * 42 + Math.sin(afloat * 15) * 2;
+  ctx.save();
+  ctx.strokeStyle = '#f3e3b9dc';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.quadraticCurveTo((tipX + lineX) / 2, (tipY + lineY) / 2 + flight * 13, lineX, lineY);
+  ctx.stroke();
+  orb(ctx, lineX, lineY, 3.7, '#d47651');
+  orb(ctx, lineX, lineY - 1.9, 2.2, '#f9e7be');
+  if (flight === 1) {
+    ctx.strokeStyle = '#f6e8b9ac';
+    ctx.beginPath();
+    ctx.ellipse(lineX, lineY + 3, 5 + afloat * 46, 2 + afloat * 12, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();

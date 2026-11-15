@@ -15,15 +15,15 @@ import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=15';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
   ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=11';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=18';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=19';
 import { paintTelescopeView } from './telescope-art.mjs?v=2';
-import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=3';
+import { ROWBOAT_FISH_X, ROWBOAT_BASELINE_Y, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=3';
 import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=4';
 import { startRowboatAmbience, startBeachAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=3';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
-  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
-import { renderInventory } from './backpack.mjs?v=09';
+  advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintFishingRod, paintBerryBush } from './equipment.mjs?v=10';
+import { renderInventory } from './backpack.mjs?v=10';
 import { hearthNote } from './hearth.mjs?v=12';
 import { paintHearthDetails } from './hearth-art.mjs?v=1';
 import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
@@ -37,7 +37,7 @@ import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, p
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=6';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=32';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=33';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=4';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=6';
@@ -419,9 +419,10 @@ function paintPeers() {
     if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
     paintShadow(ctx,peer.x,peer.y,22);
     const look = pose.appearance ?? defaultAppearanceFor(pose.avatar);
-    drawSprite(ctx, makeAvatarSprite(look, pose.helmet), peer.x, peer.y, avatarHeightFor(look), pose.direction, bob, tilt);
+    const avatarHeight = avatarHeightFor(look);
+    drawSprite(ctx, makeAvatarSprite(look, pose.helmet), peer.x, peer.y, avatarHeight, pose.direction, bob, tilt);
     if (pose.scarf === true) paintTrailScarf(ctx,peer.x,peer.y,pose.direction,bob);
-    paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt);
+    paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt,avatarHeight);
     paintWave(ctx,peer.x,peer.y,pose.direction,pose.wave ?? 0,bob);
     ctx.font = 'bold 13px system-ui, sans-serif';
     const label = pose.name || 'Adventurer';
@@ -683,12 +684,11 @@ function paint() {
     drawSprite(ctx, sprites.hugh, hugh.x, hugh.y, hughStiltsRevealed ? 64 : 105);
   } else if (region === 'beach') {
     if (fishing.rowboat) paintRowboat(ctx, sprites.rowboat);
-    paintBeachDetails(ctx, camera, animationClock, night, casting);
+    paintBeachDetails(ctx, camera, night);
     paintRegionalLodestones();
   } else if (region === 'rowboat') {
     paintRowboatSea(ctx,camera,animationClock);
     paintRowboatVessel(ctx,sprites.rowboat,animationClock,rowboatRelaxing);
-    paintBeachDetails(ctx,camera,animationClock,night,casting);
   } else if (region === 'hearth') {
     paintHearthDetails(ctx, animationClock, night, hearthLearned);
   } else if (region === 'king') {
@@ -755,12 +755,17 @@ function paint() {
   if (animationClock < hitUntil && Math.floor(animationClock * 13) % 2) ctx.globalAlpha = .52;
   const boatBob = region === 'rowboat' ? Math.sin(animationClock*.78)*2.4 + Math.pow(Math.max(0,Math.sin(animationClock*.29+.8)),5)*3.2 : 0;
   const bob = boatBob + (player.moving && player.ground ? -Math.abs(Math.sin(gait)) * 4 : 0);
-  const tilt = (rowboatRelaxing ? -.13 : 0) + (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
-  const facing = swing > 0 ? swingDirection : player.direction;
+  const castLean = casting ? Math.sin(Math.PI * clamp((animationClock - casting.start) / .56, 0, 1)) * .10 : 0;
+  const tilt = (rowboatRelaxing ? -.13 : 0) + (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23 + castLean;
+  const facing = swing > 0 && !casting ? swingDirection : player.direction;
   const avatarHeight = rowboatRelaxing ? avatarHeightFor(appearance) * .8 : avatarHeightFor(appearance);
   drawSprite(ctx, makeAvatarSprite(appearance, playing && tools.helmet), player.x, player.y, avatarHeight, facing, bob, tilt);
   if (specialRewards.has('scarf')) paintTrailScarf(ctx,player.x,player.y,facing,bob);
-  if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
+  if (casting) {
+    paintFishingRod(ctx, player.x, player.y, facing, bob, tilt, avatarHeight, casting, animationClock);
+  } else if (playing) {
+    paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt, avatarHeight);
+  }
   if (playing) paintWave(ctx, player.x, player.y, player.direction, wave, bob);
   if (playing) paintChatBubble(player.x, player.y, chatBubbles.get('self'));
   ctx.globalAlpha = 1;
@@ -1014,7 +1019,7 @@ function updatePrompt() {
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
   const message = telescopeViewing ? ''
-    : casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
+    : casting ? 'Casting the line…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   const jumpCaption = el('jump').querySelector('small');
   if (jumpCaption && jumpCaption.textContent !== (onLadder ? 'Climb' : 'Jump')) jumpCaption.textContent = onLadder ? 'Climb' : 'Jump';
@@ -1047,7 +1052,7 @@ function updateNotes() {
     : quest === 'complete' ? 'Brass key earned · Find the hidden box'
     : quest === 'accepted' ? 'Lyss’s dusklilies · ' + collected.size + ' / 3'
     : 'Explore the trail and find Lyss by the fire.';
-  const mineLoot = 'Iron ore · ' + ironStock + (hasNet ? ' · Casting net' : '');
+  const mineLoot = 'Iron ore · ' + ironStock + (hasNet ? ' · Fishing rod' : '');
   const equipment = tools.pickaxe ? gear[equipped][1]
     : tools.hatchet && pickaxeRecipeLearned ? 'Pickaxe · Wood ' + spareWood(tools) + '/' + WOOD_COST + ' · Flint ' + Number(tools.flint) + '/1'
     : tools.hatchet ? 'Hatchet · cuts marked pines'
@@ -1080,7 +1085,7 @@ function updateNotes() {
     : region === 'mine' ? mineLoot
     : region === 'hearth' ? (hearthLearned ? 'Ember note read' : 'A shelter behind the falls') : clue);
   el('tool-notes').textContent = region === 'beach' || region === 'rowboat'
-    ? [hasNet ? 'Casting net' : 'Find Hugh Mungus’s casting net', fishing.book && 'Soaked book',
+    ? [hasNet ? 'Fishing rod' : 'Find Hugh Mungus’s fishing rod', fishing.book && 'Soaked book',
       fishing.tideglass === 'caught' && 'Tideglass', fishing.godslayer && 'Godslayer'].filter(Boolean).join(' · ')
     : equipment;
   el('hpText').textContent = health;
@@ -2256,10 +2261,10 @@ function hughDialogue() {
     setDialogue('Another adventurer got the lift running. You can ride between here and Lyss’s clearing now. Keep exploring if you still want to find your own tideglass.');
     return;
   }
-  const net = hasNet ? 'You’ve got my casting net.' : 'Take the casting net from my chest.';
+  const rod = hasNet ? 'You’ve got my fishing rod.' : 'Take the fishing rod from my chest.';
   setDialogue('Mind the dark past these lamps. Take a breather here if you need one.', [
     ['What happened to the lift?', () => {
-      const request = 'A bearing cracked. Bring me 1 tideglass gemstone from the beach and I can get the lift back to Lyss’s clearing. ' + net;
+      const request = 'A bearing cracked. Bring me 1 tideglass gemstone from the beach and I can get the lift back to Lyss’s clearing. ' + rod;
       if (hughQuest) {
         setDialogue(request, [['Back', hughDialogue]]);
         return;
@@ -2269,7 +2274,7 @@ function hughDialogue() {
           hughQuest = true;
           updateNotes();
           saveCamp();
-          setDialogue('Thanks. Follow the shore path past the timber door. Cast the net off Lantern Dock.');
+          setDialogue('Thanks. Follow the shore path past the timber door. Cast the line off Lantern Dock.');
         }],
         ['Maybe later', () => setDialogue('Fair enough. There’s always the timber shaft.', [['Back', hughDialogue]])]
       ]);
@@ -2374,19 +2379,19 @@ const bookClue = 'The water blurred most of the writing. One sketch shows a rope
 
 function dockDialogue(result) {
   if (!hasNet) {
-    setDialogue('You need a casting net. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
+    setDialogue('You need a fishing rod. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
     return;
   }
-  const choices = [['Cast the net', () => startNetCast(false)]];
+  const choices = [['Cast the line', () => startRodCast(false)]];
   if (fishing.book) {
     choices.push(['Read the soaked book', () => setDialogue(bookClue, [['Back', () => dockDialogue()]])]);
   }
-  setDialogue(result ?? 'The water is calm here. Cast the net from the end of the pier.', choices);
+  setDialogue(result ?? 'The water is calm here. Cast the line from the end of the pier.', choices);
 }
 
-function startNetCast(offshore) {
+function startRodCast(offshore) {
   if (!hasNet) {
-    setDialogue('You need a casting net. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
+    setDialogue('You need a fishing rod. Hugh Mungus keeps one in the chest next to his lantern in Embervein Mine.');
     return;
   }
   if (offshore && !fishing.rowboat) {
@@ -2396,7 +2401,13 @@ function startNetCast(offshore) {
   equipped = 'net';
   updateNotes();
   saveCamp();
-  casting = { start: animationClock, x: player.x, y: player.y, offshore };
+  player.direction = -1;
+  casting = {
+    start: animationClock,
+    offshore,
+    landingX: (offshore ? Math.min(player.x, ROWBOAT_FISH_X) : player.x) - 144,
+    landingY: offshore ? ROWBOAT_BASELINE_Y + 12 : player.y - 108
+  };
   closeDialogue();
   clearControls();
   updatePrompt();
@@ -2461,11 +2472,11 @@ function rowboatFishingDialogue(result) {
   openDialogue('rowboat-fish');
   const line = (result ? result + ' ' : '') + 'The water is deep enough for a good cast.';
   if (!hasNet) {
-    setDialogue(line + ' You still need Hugh Mungus’s casting net from Embervein Mine.');
+    setDialogue(line + ' You still need Hugh Mungus’s fishing rod from Embervein Mine.');
     return;
   }
   setDialogue(line, [
-    ['Cast the net', () => startNetCast(true)],
+    ['Cast the line', () => startRodCast(true)],
     ['Back to the boat', closeDialogue]
   ]);
 }
@@ -2507,12 +2518,12 @@ function finishCast() {
   recordJournalEntry('fishing', { quiet: true });
   openDialogue(offshore ? (region === 'rowboat' ? 'rowboat-fish' : 'rowboat') : 'dock');
   let message = 'You caught ' + result.catchName.toLowerCase() + '.';
-  if (result.catchName === 'Soaked book') message = 'The net comes up heavy with a soaked book. There’s still a legible sketch inside.';
+  if (result.catchName === 'Soaked book') message = 'You reel in a soaked book. There’s still a legible sketch inside.';
   if (result.catchName === 'Tideglass gemstone') message = 'Tideglass gemstone caught. Bring it back to Hugh Mungus to repair the lift.';
   const newLevel = fishingLevel(fishing.xp);
   if (newLevel > oldLevel) message += ' Fishing reached level ' + newLevel + '!';
-  if (result.rootglass) message += ' A piece of Rootglass came up tangled in the net.';
-  if (result.rare) message += ' Tangled in the net alongside it is the Godslayer.';
+  if (result.rootglass) message += ' You reeled in a piece of Rootglass too.';
+  if (result.rare) message += ' You also hooked the Godslayer!';
   if (offshore && region === 'rowboat') rowboatFishingDialogue(message);
   else if (offshore) rowboatDialogue(message);
   else dockDialogue(message);
@@ -2750,7 +2761,7 @@ function gather(item) {
   } else if (item === netChest) {
     hasNet = true;
     if (!equipped) equipped = 'net';
-    notice = 'Casting net taken';
+    notice = 'Fishing rod taken';
   } else if (item === flint) {
     tools.flint = true;
     notice = 'Flint picked up';

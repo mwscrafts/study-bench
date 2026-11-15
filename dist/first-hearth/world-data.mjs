@@ -10,7 +10,7 @@ import { rootdeepHouseRegions, rootdeepHouseGates } from './rootdeep-home.mjs?v=
 import { beachTerrain, beachLandmarks, beachFlower, beachLocation, beachShadows } from './beach.mjs?v=11';
 import { rowboatTerrain, rowboatLandmarks, rowboatLocation } from './rowboat.mjs?v=3';
 import { buildRowboatArt } from './rowboat-art.mjs?v=4';
-import { buildBeachArt } from './beach-art.mjs?v=18';
+import { buildBeachArt } from './beach-art.mjs?v=19';
 import { workbench } from './crafting.mjs?v=17';
 import { hearthTerrain, hearthLandmarks, hearthLocation } from './hearth.mjs?v=12';
 import { buildHearthArt } from './hearth-art.mjs?v=1';
@@ -49,7 +49,7 @@ export const regions = {
   },
   beach: {
     title: ['The', 'Beach'],
-    intro: 'Follow the bluff to Driftwood Cove, cast Hugh Mungus’s net at Lantern Dock, and look out from Tide Arch.',
+    intro: 'Follow the bluff to Driftwood Cove, fish with Hugh Mungus’s rod at Lantern Dock, and look out from Tide Arch.',
     terrain: beachTerrain, landmarks: beachLandmarks, flowers: [beachFlower],
     buildArt: buildBeachArt, location: beachLocation, shadows: beachShadows, retreat: 'Salt Pines'
   },
@@ -143,7 +143,7 @@ export const conversations = {
   lodestone: { name: 'Old lodestone', role: 'ANCIENT MARKINGS' },
   'rootdeep-entrance': { name: 'Sealed Rootdeep entrance', role: 'CROWNWOOD' },
   workbench: { name: 'Camp workbench', role: 'CRAFTING' },
-  dock: { name: 'Lantern Dock', role: 'CASTING NET' },
+  dock: { name: 'Lantern Dock', role: 'FISHING' },
   'tool-needed': { name: 'Tool needed', role: 'GATHERING' },
   'admin-ring': { name: 'Admin Ring', role: 'TEST TOOLS' },
   'admin-tools': { name: 'Admin Panel', role: 'TEST TOOLS' },
