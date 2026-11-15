@@ -9,6 +9,13 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Shared layered adventurer art
+
+- `dist/first-hearth/adventurer-art.mjs` draws every custom appearance, including the default ponytail, with one layered drawing used by the creator, Hugh's makeover, and the local and multiplayer character renderers. The character atlas is no longer loaded by the game.
+- Face, ear and hands use the selected skin palette. Hair is drawn separately, with dedicated geometry for each of the five styles. Clothing has its own colours. Build changes torso width and height changes body proportions while the boots remain anchored.
+- The landscape UI still uses the approved screen artwork and its illustrated hairstyle buttons as the backdrop. The live drawing fills the portrait area immediately, including on the default selection. Cache versions are `playtest.css?v=39`, `playtest.mjs?v=144` and `adventurer-art.mjs?v=1`.
+- Local canvas renders were checked across skin, shape, height and hairstyle choices. Public gameplay was not used for verification.
+
 ### Approved character creator
 
 - The creator was rebuilt from the two-screen journey flow at `0721887`. The intact approved artwork is `dist/first-hearth/adventurer-creator.jpg`. The landscape creator uses that full image and positions native controls over it. Narrow portrait screens use a stacked form.

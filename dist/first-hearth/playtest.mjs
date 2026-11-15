@@ -1,3 +1,4 @@
+import { paintAdventurer } from './adventurer-art.mjs?v=1';
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
 import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=15';
@@ -189,10 +190,8 @@ let avatar = 'boy';
 const DEFAULT_APPEARANCE = { skin: 'warm', build: 'slim', height: 'tall', hairStyle: 'ponytail', hairColor: 'brown' };
 let appearance = { ...DEFAULT_APPEARANCE };
 let appearanceDraft = { ...DEFAULT_APPEARANCE };
-let avatarAtlasImage = null;
 let activeDialogueId = null;
 let appearanceEditorOpen = false;
-const avatarBaseCellCache = new Map();
 const avatarAppearanceCache = new Map();
 let playing = false;
 let paused = false;
@@ -1321,149 +1320,21 @@ function avatarHeightFor(value) {
   return normalizeAppearance(value, defaultAppearanceFor()).height === 'short' ? 84 : 104;
 }
 
-function rgbToHsl(red, green, blue) {
-  let r = red / 255, g = green / 255, b = blue / 255;
-  const max = Math.max(r,g,b), min = Math.min(r,g,b), delta = max - min;
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (delta) {
-    s = delta / (1 - Math.abs(2 * l - 1));
-    if (max === r) h = ((g - b) / delta) % 6;
-    else if (max === g) h = (b - r) / delta + 2;
-    else h = (r - g) / delta + 4;
-    h = (h * 60 + 360) % 360;
-  }
-  return [h,s,l];
-}
-
-function hslToRgb(h, s, l) {
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l,1-l);
-  const channel = n => Math.round(255 * (l - a * Math.max(-1,Math.min(k(n)-3,9-k(n),1))));
-  return [channel(0),channel(8),channel(4)];
-}
-
-function parseHexColor(hex) {
-  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
-}
-
-// Measured on the source atlas: left, top, right, bottom, and the crown-to-scarf boundary.
-const AVATAR_FRAMES = [
-  [[87,64,212,280,153], [335,59,491,279,154], [608,24,747,279,123], [864,13,1039,279,115]],
-  [[80,331,214,557,431], [334,330,496,557,432], [609,294,748,557,395], [865,286,1041,557,391]],
-  [[87,615,212,825,698], [334,611,496,825,698], [609,576,748,825,662], [865,570,1042,825,661]],
-  [[85,867,220,1107,979], [335,858,495,1107,972], [610,832,755,1107,948], [865,828,1043,1108,945]],
-  [[87,1147,212,1389,1264], [335,1145,495,1389,1264], [610,1119,748,1390,1232], [865,1112,1042,1389,1228]]
-];
-
-function getAvatarBaseCell(column, row) {
-  const key = column + ':' + row;
-  if (avatarBaseCellCache.has(key)) return avatarBaseCellCache.get(key);
-  if (!avatarAtlasImage) return null;
-  const [left, top, right, bottom, scarfTop] = AVATAR_FRAMES[row][column];
-  const canvas = document.createElement('canvas');
-  canvas.width = right - left + 1;
-  canvas.height = bottom - top + 1;
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  context.drawImage(avatarAtlasImage, left, top, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
-  const image = context.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = image.data;
-  const width = canvas.width;
-  const height = canvas.height;
-
-  // Keep the connected figure. Flecks in the transparent margin are atlas artefacts.
-  const connected = new Uint8Array(width * height);
-  const center = Math.floor(height * 0.53) * width + Math.floor(width * 0.62);
-  const queue = [center];
-  connected[center] = 1;
-  for (let i = 0; i < queue.length; i++) {
-    const point = queue[i];
-    const x = point % width;
-    const y = Math.floor(point / width);
-    for (let ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny++) {
-      for (let nx = Math.max(0, x - 1); nx <= Math.min(width - 1, x + 1); nx++) {
-        const neighbor = ny * width + nx;
-        const k = neighbor * 4;
-        const redArtefact = pixels[k] > 140 && pixels[k + 1] < pixels[k] / 4 && pixels[k + 2] < pixels[k] / 4;
-        if (connected[neighbor] || pixels[k + 3] < 80 || redArtefact) continue;
-        connected[neighbor] = 1;
-        queue.push(neighbor);
-      }
-    }
-  }
-  for (let i = 0; i < connected.length; i++) {
-    if (!connected[i]) pixels[i * 4 + 3] = 0;
-  }
-  context.putImageData(image, 0, 0);
-  const frame = { canvas, headHeight: scarfTop - top };
-  avatarBaseCellCache.set(key, frame);
-  return frame;
-}
-
 function makeAvatarSprite(value) {
-  const look=normalizeAppearance(value,defaultAppearanceFor());
-  const key=[look.skin,look.build,look.height,look.hairStyle,look.hairColor].join(':');
+  const look = normalizeAppearance(value, defaultAppearanceFor());
+  const key = [look.skin, look.build, look.height, look.hairStyle, look.hairColor].join(':');
   if (avatarAppearanceCache.has(key)) return avatarAppearanceCache.get(key);
-  const column=(look.height==='short'?0:2)+(look.build==='stocky'?1:0);
-  const row=APPEARANCE_STYLES.indexOf(look.hairStyle);
-  const base=getAvatarBaseCell(column,row);
-  if (!base) return sprites?.[avatar] ?? sprites?.boy;
-  const canvas=document.createElement('canvas');
-  canvas.width = base.canvas.width;
-  canvas.height = base.canvas.height;
-  const context=canvas.getContext('2d',{willReadFrequently:true});
-  context.drawImage(base.canvas, 0, 0);
-  const image=context.getImageData(0,0,canvas.width,canvas.height);
-  const pixels=image.data, width=canvas.width, height=canvas.height;
-  const skinOption=APPEARANCE_SKINS.find(option=>option.value===look.skin);
-  const skinHsl=rgbToHsl(...parseHexColor(skinOption.color));
-  const hairHex=({
-    black:'#32231e',brown:'#70472f',blonde:'#c99b55',auburn:'#9d4930',
-    pink:'#d35b99',purple:'#985cc4',green:'#568e48',blue:'#427bb5'
-  })[look.hairColor];
-  const hairHsl=hairHex?rgbToHsl(...parseHexColor(hairHex)):null;
-  const hairMask = new Uint8Array(width * base.headHeight);
-  let hairLeft = width;
-  let hairRight = 0;
-  for (let y = 0; y < base.headHeight; y++) {
-    for (let x = 0; x < width; x++) {
-      const point = y * width + x;
-      const i = point * 4;
-      if (pixels[i + 3] < 80) continue;
-      const [h, s, l] = rgbToHsl(pixels[i], pixels[i + 1], pixels[i + 2]);
-      // Include the darker locks around the ears and the lighter shaved sides of the mohawk.
-      if (h <= 7 || h >= 34 || s <= 0.12 || l <= 0.14 || !(l < 0.53 || (l < 0.61 && s < 0.46))) continue;
-      hairMask[point] = 1;
-      hairLeft = Math.min(hairLeft, x);
-      hairRight = Math.max(hairRight, x);
-    }
-  }
-  for (let y=0;y<height;y++) for (let x=0;x<width;x++) {
-    const i=(y*width+x)*4;
-    if (pixels[i+3]<80) continue;
-    const [h,s,l]=rgbToHsl(pixels[i],pixels[i+1],pixels[i+2]);
-    const inHead = y < base.headHeight;
-    if (hairMask[y * width + x]) {
-      if (look.hairColor === 'brown') continue;
-      const nextH=look.hairColor==='rainbow'
-        ? (x - hairLeft) / Math.max(1, hairRight - hairLeft) * 293 + y / base.headHeight * 15
-        : hairHsl[0];
-      const nextS=look.hairColor==='rainbow'?.82:hairHsl[1];
-      const targetL=look.hairColor==='rainbow'?.53:hairHsl[2];
-      [pixels[i],pixels[i+1],pixels[i+2]]=hslToRgb(nextH,nextS,Math.max(.10,Math.min(.90,targetL+(l-.34)*.62)));
-      continue;
-    }
-    const isSkin = h > 7 && h < 34 && s > 0.16 && l > 0.60
-      && (inHead || (y > height * 0.54 && y < height * 0.72));
-    if (isSkin) {
-      const targetL=Math.max(.20,Math.min(.92,skinHsl[2]+(l-.72)*.72));
-      [pixels[i],pixels[i+1],pixels[i+2]]=hslToRgb(skinHsl[0],skinHsl[1],targetL);
-    }
-  }
-  context.putImageData(image,0,0);
-  const sprite=spriteBounds(canvas,0,1,.5);
-  if (avatarAppearanceCache.size>=64) avatarAppearanceCache.delete(avatarAppearanceCache.keys().next().value);
-  avatarAppearanceCache.set(key,sprite);
+
+  const skin = APPEARANCE_SKINS.find(option => option.value === look.skin).color;
+  const image = document.createElement('canvas');
+  image.width = 328;
+  image.height = look.height === 'short' ? 430 : 491;
+  const context = image.getContext('2d');
+  context.translate(6, 19);
+  paintAdventurer(context, look, skin);
+  const sprite = { image, left: 0, top: 0, width: image.width, height: image.height, anchor: 0.53 };
+  if (avatarAppearanceCache.size >= 64) avatarAppearanceCache.delete(avatarAppearanceCache.keys().next().value);
+  avatarAppearanceCache.set(key, sprite);
   return sprite;
 }
 
@@ -1475,14 +1346,11 @@ function updateAppearanceEditor() {
     const active=look[button.dataset.appearanceField]===button.dataset.value;
     button.setAttribute('aria-pressed',String(active));
   }
-  root.dataset.referenceLook = String(Object.keys(DEFAULT_APPEARANCE)
-    .every(field => look[field] === DEFAULT_APPEARANCE[field]));
-  if (!avatarAtlasImage) return;
   const canvas = el('appearance-preview');
   const context = canvas.getContext('2d');
   const sprite = makeAvatarSprite(look);
-  const height = Math.min(canvas.height * 0.91, canvas.width * 0.88 * sprite.height / sprite.width)
-    * (look.height === 'short' ? 0.84 : 1);
+  const scale = Math.min(canvas.height * 0.95 / 491, canvas.width * 0.97 / 328);
+  const height = sprite.height * scale;
   context.clearRect(0, 0, canvas.width, canvas.height);
   const baseline = canvas.height * 0.94;
   context.fillStyle = '#0005';
@@ -4381,10 +4249,9 @@ async function boot() {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
     el('new-journey-warning').hidden = !saved;
-    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage, avatarAtlas] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp'), loadImage('./adventurer-atlas.webp')
+    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp')
     ]);
-    avatarAtlasImage = avatarAtlas;
     backgrounds.camp = buildCampArt();
     sprites = {
       nightWisp: spriteBounds(rootWispImage, 0, 1, .5),

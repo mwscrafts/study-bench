@@ -460,7 +460,6 @@ img.creator-art.is-neutralized { display: none; }
   --x: 8.2%; --y: 17.3%; --w: 26.8%; --h: 57.1%;
   background: radial-gradient(ellipse at 50% 55%, #1c3022, #14261c);
 }
-.character-creation-card [data-reference-look="true"] .appearance-preview-frame { visibility: hidden; }
 .character-creation-card #appearance-preview { width: 100%; max-width: none; height: 100%; object-fit: contain; }
 .character-creation-card .appearance-swatch[aria-pressed="true"]:not([data-reference-selected]) { box-shadow: inset 0 0 0 .28cqw #f0bf50; }
 .character-creation-card .appearance-swatch[data-reference-selected][aria-pressed="false"] {
@@ -496,7 +495,7 @@ img.creator-art.is-neutralized { display: none; }
   .character-creation-card :is(button[data-value],button[data-difficulty],#player-name,#begin,.appearance-preview-frame) {
     position: static; width: auto; height: auto;
   }
-  .character-creation-card .appearance-preview-frame { visibility: visible !important; height: 200px; }
+  .character-creation-card .appearance-preview-frame { height: 200px; }
   .character-creation-card .appearance-swatch { width: 30px !important; height: 30px !important; background: var(--swatch); border: 1px solid #dfc79a; }
   .character-creation-card .rainbow-swatch { background: linear-gradient(135deg,#e36777,#eac35f,#77b667,#5b92c8,#935fa8); }
   .character-creation-card .appearance-option { padding: 9px 0; display: grid; gap: 7px; border-bottom: 1px solid #ad8d4755; }
