@@ -31,7 +31,7 @@ import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, L
   BARRY_HOME_WOOD_COST, BARRY_HOME_IRON_COST } from './home-projects.mjs?v=2';
 import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, paintBarryHomeExterior } from './home-projects-art.mjs?v=2';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
-import { createPresence } from './presence.mjs?v=5';
+import { createPresence } from './presence.mjs?v=6';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=31';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
@@ -225,12 +225,15 @@ const presence = createPresence({
     gait: gait % (Math.PI * 2), swing, wave: Math.round(wave * 100) / 100,
     avatar, tool: equipped, helmet: tools.helmet, name: publicName,
     scarf: specialRewards.has('scarf'),
+    shadowSync: skyMode === 'auto',
     alvin: alvinResting && region !== 'hut' ? null : { x: cat.x, y: cat.y, direction: cat.direction, gait: cat.gait,
       size: 1 + fishFed / 4, indoors: region === 'hut', bell: specialRewards.has('bell') }
   }),
   isOnline: () => onlineEnabled,
   isPlaying: () => playing,
   isHidden: () => document.hidden,
+  needsFrequentPoses: scene => skyMode === 'auto' && regions[region]?.shadows &&
+    (scene?.creatures.length > 0 || (phaseClock >= NIGHT_START - 1 && phaseClock < NIGHT_END + 1)),
   onChange: updatePresenceButton,
   onDoorsChange: () => { updatePrompt(); updateNotes(); },
   onNotesChange: () => { if (playing) updateNotes(); },
@@ -438,7 +441,7 @@ function syncPublicClock() {
     nightIndex = Math.min(1000000, nightIndex + cycle - publicClockCycle);
     advanceTreeRegrowth();
     iron.clear();
-    defeatedShadows.clear();
+    clearLocalShadowDefeats();
     shadowHealth.clear();
   }
   publicClockCycle = cycle;
@@ -472,7 +475,7 @@ function applySharedSleep(offset, rested = false) {
   if (!Number.isFinite(offset)) return;
   publicClockOffsetMs = offset;
   syncPublicClock();
-  iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
+  iron.clear(); clearLocalShadowDefeats(); shadowHealth.clear();
   if (rested) {
     health = 100;
     skyMode = 'auto';
@@ -494,23 +497,33 @@ function restoreShadowComposure(x, y) {
   if (composure > before) floater(floaters, x, y - 145, '+5 Composure');
 }
 
+function clearLocalShadowDefeats() {
+  for (const id of defeatedShadows) {
+    if (typeof id !== 'string' || !id.startsWith('public:')) defeatedShadows.delete(id);
+  }
+}
+
 function applySharedShadowState(message) {
-  if (!message || message.region !== region || message.cycle !== publicClockCycle || !Number.isInteger(message.index)) return;
-  const id = region + ':' + nightIndex + ':' + message.index;
+  if (!message || !onlineEnabled || message.region !== region ||
+    !message.defeated || !Number.isInteger(message.cycle) || !Number.isInteger(message.index)) return;
+  const id = sharedShadowId(message.cycle, message.index);
+  if (defeatedShadows.has(id)) return;
+  const cyclePrefix = 'public:' + message.cycle + ':';
+  for (const defeatedId of defeatedShadows) {
+    if (typeof defeatedId === 'string' && defeatedId.startsWith('public:') &&
+      !defeatedId.startsWith(cyclePrefix)) defeatedShadows.delete(defeatedId);
+  }
+  defeatedShadows.add(id);
   const target = creatures.find(creature => creature.index === message.index);
   const x = Number.isFinite(message.x) ? message.x : target?.x ?? player.x;
   const y = Number.isFinite(message.y) ? message.y : target?.y ?? player.y;
-  shadowHealth.set(id, Math.max(0, Number(message.hp) || 0));
-  if (message.defeated && !defeatedShadows.has(id)) {
-    defeatedShadows.add(id);
-    creatures = creatures.filter(creature => creature.index !== message.index);
-    if (message.rewarded) {
-      shadowStock++;
-      restoreShadowComposure(x,y);
-      floater(floaters, x, y - 116, '+1 shadow');
-    }
-    updateNotes(); saveCamp();
+  if (usesSharedShadows()) creatures = creatures.filter(creature => creature.index !== message.index);
+  if (message.rewarded) {
+    shadowStock++;
+    restoreShadowComposure(x,y);
+    floater(floaters, x, y - 116, '+1 shadow');
   }
+  updateNotes(); saveCamp();
 }
 
 function skyState() {
@@ -693,11 +706,13 @@ function paint() {
     paintHutDecor(ctx, hutDecorations);
     paintSpecialHomeDecor(ctx,'hut',specialRewards,hutDecorations);
   }
-  const shadowFade = skyMode === 'auto' && phaseClock >= NIGHT_FADE_START
-    ? clamp((NIGHT_END - phaseClock) / (NIGHT_END - NIGHT_FADE_START), 0, 1) : 1;
+  const shadowPhase = usesSharedShadows() ? presence.getShadowFrame()?.phase ?? phaseClock : phaseClock;
+  const shadowFade = skyMode === 'auto' && shadowPhase >= NIGHT_FADE_START
+    ? clamp((NIGHT_END - shadowPhase) / (NIGHT_END - NIGHT_FADE_START), 0, 1) : 1;
   ctx.save();
   ctx.globalAlpha *= shadowFade;
-  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock, sprites.nightWisp, player.x < creature.x ? 1 : -1));
+  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock, sprites.nightWisp,
+    creature.direction ?? (player.x < creature.x ? 1 : -1)));
   ctx.restore();
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
@@ -800,8 +815,8 @@ function updateAlvinCombat() {
       const target = creatures.find(item => item.index === attack.index);
       if (target) {
         const id = region + ':' + nightIndex + ':' + target.index;
-        if (onlineEnabled && presence.isConnected()) {
-          presence.hitShadow(target.index, power, target.x, target.y, 'alvin');
+        if (usesSharedShadows()) {
+          presence.hitShadow(target.index, power, 'alvin');
         } else {
           const remaining = (shadowHealth.get(id) ?? 60) - power;
           shadowHealth.set(id,remaining);
@@ -1743,7 +1758,7 @@ function bedDialogue() {
     phaseClock = 0; nightIndex++; advanceTreeRegrowth();
     health = 100; skyMode = 'auto';
     el('sky-toggle').textContent = 'Sky: Auto';
-    iron.clear(); defeatedShadows.clear(); shadowHealth.clear();
+    iron.clear(); clearLocalShadowDefeats(); shadowHealth.clear();
     updateShadows(); updateNotes(); saveCamp();
     setDialogue('Morning light fills the window. You feel rested, and Alvin is still tucked into his little bed.');
   }], ['Not yet', () => { sleepVotePending = false; closeDialogue(); }]]);
@@ -2663,8 +2678,8 @@ function updateSwing(dt) {
             : equipped === 'ironSword' ? 70 : equipped === 'pickaxe' ? 45 : 32;
           const power = equipped === 'godslayer' ? basePower : Math.max(1, Math.floor(basePower * composureDamageFactor()));
           result = { x: target.x, y: target.y, damage: power };
-          if (onlineEnabled && presence.isConnected()) {
-            presence.hitShadow(target.index, power, target.x, target.y, 'player');
+          if (usesSharedShadows()) {
+            presence.hitShadow(target.index, power);
           } else {
             const remaining = (shadowHealth.get(id) ?? 60) - power;
             shadowHealth.set(id, remaining);
@@ -3355,7 +3370,32 @@ function updateTunnelGoblins(dt) {
   }
 }
 
+function usesSharedShadows() {
+  return onlineEnabled && skyMode === 'auto' && presence.isConnected();
+}
+
+function sharedShadowId(cycle, index) {
+  return 'public:' + cycle + ':' + region + ':' + index;
+}
+
+function refreshSharedShadows() {
+  if (usesSharedShadows()) {
+    const scene = presence.getShadowFrame();
+    creatureCycleKey = 'public';
+    creatures = scene?.region === region
+      ? scene.creatures.filter(creature => !defeatedShadows.has(sharedShadowId(scene.cycle, creature.index)))
+      : [];
+  } else if (creatureCycleKey === 'public') {
+    creatures = [];
+    creatureCycleKey = '';
+  }
+}
+
 function updateShadows(dt = 0) {
+  if (usesSharedShadows()) {
+    if (dt > 0) checkShadowContact();
+    return;
+  }
   const area = regions[region];
   if (!area.shadows) return;
   const cycleKey = region + ':' + nightIndex;
@@ -3411,6 +3451,10 @@ function updateShadows(dt = 0) {
   }
   creatures = [...current.values()].filter(creature =>
     !defeatedShadows.has(region + ':' + nightIndex + ':' + creature.index));
+  checkShadowContact();
+}
+
+function checkShadowContact() {
   if (creatures.length === 0 || animationClock < hitUntil) return;
   const hit = creatures.some(creature =>
     Math.abs(creature.x - player.x) < 37 && Math.abs(creature.y - player.y + 12) < 49);
@@ -3435,6 +3479,7 @@ function frame(time) {
   lastFrame = time;
   if (playing && onlineEnabled) syncPublicClock();
   else if (!onlineEnabled) publicClockCycle = null;
+  if (playing) refreshSharedShadows();
   if (wave > 0) wave = Math.max(0, wave - dt);
   if (!paused && !talking && !inventoryOpen && !mapOpen) animationClock += dt;
   if (casting && animationClock - casting.start >= .92) finishCast();
@@ -3574,7 +3619,7 @@ function frame(time) {
         nightIndex++;
         advanceTreeRegrowth();
         iron.clear();
-        defeatedShadows.clear();
+        clearLocalShadowDefeats();
         shadowHealth.clear();
       }
     }
@@ -3754,6 +3799,7 @@ el('resume').addEventListener('click', () => setPause(false));
 el('leave-trial').addEventListener('click', () => retreatFromTrial());
 el('sky-toggle').addEventListener('click', () => {
   skyMode = skyModes[(skyModes.indexOf(skyMode) + 1) % skyModes.length];
+  sendPose(true);
   el('sky-toggle').textContent = 'Sky: ' + (skyLabels[skyMode] ?? 'Auto');
 });
 el('fullscreen').addEventListener('click', async () => {

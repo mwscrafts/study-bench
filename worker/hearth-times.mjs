@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { advanceFieldShadows, shadowPatrols } from './field-shadows.mjs';
 
 const PATH = '/first-hearth/api/times';
 const PRESENCE_PATH = '/first-hearth/api/presence';
@@ -87,7 +88,6 @@ export class HearthTimes extends DurableObject {
 
 const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut','rowboat',
   'rootdeep','rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common']);
-const SHADOW_REGIONS = new Set(['crownwood','rootdeep','mine','beach']);
 const TOOLS = new Set(['hatchet','pickaxe','ironSword','shadowBlade','godslayer','net']);
 const DOORS = {
   'mine-lift': [{ region: 'mine', x: 2165 }, { region: 'mine', x: 4510 }, { region: 'camp', x: 2425 }],
@@ -118,6 +118,7 @@ function readPose(data) {
     tool: TOOLS.has(data.tool) ? data.tool : null,
     helmet: data.helmet === true,
     scarf: data.scarf === true,
+    shadowSync: data.shadowSync !== false,
     name: rawName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(rawName) ? rawName : 'Adventurer',
     alvin: cat
   };
@@ -132,6 +133,7 @@ export class HearthPresence extends DurableObject {
     this.sleepVotes = new Set();
     this.clockOffsetMs = 0;
     this.shadowCycleState = { cycle: null, states: {} };
+    this.shadowScenes = new Map();
     ctx.blockConcurrencyWhile(async () => {
       this.clockOffsetMs = await ctx.storage.get('public-clock-offset') ?? 0;
       if (ctx.getWebSockets().length) {
@@ -176,13 +178,35 @@ export class HearthPresence extends DurableObject {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  async ensureShadowCycle() {
-    const cycle = Math.floor((Date.now() + this.clockOffsetMs) / PUBLIC_CYCLE_MS);
-    if (this.shadowCycleState?.cycle !== cycle) {
+  ensureShadowCycle(cycle = Math.floor((Date.now() + this.clockOffsetMs) / PUBLIC_CYCLE_MS)) {
+    if (this.shadowCycleState.cycle !== cycle) {
       this.shadowCycleState = { cycle, states: {} };
-      await this.ctx.storage.put('shared-shadow-state', this.shadowCycleState);
+      this.shadowScenes.clear();
     }
     return this.shadowCycleState;
+  }
+
+  updateShadowScene(region, sockets, now) {
+    const time = now + this.clockOffsetMs;
+    const cycle = Math.floor(time / PUBLIC_CYCLE_MS);
+    const phase = (time - cycle * PUBLIC_CYCLE_MS) / 1000;
+    const state = this.ensureShadowCycle(cycle);
+    const previous = this.shadowScenes.get(region);
+    if (previous && now - previous.updatedAt < 95) return { scene: previous, changed: false };
+    if (!previous?.creatures.length && (phase < 70 || phase >= 96)) {
+      return { scene: { type: 'shadow-frame', region, cycle, phase, creatures: [] }, changed: false };
+    }
+    const players = sockets.map(socket => socket.deserializeAttachment())
+      .filter(peer => peer?.pose?.region === region && peer.pose.shadowSync !== false && now - peer.lastAt < 3000)
+      .map(peer => peer.pose);
+    const elapsed = previous ? now - previous.updatedAt : 0;
+    const continuing = elapsed < 3000 ? previous?.creatures ?? [] : [];
+    const creatures = advanceFieldShadows(continuing, shadowPatrols.get(region), phase,
+      Math.min(elapsed, 1250) / 1000, players, index => state.states[region + ':' + index]?.defeated);
+    const scene = { type: 'shadow-frame', region, cycle, phase, updatedAt: now, creatures };
+    if (creatures.length) this.shadowScenes.set(region, scene);
+    else this.shadowScenes.delete(region);
+    return { scene, changed: creatures.length > 0 || !!previous?.creatures.length };
   }
 
   activeSleepPeers(except = null, now = Date.now()) {
@@ -221,8 +245,8 @@ export class HearthPresence extends DurableObject {
       total: peers.length });
   }
 
-  async sendShadowSnapshot(socket, region) {
-    const state = await this.ensureShadowCycle();
+  sendShadowSnapshot(socket, region) {
+    const state = this.ensureShadowCycle();
     socket.send(JSON.stringify({ type: 'shadow-snapshot', region, cycle: state.cycle,
       states: Object.values(state.states).filter(item => item.region === region) }));
   }
@@ -232,21 +256,24 @@ export class HearthPresence extends DurableObject {
     const pose = peer?.pose;
     const source = data.source;
     const actor = source === 'alvin' ? pose?.alvin : source === 'player' ? pose : null;
-    if (!pose || !SHADOW_REGIONS.has(pose.region) || Date.now() - peer.lastAt > 3000 || !actor
+    if (!pose || pose.shadowSync === false || !shadowPatrols.has(pose.region) || Date.now() - peer.lastAt > 3000 || !actor
       || !Number.isInteger(data.index) || data.index < 0 || data.index > 9
-      || !Number.isSafeInteger(data.damage) || data.damage < 1 || data.damage > 999
-      || !numberBetween(data.x, 0, 7000) || !numberBetween(data.y, -500, 6000)) return;
+      || !Number.isSafeInteger(data.damage) || data.damage < 1 || data.damage > 999) return;
     const reachX = source === 'alvin' ? 340 : 145;
     const reachY = source === 'alvin' ? 260 : 110;
-    if (Math.abs(data.x - actor.x) > reachX || Math.abs(data.y - actor.y) > reachY) return;
-    const state = await this.ensureShadowCycle();
+    const state = this.ensureShadowCycle();
+    if (data.cycle !== undefined && data.cycle !== state.cycle) return;
     const key = pose.region + ':' + data.index;
     const prior = state.states[key] ?? { region: pose.region, index: data.index, hp: 60, defeated: false, winnerId: null };
     if (prior.defeated) {
       socket.send(JSON.stringify({ type: 'shadow-state', ...prior, cycle: state.cycle, rewarded: prior.winnerId === peer.id }));
       return;
     }
-    const updated = { ...prior, x: data.x, y: data.y, hp: Math.max(0, prior.hp - data.damage) };
+    const phase = (Date.now() + this.clockOffsetMs - state.cycle * PUBLIC_CYCLE_MS) / 1000;
+    const target = this.shadowScenes.get(pose.region)?.creatures.find(shadow => shadow.index === data.index);
+    if (phase < 70 || phase >= 106 || !target ||
+      Math.abs(target.x - actor.x) > reachX || Math.abs(target.y - actor.y) > reachY) return;
+    const updated = { ...prior, x: target.x, y: target.y, hp: Math.max(0, prior.hp - data.damage) };
     updated.defeated = updated.hp <= 0;
     updated.winnerId = updated.defeated ? peer.id : null;
     state.states[key] = updated;
@@ -328,8 +355,14 @@ export class HearthPresence extends DurableObject {
         .map(peer => ({ id: peer.id, pose: peer.pose })) }));
     }
     this.broadcast(others, pose.region, { type: 'pose', id: prior.id, pose });
-    if (prior.pose?.region !== pose.region && SHADOW_REGIONS.has(pose.region))
-      await this.sendShadowSnapshot(socket, pose.region);
+    if (pose.shadowSync && shadowPatrols.has(pose.region)) {
+      const joiningShadows = prior.pose?.region !== pose.region || prior.pose?.shadowSync === false;
+      if (joiningShadows) this.sendShadowSnapshot(socket, pose.region);
+      const room = [socket, ...others];
+      const { scene, changed } = this.updateShadowScene(pose.region, room, Date.now());
+      if (changed) this.broadcast(room, pose.region, scene);
+      else if (joiningShadows) socket.send(JSON.stringify(scene));
+    }
     if (!prior.pose && this.sleepVotes.size) await this.updateSleepVote();
   }
 

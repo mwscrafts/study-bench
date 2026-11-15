@@ -1,13 +1,14 @@
 const SHARED_DOORS = new Set(['mine-lift', 'village-gate']);
 
 export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidden,
-  onChange, onDoorsChange, onNotesChange, onShadowState, onChatMessage, onSleepStatus, onSleepComplete, onClockOffset }) {
+  needsFrequentPoses, onChange, onDoorsChange, onNotesChange, onShadowState, onChatMessage, onSleepStatus, onSleepComplete, onClockOffset }) {
   const peers = new Map();
   const sharedDoors = new Set();
   let socket = null;
   let retry = null;
   let lastPoseAt = 0;
   let lastPose = '';
+  let shadowFrame = null;
   let cachedId = null;
 
   function playerId() {
@@ -37,7 +38,7 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     const now = performance.now();
     if (!force && now - lastPoseAt < 95) return;
     const message = JSON.stringify({ type: 'pose', pose: getPose() });
-    if (force || message !== lastPose || now - lastPoseAt > 1200) {
+    if (force || message !== lastPose || needsFrequentPoses(shadowFrame) || now - lastPoseAt > 1200) {
       socket.send(message);
       lastPose = message;
       lastPoseAt = now;
@@ -73,6 +74,8 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
         onDoorsChange();
       } else if (message.type === 'chat') {
         onChatMessage?.({ ...message, mine: message.senderId === playerId() });
+      } else if (message.type === 'shadow-frame' && message.region === getRegion() && Array.isArray(message.creatures)) {
+        shadowFrame = message;
       } else if (message.type === 'shadow-state') {
         onShadowState({ ...message, rewarded: message.winnerId === playerId() });
       } else if (message.type === 'shadow-snapshot' && Array.isArray(message.states)) {
@@ -81,6 +84,7 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
       } else if (message.type === 'sleep-status') {
         onSleepStatus?.(message);
       } else if (message.type === 'sleep-complete' && Number.isFinite(message.clockOffsetMs)) {
+        shadowFrame = null;
         onSleepComplete?.(message.clockOffsetMs,
           Array.isArray(message.restedIds) && message.restedIds.includes(playerId()));
       } else if (message.type === 'snapshot' && Array.isArray(message.peers)) {
@@ -98,6 +102,7 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     nextSocket.onclose = () => {
       if (nextSocket !== socket) return;
       socket = null;
+      shadowFrame = null;
       peers.clear();
       sharedDoors.clear();
       onChange();
@@ -116,6 +121,7 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     if (current && current.readyState < WebSocket.CLOSING) current.close(1000, reason);
     peers.clear();
     sharedDoors.clear();
+    shadowFrame = null;
     lastPose = '';
     onChange();
   }
@@ -131,9 +137,9 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
     return true;
   }
 
-  function hitShadow(index, damage, x, y, source = 'player') {
-    if (socket?.readyState !== WebSocket.OPEN) return false;
-    socket.send(JSON.stringify({ type: 'shadow-hit', index, damage, x, y, source }));
+  function hitShadow(index, damage, source = 'player') {
+    if (socket?.readyState !== WebSocket.OPEN || shadowFrame?.region !== getRegion()) return false;
+    socket.send(JSON.stringify({ type: 'shadow-hit', index, damage, source, cycle: shadowFrame.cycle }));
     return true;
   }
 
@@ -151,7 +157,8 @@ export function createPresence({ getRegion, getPose, isOnline, isPlaying, isHidd
 
   return {
     peers, sharedDoors, connect, disconnect, sendPose, openDoor, hitShadow, voteForSleep,
-    sendChat, clearPeers: () => peers.clear(),
+    sendChat, getShadowFrame: () => shadowFrame,
+    clearPeers: () => { peers.clear(); shadowFrame = null; },
     isConnected: () => socket?.readyState === WebSocket.OPEN
   };
 }
