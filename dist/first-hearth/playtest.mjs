@@ -1301,8 +1301,10 @@ const APPEARANCE_STYLES = ['regular','ponytail','buzzcut','afro','mohawk'];
 const APPEARANCE_HAIR_COLORS = ['black','brown','blonde','auburn','pink','purple','green','blue','rainbow'];
 const DEFAULT_APPEARANCE = { skin:'warm', build:'slim', height:'tall', hairStyle:'ponytail', hairColor:'brown' };
 
-function defaultAppearanceFor(legacyAvatar = avatar) {
-  return { ...DEFAULT_APPEARANCE, hairStyle: legacyAvatar === 'girl' ? 'ponytail' : 'regular' };
+function defaultAppearanceFor(legacyAvatar = null) {
+  if (legacyAvatar === 'girl') return { ...DEFAULT_APPEARANCE, hairStyle:'ponytail' };
+  if (legacyAvatar === 'boy') return { ...DEFAULT_APPEARANCE, hairStyle:'regular' };
+  return { ...DEFAULT_APPEARANCE };
 }
 
 function normalizeAppearance(value, fallback = DEFAULT_APPEARANCE) {
@@ -3967,8 +3969,11 @@ el('continue').addEventListener('click', () => begin(getSavedCamp()));
 el('create-new-journey').addEventListener('click', () => {
   el('start').hidden = true;
   el('characterCreation').hidden = false;
-  el('characterCreation').querySelector('.character-creation-card').scrollTop = 0;
+  const creatorCard=el('characterCreation').querySelector('.character-creation-card');
+  creatorCard.scrollTop = 0;
+  el('characterCreation').scrollTop = 0;
   el('back-to-journey-choice').focus({ preventScroll: true });
+  creatorCard.scrollTop = 0;
 });
 el('back-to-journey-choice').addEventListener('click', () => {
   el('characterCreation').hidden = true;
