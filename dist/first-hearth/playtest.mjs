@@ -1464,6 +1464,7 @@ function openMakeover() {
   appearanceDraft={...appearance};
   el('appearance-editor-title').textContent='Hugh’s Makeover';
   el('appearance-editor-actions').hidden=false;
+  el('dialogue').hidden=true;
   el('makeover-editor-mount').append(el('appearance-editor'));
   el('makeoverOverlay').hidden=false;
   appearanceEditorOpen=true;
@@ -1480,6 +1481,7 @@ function closeMakeover(apply) {
     saveCamp();
   } else appearanceDraft={...appearance};
   el('makeoverOverlay').hidden=true;
+  el('dialogue').hidden=false;
   appearanceEditorOpen=false;
   el('appearance-editor-home').append(el('appearance-editor'));
   el('appearance-editor-title').textContent='Choose your adventurer.';
