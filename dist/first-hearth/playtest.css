@@ -609,9 +609,11 @@ img.creator-art.is-neutralized { display: none; }
 .fishing-xp-label { margin-top: 3px; text-align: right; color: #d4cbb0; font-size: 11px; }
 .fishing-track { position: relative; padding-top: 4px; margin-top: 7px; }
 .fishing-zones {
-  height: 12px;
+  height: 16px;
+  border: 1px solid #fff1bf;
   border-radius: 8px;
-  background: linear-gradient(to right, #c95c50 0 20%, #ffd43b 20% 35%, #8fb375 35% 65%, #ffd43b 65% 80%, #c95c50 80% 100%);
+  background: linear-gradient(to right, #ff5248 0 20%, #ffe34d 20% 35%, #56e879 35% 65%, #ffe34d 65% 80%, #ff5248 80% 100%);
+  box-shadow: 0 0 0 1px #0b1a12, 0 0 8px #fff1bf55;
 }
 .fishing-marker {
   position: absolute;

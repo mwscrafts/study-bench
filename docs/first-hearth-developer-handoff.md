@@ -23,6 +23,7 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ### Fishing timing, level cap, and loading-screen recovery (latest)
 
+- Contrast follow-up: raised the timing strip to 16 px, added a light outline/glow, and changed the zones to vivid red `#ff5248`, yellow `#ffe34d`, and green `#56e879` so all five zones read clearly against the dark panel. Stylesheet cache v43.
 - The fishing timing band is red at both ends, yellow from 20–35% and 65–80%, and green in the center. The yellow is bright `#ffd43b` (stylesheet cache v42).
 - Fishing now progresses through level 25. XP thresholds are 3 through 26 (348 XP total); level 10 still unlocks the rowboat. Cache versions: `beach.mjs?v=13`, `playtest.mjs?v=150`.
 - A source-upload attempt truncated `playtest.mjs` because I passed output-limited terminal text as the file. That left the game on “Preparing Alder Camp.” The full 201,623-byte module was restored in commit `d37277f`. The published file now matches the local SHA-256 exactly (`f819b3d41dc5be6140022bf77e089be50660b447c93731586a329512f3037922`) and passes `node --check`. This verifies file delivery and syntax only; the game was not opened or play-tested. For future file transfers, do not round-trip large source through bounded terminal output; verify byte count/hash before publishing.
