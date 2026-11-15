@@ -1448,7 +1448,7 @@ function drawFullBodyPreview(canvas,sprite) {
   context.clearRect(0,0,canvas.width,canvas.height);
   if (!sprite) return;
   // Render the complete sprite inside the portrait frame with deliberate top and foot room.
-  drawSprite(context,sprite,canvas.width/2,canvas.height*.91,canvas.height*.76);
+  drawSprite(context,sprite,canvas.width/2,canvas.height*.91,canvas.height*.87);
 }
 
 function drawHairStylePreview(canvas,sprite,style) {
