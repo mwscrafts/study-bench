@@ -7,6 +7,13 @@ Game: <https://love.ashquack.workers.dev/first-hearth/>
 
 This is the durable continuity note for future Codex/dev conversations. Read it together with the root `AGENTS.md`. The repository is the source of truth; do not ask the owner to resend source files, identify the repository, or recreate a recap that can be recovered from these files and Git history.
 
+## Do-not-repeat: source transfer and release checks
+
+- **Owner reports this is the fourth time careless truncation has broken the game.** In this turn, the full local `playtest.mjs` (201,623 bytes) was accidentally replaced in the live build with a 160,110-byte truncated copy because output-capped shell text—including its truncation warning—was reused as source. The game stayed on “Preparing Alder Camp.” The exact full file was restored; details and verification are in the latest checkpoint below.
+- Never reuse terminal/tool output as source for a large file. Edit the checkout and use Git; if a transfer path is unavoidable, chunk it safely, reconstruct it, and verify exact byte count and SHA-256 against the source before publishing.
+- Before claiming a release is fixed, syntax-check changed JavaScript and compare the deployed asset’s full byte count and hash with the source. A successful commit/push alone does not prove the deployment or startup works. Do not claim live gameplay was verified unless it was actually opened and checked.
+- When the owner is explaining a mistake or reporting a screen they have not yet rechecked, respond to that point first. Do not assume a new fix failed or claim the owner has seen it. Own the specific error plainly and distinguish what is verified from what still needs their check.
+
 ## Current checkpoint
 
 ### Fishing timing, level cap, and loading-screen recovery (latest)
