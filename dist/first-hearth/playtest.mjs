@@ -1277,7 +1277,7 @@ function saveCamp() {
 
 function isValidNewJourneyName(value) {
   const name = value.trim();
-  return name.length > 0 && name.length <= 16 && /^[\\p{L}\\p{N} ]+$/u.test(name);
+  return name.length > 0 && name.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(name);
 }
 
 function updateNewJourneyButton() {
