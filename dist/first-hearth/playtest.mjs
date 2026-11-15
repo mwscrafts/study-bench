@@ -36,7 +36,7 @@ import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } fr
 import { createPresence } from './presence.mjs?v=6';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=31';
-import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
+import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=4';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=6';
 
@@ -1201,11 +1201,23 @@ function openMap() {
   mapOpen = true;
   clearControls();
   renderFieldMap({
-    discovered: discoveredRegions, region, player, terrain, tunnelOpen: tunnelStage === 'open',
+    discovered: discoveredRegions, region, player, terrain,
     location: el('location-name').textContent,
-    drawing: el('fieldMap'), here: el('mapHere'), routes: el('mapRoutes')
+    landmarks: currentLandmarks(),
+    access: {
+      tunnel: tunnelStage === 'open',
+      lift: fishing.tideglass === 'spent' || sharedDoors.has('mine-lift'),
+      rootdeep: hasRootKey || sharedDoors.has('rootdeep-entrance'),
+      bridge: kingBridgeQuest === 'complete',
+      village: Boolean(victory?.ending || sharedDoors.has('village-gate')),
+      boat: fishing.rowboat
+    },
+    drawing: el('fieldMap'), profile: el('mapProfile'),
+    here: el('mapHere'), area: el('mapRegion'), routes: el('mapRoutes')
   });
   el('mapOverlay').hidden = false;
+  el('mapOverlay').querySelector('.map-panel').scrollTop = 0;
+  el('mapRoutes').scrollTop = 0;
   updatePrompt();
   el('closeMap').focus({ preventScroll: true });
 }

@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth</title>
-  <link rel="stylesheet" href="./playtest.css?v=39">
+  <link rel="stylesheet" href="./playtest.css?v=40">
 </head>
 <body>
   <main class="page">
@@ -267,14 +267,46 @@
         <div id="mapOverlay" class="overlay" hidden>
           <section class="map-panel" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
             <div class="panel-head">
-              <div><p class="eyebrow">PATHS YOU HAVE WALKED</p><h2 id="mapTitle">Field map</h2></div>
-              <button id="closeMap" class="secondary bag-close" type="button" aria-label="Close map">×</button>
+              <h2 id="mapTitle">Field Atlas</h2>
+              <button id="closeMap" class="secondary" type="button" aria-label="Close map">× Close</button>
             </div>
-            <p id="mapHere" class="map-here" aria-live="polite"></p>
-            <svg id="fieldMap" class="field-map" viewBox="0 0 480 690" role="img" aria-label="Visited regions and your current location"></svg>
-            <h3>Paths from here</h3>
-            <ul id="mapRoutes" class="map-routes"></ul>
-            <small>Only places you have reached appear here. M closes the map.</small>
+            <div class="atlas-layout">
+              <div class="atlas-overview">
+                <svg class="field-map" viewBox="43 137 985 591" role="img" aria-label="Discovered regions and your current region">
+                  <defs>
+                    <g id="atlas-tree"><path d="M-10 11 0-15 10 11z" fill="#263b2f"/><path d="M0-15 0 11h10z" fill="#415743"/><path d="M0 10v6" stroke="#a38560" stroke-width="2"/></g>
+                    <g id="atlas-camp"><path d="M-20 12 0-15 20 12z" fill="#bc9760"/><path d="M0-15 20 12H1z" fill="#876b46"/><path d="M-7 12 1-4 7 12z" fill="#392e24"/><path d="M-24 13h48" stroke="#e5bc7d" stroke-width="2"/></g>
+                    <g id="atlas-castle"><path d="M-20 11v-26h6v5h6v-5h6v10h5v-10h6v5h5v-5h6v26z" fill="#b5b5a0"/><path d="M-4 11V3a4 4 0 0 1 8 0v8M-13-4v6M13-4v6" stroke="#3f5048" stroke-width="3"/></g>
+                    <g id="atlas-waterfall"><path d="M-19-11h33l6 22h-39z" fill="#6a7b6c"/><path d="M2-14c-2 6 3 7 3 12s-5 8-4 13M9-14c-3 7 3 6 3 12s-5 8-5 13" stroke="#b4d3d0" stroke-width="2.7" fill="none"/><path d="M-17 14h33" stroke="#7daaaa" stroke-width="2"/></g>
+                    <g id="atlas-boat"><path d="M-20 3h40l-7 10h-25z" fill="#bc935e"/><path d="M-19 3h38M-9 2l14-11" stroke="#e8c991" stroke-width="2.4"/><path d="M-22 17h13m6 0h11m6 0h8" stroke="#8cc3c5" stroke-width="2"/></g>
+                    <g id="atlas-shore"><path d="M-18 8 1-10l21 18z" fill="#b49b68"/><path d="M-21 12h42m-29 5H9" stroke="#a9d0cd" stroke-width="2.5"/><path d="M11 4v-14m0 0h8" stroke="#ebc47f" stroke-width="2"/></g>
+                    <g id="atlas-house"><path d="M-17-1 0-15 17-1H13v15h-26V-1z" fill="#cba472"/><path d="M-6 3h7v7h-7zM6 4h4v10H6z" fill="#f6d083"/></g>
+                    <g id="atlas-mine"><path d="M-19 13V4a19 19 0 0 1 38 0v9z" fill="#151f20" stroke="#ad9b76" stroke-width="3"/><path d="M-11 12V0m22 0v12M-12 0h24" stroke="#a48055" stroke-width="3"/></g>
+                    <g id="atlas-pin"><path d="M0 17C-3 10-12 5-12-4a12 12 0 0 1 24 0c0 9-9 14-12 21z" fill="#ffd48b" stroke="#19251f" stroke-width="2"/><circle cy="-4" r="4" fill="#453126"/></g>
+                  </defs>
+                  <image href="./field-atlas-art.svg?v=1" x="43" y="137" width="985" height="591"/>
+                  <g id="fieldMap"></g>
+                </svg>
+                <div class="atlas-legend" aria-label="Map legend">
+                  <span><i></i> Known route</span>
+                  <span><i class="atlas-dashed"></i> Open shortcut</span>
+                  <span><i class="atlas-dot"></i> Your location</span>
+                </div>
+              </div>
+              <div class="atlas-detail">
+                <div class="atlas-location" aria-live="polite">
+                  <p class="eyebrow">◆ You are here</p>
+                  <h3 id="mapHere"></h3>
+                  <p id="mapRegion" class="map-region"></p>
+                </div>
+                <div class="atlas-profile">
+                  <div class="atlas-directions"><span>West</span><span>East</span></div>
+                  <svg id="mapProfile" viewBox="0 0 330 100" role="img" aria-label="Your position and exits in this region"></svg>
+                </div>
+                <h3 class="atlas-exits-title">Ways out</h3>
+                <ul id="mapRoutes" class="map-routes"></ul>
+              </div>
+            </div>
           </section>
         </div>
         <div id="paused" class="overlay" hidden>
@@ -313,6 +345,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=145"></script>
+  <script type="module" src="./playtest.mjs?v=146"></script>
 </body>
 </html>

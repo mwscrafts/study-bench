@@ -9,6 +9,12 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Field Atlas
+
+- The map now uses the approved atlas artwork, including the open bay and the Rootdeep branch between First Hearth and King’s Grounds. Discovered-region icons, travel routes, and the location indicator are rendered separately.
+- The local panel plots actual terrain and exit landmarks. Travel directions use the player’s position within the region. The minecart, repaired lift, King’s Bridge, Rootdeep door, village gate, and boat use the game’s current route access. Narrow portrait screens put the local panel first.
+- Existing discovered-region saves and map controls are preserved. Cache versions are `field-map.mjs?v=4`, `playtest.mjs?v=146`, and `playtest.css?v=40`.
+
 ### Ridge Helm
 
 - The owner selected the Ridge Helm concept for the existing iron helmet. The artwork is drawn with the layered adventurer in `adventurer-art.mjs`, with a raised center ridge, short cheek guards, and a clear face. Tall hairstyles tuck inside the helmet and ponytail braids remain visible.
