@@ -13,7 +13,7 @@ import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
   ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=10';
 import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=17';
-import { paintTelescopeView } from './telescope-art.mjs?v=1';
+import { paintTelescopeView } from './telescope-art.mjs?v=2';
 import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=2';
 import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=3';
 import { startRowboatAmbience, startBeachAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=3';
@@ -766,7 +766,7 @@ function paint() {
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
-  if (telescopeViewing) paintTelescopeView(ctx, camera, animationClock);
+  if (telescopeViewing) paintTelescopeView(ctx, camera, animationClock, sprites.telescopeView);
 }
 
 function updateAlvinCombat() {
@@ -1013,7 +1013,8 @@ function updatePrompt() {
     (current?.id === 'rootdeep-lift-high' || current?.id === 'rootdeep-lift-low') && rootdeepQuest === 'complete' ? 'Ride the restored winch' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
-  const message = casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
+  const message = telescopeViewing ? 'E / Escape / Interact · lower the telescope'
+    : casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   const jumpCaption = el('jump').querySelector('small');
   if (jumpCaption && jumpCaption.textContent !== (onLadder ? 'Climb' : 'Jump')) jumpCaption.textContent = onLadder ? 'Climb' : 'Jump';
@@ -2947,6 +2948,7 @@ function interact() {
   const id = item.id;
   if (id === 'telescope') {
     telescopeViewing = true;
+    updatePrompt();
     return;
   }
   if (id === 'king-bridge') {
@@ -4016,8 +4018,8 @@ async function boot() {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
     if (saved?.publicName) el('player-name').value = saved.publicName;
-    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage] = await Promise.all([
-      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp')
+    const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage] = await Promise.all([
+      loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp')
     ]);
     backgrounds.camp = buildCampArt();
     sprites = {
@@ -4028,6 +4030,7 @@ async function boot() {
         mine: spriteBounds(lodestoneSheet, 2 / 3, 1, .5)
       },
       rowboat: spriteBounds(rowboatImage, 0, 1, .5),
+      telescopeView: telescopeViewImage,
       boy: spriteBounds(party, 0, 1 / 3, .64),
       girl: spriteBounds(party, 1 / 3, 2 / 3, .63),
       alvin: spriteBounds(party, 2 / 3, 1, .65),
