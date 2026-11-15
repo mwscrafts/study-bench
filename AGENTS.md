@@ -6,6 +6,8 @@ Read [the First Hearth developer handoff](docs/first-hearth-developer-handoff.md
 
 Update the handoff after **every implementation attempt**, including failed, partial, reverted, or aborted work—not only meaningful successes. Record the requested scope, what actually changed, errors and their causes, commit/push state, what was verified, what remains unverified, and the next step. Leave the note before ending the task or handing off context. Keep it concise, but never omit a failure because it seems small or embarrassing. Do not write “tested,” “deployed,” “fixed,” or “disconnected” unless that state was verified.
 
+Approved concepts are binding visual specifications, not loose inspiration. Preserve the approved composition, framing, proportions, palette, typography, and control order. Do not redraw, regenerate, crop sprite-sheet art, substitute assets, or recompose the interface unless the owner asks. If a technical constraint prevents an exact match, explain the constraint and discuss the change before implementing it. Before calling the work complete, compare the rendered result against the approved reference at the intended viewport; record any approved deviation in the handoff.
+
 ## Project layout
 
 The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest and CSS. `playtest.mjs` owns the main loop, controls, player save, dialogue, region transitions, combat, multiplayer presence, and the UI. Region and feature modules keep their terrain, landmark data, state helpers, and artwork in separate files.

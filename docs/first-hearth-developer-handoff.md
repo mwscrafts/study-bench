@@ -19,6 +19,10 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - Before claiming a release is fixed, syntax-check changed JavaScript and compare the deployed asset’s full byte count and hash with the source. A successful commit/push alone does not prove the deployment or startup works. Do not claim live gameplay was verified unless it was actually opened and checked.
 - When the owner is explaining a mistake or reporting a screen they have not yet rechecked, respond to that point first. Do not assume a new fix failed or claim the owner has seen it. Own the specific error plainly and distinguish what is verified from what still needs their check.
 
+## Approved concept fidelity — binding
+
+Approved concepts are binding visual specifications, not loose inspiration. Preserve the approved composition, framing, proportions, palette, typography, and control order. Do not redraw, regenerate, crop sprite-sheet art, substitute assets, or recompose the interface unless the owner asks. If a technical constraint prevents an exact match, explain the constraint and discuss the change before implementing it. Before calling the work complete, compare the rendered result against the approved reference at the intended viewport; record any approved deviation in the handoff.
+
 ## Current checkpoint
 
 ### Fishing timing, level cap, and loading-screen recovery (latest)
