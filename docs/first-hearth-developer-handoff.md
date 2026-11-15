@@ -466,3 +466,10 @@ This is future direction, not a committed feature plan. The current setting begi
 
 - Removed the redundant keyboard/interact status bar while looking through the Sandy Cove telescope; the dedicated on-screen exit button is the clear exit affordance.
 - Restyled the exit button in the game’s warm gold accent for contrast against the dimmed scene, with a visible keyboard focus outline.
+
+
+### Required name before starting a new journey — 2026-11-15
+
+- The new-journey name field is required and the start button stays disabled until a valid name is typed.
+- Existing save names are no longer prefilled into the new-game field, preventing a single accidental tap from overwriting a saved journey. Continue Journey keeps the saved name.
+- `begin()` validates again before creating a new journey, including for programmatic activation.

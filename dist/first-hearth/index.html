@@ -89,7 +89,7 @@
                 <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
                 <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
               </div>
-              <label class="player-name" for="player-name">Name shown to other players <input id="player-name" type="text" maxlength="16" autocomplete="nickname" placeholder="Adventurer"></label>
+              <label class="player-name" for="player-name">Name shown to other players (required) <input id="player-name" type="text" maxlength="16" autocomplete="off" placeholder="Enter a name to start" required aria-required="true"></label>
               <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
             </section>
             
@@ -239,6 +239,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=128"></script>
+  <script type="module" src="./playtest.mjs?v=129"></script>
 </body>
 </html>

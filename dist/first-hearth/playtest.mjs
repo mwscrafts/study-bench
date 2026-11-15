@@ -1275,13 +1275,34 @@ function saveCamp() {
   } catch { /* Play remains available if browser storage is disabled. */ }
 }
 
+function isValidNewJourneyName(value) {
+  const name = value.trim();
+  return name.length > 0 && name.length <= 16 && /^[\\p{L}\\p{N} ]+$/u.test(name);
+}
+
+function updateNewJourneyButton() {
+  el('begin').disabled = !sprites || !isValidNewJourneyName(el('player-name').value);
+}
+
 function begin(save) {
   if (!sprites) return;
+  const nameField = el('player-name');
+  const enteredName = nameField.value.trim();
+  if (!save && !isValidNewJourneyName(enteredName)) {
+    nameField.setCustomValidity(enteredName
+      ? 'Use only letters, numbers, and spaces for your name.'
+      : 'Enter a name before starting a new journey.');
+    nameField.reportValidity();
+    nameField.focus({ preventScroll: true });
+    updateNewJourneyButton();
+    return;
+  }
+  nameField.setCustomValidity('');
   testRun = save?.testRun === true;
   adminRing = save?.adminRing === true;
   adminPanelFromRing = false;
   avatar = save?.avatar ?? avatar;
-  const chosenName = el('player-name').value.trim() || save?.publicName || 'Adventurer';
+  const chosenName = save?.publicName || enteredName;
   publicName = typeof chosenName === 'string' && chosenName.length <= 16 && /^[\p{L}\p{N} ]+$/u.test(chosenName)
     ? chosenName : 'Adventurer';
   difficulty = save ? (save.difficulty === 'hard' ? 'hard' : 'easy') : difficulty;
@@ -3684,6 +3705,10 @@ for (const button of document.querySelectorAll('[data-difficulty]')) {
     }
   });
 }
+el('player-name').addEventListener('input', () => {
+  el('player-name').setCustomValidity('');
+  updateNewJourneyButton();
+});
 el('begin').addEventListener('click', () => begin());
 el('continue').addEventListener('click', () => begin(getSavedCamp()));
 el('presence-toggle').addEventListener('click', () => {
@@ -4026,7 +4051,6 @@ async function boot() {
   try {
     const saved = getSavedCamp();
     el('continue-section').hidden = !saved;
-    if (saved?.publicName) el('player-name').value = saved.publicName;
     const [party, keepers, lodestoneSheet, rowboatImage, rootWispImage, telescopeViewImage] = await Promise.all([
       loadImage('./party.webp'), loadImage('./keepers.webp'), loadImage('./lodestones.webp'), loadImage('./tide-arch-rowboat.png'), loadImage('./night-root-wisp.webp'), loadImage('./telescope-view.webp')
     ]);
@@ -4048,8 +4072,8 @@ async function boot() {
     };
     drawPortrait(el('choose-boy').querySelector('canvas'), sprites.boy);
     drawPortrait(el('choose-girl').querySelector('canvas'), sprites.girl);
-    el('begin').disabled = false;
     el('begin').textContent = 'Enter Alder Camp →';
+    updateNewJourneyButton();
     updatePresenceButton();
     resize();
     el('start').hidden = false;
