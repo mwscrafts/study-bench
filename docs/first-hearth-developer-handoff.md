@@ -427,3 +427,9 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 - Changed files: `dist/first-hearth/playtest.mjs`, `dist/first-hearth/index.html`, and this handoff. Entry cache is now `playtest.mjs?v=123`.
 - Source reviewed for the wake dialogue, Alvin’s temporary position/animation, all death paths, save behavior, and cache reference. No tests were run and the live game was not opened, per the owner’s standing instruction. The push to `main` triggers the configured deployment; completion is unverified.
 - Code commit: this wake-up scene checkpoint, recorded in Git history.
+
+## Shared rowboat presence — 2026-11-15
+
+- The offshore boat scene uses region ID `rowboat`, but the public presence worker rejected it because its valid-region allowlist omitted that ID. Players therefore stopped receiving each other’s rowboat poses and the public player count split.
+- Added `rowboat` to the existing valid-region allowlist in `worker/hearth-times.mjs`. No scene art, movement, boat interactions, or terrain were changed.
+- Reviewed the client’s region transition and worker pose validation. No tests were run and the live game was not opened. The push triggers the configured deployment; deployment completion and shared boat visibility remain for the owner and Ash to verify in-game.

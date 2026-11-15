@@ -85,7 +85,7 @@ export class HearthTimes extends DurableObject {
   }
 }
 
-const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut',
+const AREAS = new Set(['camp','crownwood','mine','beach','hearth','king','village','house','hut','rowboat',
   'rootdeep','rootdeep-home-lantern','rootdeep-home-stone','rootdeep-home-common']);
 const SHADOW_REGIONS = new Set(['crownwood','rootdeep','mine','beach']);
 const TOOLS = new Set(['hatchet','pickaxe','ironSword','shadowBlade','godslayer','net']);
