@@ -1,7 +1,7 @@
 import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs?v=18';
 
-export const MAX_FISHING_LEVEL = 10;
-export const MAX_FISHING_XP = ((MAX_FISHING_LEVEL - 1) * (3 + 11)) / 2;
+export const MAX_FISHING_LEVEL = 25;
+export const MAX_FISHING_XP = ((MAX_FISHING_LEVEL - 1) * (MAX_FISHING_LEVEL + 4)) / 2;
 export const ROWBOAT_WOOD_COST = 5;
 export const ROWBOAT_DRIFTWOOD_COST = 20;
 export const ROWBOAT_IRON_COST = 2;
