@@ -460,3 +460,9 @@ This is future direction, not a committed feature plan. The current setting begi
 
 - The owner reported that touch Interact stays disabled in telescope view, leaving keyboard instructions unusable on mobile. Added a dedicated visible **Stop looking** button beside the scope on wide layouts, with a compact responsive placement on narrow screens. It closes telescope view directly; keyboard E/Escape and Interact remain supported.
 - Cache versions: playtest CSS v25 and entry module v127. Source review only; no tests or live gameplay check were run. The push to `main` triggers Cloudflare deployment; live behavior remains unverified.
+
+
+### Telescope view prompt and exit contrast — 2026-11-15
+
+- Removed the redundant keyboard/interact status bar while looking through the Sandy Cove telescope; the dedicated on-screen exit button is the clear exit affordance.
+- Restyled the exit button in the game’s warm gold accent for contrast against the dimmed scene, with a visible keyboard focus outline.

@@ -1013,7 +1013,7 @@ function updatePrompt() {
     (current?.id === 'rootdeep-lift-high' || current?.id === 'rootdeep-lift-low') && rootdeepQuest === 'complete' ? 'Ride the restored winch' :
     (fishing.tideglass === 'spent' || sharedDoors.has('mine-lift')) && liftGates[current?.id] ? 'Ride the lift' :
     current?.id === 'village-gate' && sharedDoors.has('village-gate') && !victory?.ending ? 'Enter the open village gate' : current?.label;
-  const message = telescopeViewing ? 'E / Escape / Interact · lower the telescope'
+  const message = telescopeViewing ? ''
     : casting ? 'Casting the net…' : label ? label + (current?.id.startsWith('rootdeep-ladder-') ? '' : ' · E / Interact')
     : controlsActive() && animationClock < noticeUntil ? notice : '';
   const jumpCaption = el('jump').querySelector('small');
