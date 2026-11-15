@@ -1,22 +1,24 @@
+import { DAY_LENGTH, WORLD_CYCLE_MS, DAY_DUSK_START, DUSK_NIGHT_START,
+  NIGHT_START, NIGHT_FADE_START, NIGHT_END, DAY_START } from './day-cycle.mjs?v=1';
 import { paintAdventurer } from './adventurer-art.mjs?v=2';
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
-  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
+  groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=18';
 import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=15';
 import { crownwoodLandmarks, crownwoodTimberTrees, crystalNodes, crownwoodTerrain, crownwoodKingBridgeTerrain,
-  KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=16';
+  KING_BRIDGE_START, KING_BRIDGE_END, KING_BRIDGE_WOOD_COST, KING_BRIDGE_IRON_COST } from './crownwood.mjs?v=17';
 import { paintBarry, paintRootdeepEntranceLock, paintCrownwoodWater, paintCrystal, paintCrownwoodShadow,
-  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=18';
-import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=16';
-import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=07';
-import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=9';
+  paintCrownwoodPines, paintKingBridge } from './crownwood-art.mjs?v=19';
+import { hugh, netChest, oreNodes, flint } from './mine.mjs?v=17';
+import { paintMineLights, paintMineChest, paintOre, paintFlint, paintMineTunnel, paintDiscardedStilts } from './mine-art.mjs?v=8';
+import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, glowcapNodes, rootdeepBranchLanterns, rootdeepSettlerRoutes, rootdeepSettlerState } from './rootdeep.mjs?v=10';
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
-  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
+  paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=15';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
-  ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=10';
-import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=17';
+  ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=11';
+import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=18';
 import { paintTelescopeView } from './telescope-art.mjs?v=2';
-import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=2';
-import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=3';
+import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=3';
+import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=4';
 import { startRowboatAmbience, startBeachAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=3';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
@@ -28,14 +30,14 @@ import { kingLandmarks, ARENA, TRIAL_START, REST_X, MAX_BOSS_HP,
   endings, startTrial, trialBounds, attackTrial, advanceTrial, trialHint, formatTime } from './king.mjs?v=12';
 import { paintKingGrounds, paintFireworks } from './king-art.mjs?v=13';
 import { readVictory, openTimeBoard } from './time-board.mjs?v=10';
-import { paintRestoredKing, buildVillageArt } from './village-art.mjs?v=1';
+import { paintRestoredKing, buildVillageArt } from './village-art.mjs?v=2';
 import { VILLAGE_HOME_WOOD_COST, VILLAGE_HOME_IRON_COST, LYSS_CABIN_WOOD_COST, LYSS_CABIN_IRON_COST,
-  BARRY_HOME_WOOD_COST, BARRY_HOME_IRON_COST } from './home-projects.mjs?v=2';
-import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, paintBarryHomeExterior } from './home-projects-art.mjs?v=2';
+  BARRY_HOME_WOOD_COST, BARRY_HOME_IRON_COST } from './home-projects.mjs?v=3';
+import { paintVillageHomeExterior, paintVillageHomeDecor, paintLyssCabinDecor, paintBarryHomeExterior } from './home-projects-art.mjs?v=3';
 import { campFacilities, paintHutWindow, paintHutDecor, paintCampFacilities } from './camp-idle.mjs?v=18';
 import { createPresence } from './presence.mjs?v=6';
 import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell, paintSpecialHomeDecor } from './special-rewards.mjs?v=1';
-import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=31';
+import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=32';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=4';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
   paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=6';
@@ -66,14 +68,6 @@ const journalCatalog = [
   { id: 'barry-home', title: 'Barry’s workshop', body: 'Barry can make a sturdy home and workshop above the Crownwood bridge. Bring ten spare wood and four iron to build it.' }
 ];
 const PRESENCE_KEY = 'first-hearth:solo:v1';
-const DAY_LENGTH = 136;
-const WORLD_CYCLE_MS = DAY_LENGTH * 1000;
-const DAY_DUSK_START = 48;
-const DUSK_NIGHT_START = 60;
-const NIGHT_START = 70;
-const NIGHT_FADE_START = 96;
-const NIGHT_END = 106;
-const DAY_START = 121;
 const ROOTDEEP_LADDER_X = 1780;
 const ROOTDEEP_CLIMB_SPEED = 430;
 const BERRY_GROW_MS = 3 * 60 * 1000;
@@ -950,7 +944,7 @@ function currentFlowers() {
 
 function rootdeepRoutineTime() {
   return skyMode === 'auto' ? phaseClock % DAY_LENGTH
-    : ({day:20,dusk:62,night:112,dawn:4})[skyMode] ?? phaseClock % DAY_LENGTH;
+    : ({day:20,dusk:DUSK_NIGHT_START + 2,night:NIGHT_END + 6,dawn:4})[skyMode] ?? phaseClock % DAY_LENGTH;
 }
 
 function rootdeepResidentAtHome(id) {
@@ -3586,14 +3580,14 @@ function updateShadows(dt = 0) {
     creatureCycleKey = cycleKey;
   }
   const forcedNight = skyMode === 'night';
-  const shadowPhase = forcedNight ? 80 : phaseClock;
+  const shadowPhase = forcedNight ? NIGHT_START + 10 : phaseClock;
   if (!forcedNight && skyMode !== 'auto') {
     creatures = [];
     return;
   }
   if (!forcedNight && (phaseClock < NIGHT_START || phaseClock >= NIGHT_END)) {
     creatures = [];
-    if (phaseClock < 70) creatureCycleKey = cycleKey;
+    if (phaseClock < NIGHT_START) creatureCycleKey = cycleKey;
     return;
   }
   const current = new Map(creatures.map(creature => [creature.index, creature]));

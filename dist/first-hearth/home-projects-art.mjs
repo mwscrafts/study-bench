@@ -1,7 +1,7 @@
 import { poly, path, orb, stone } from './camp-art.mjs?v=15';
-import { villageHomeTerrain, lyssCabinTerrain, barryHouseTerrain } from './home-projects.mjs?v=2';
-import { crownwoodTerrain } from './crownwood.mjs?v=15';
-import { surfaceAt } from './terrain.mjs?v=17';
+import { villageHomeTerrain, lyssCabinTerrain, barryHouseTerrain } from './home-projects.mjs?v=3';
+import { crownwoodTerrain } from './crownwood.mjs?v=17';
+import { surfaceAt } from './terrain.mjs?v=18';
 
 export function paintVillageHomeExterior(ctx,built) {
   const x=3190,y=630;

@@ -1,4 +1,4 @@
-import { defineTerrain } from './terrain.mjs?v=17';
+import { defineTerrain } from './terrain.mjs?v=18';
 
 export const ROWBOAT_CENTER_X = 960;
 export const ROWBOAT_BASELINE_Y = 674;

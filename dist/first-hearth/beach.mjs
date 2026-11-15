@@ -1,4 +1,4 @@
-import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs';
+import { defineTerrain, surfaceAt, patrolShadows, clamp } from './terrain.mjs?v=18';
 
 export const MAX_FISHING_LEVEL = 10;
 export const MAX_FISHING_XP = ((MAX_FISHING_LEVEL - 1) * (3 + 11)) / 2;

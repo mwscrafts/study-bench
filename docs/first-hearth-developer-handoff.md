@@ -9,6 +9,11 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Four-minute day cycle
+
+- The client and presence worker share `dist/first-hearth/day-cycle.mjs`. A full cycle lasts 240 seconds. Night runs from phase 120 through 210 (90 seconds), including the ten-second fade starting at 200. The two dusk transitions retain their 12- and 10-second durations, and dawn retains its 15 seconds.
+- Solo and Public shadow spawns, attack windows, and fade now use the shared phase boundaries. Rootdeep settlers still walk at their previous pace. Their time at work and at home expands with the cycle. Manual sky previews use phase values appropriate to the new schedule. Browser entry version is `playtest.mjs?v=147`.
+
 ### Field Atlas
 
 - The map now uses the approved atlas artwork, including the open bay and the Rootdeep branch between First Hearth and King’s Grounds. Discovered-region icons, travel routes, and the location indicator are rendered separately.

@@ -1,4 +1,5 @@
-import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs';
+import { DAY_LENGTH, NIGHT_START, DAY_DUSK_START } from './day-cycle.mjs?v=1';
+import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs?v=18';
 
 const floor = { id: 'rootdeep-floor', points: [[0,4860],[1920,4860]] };
 const heights = [250,810,1370,1930,2490,3050,3610,4170];
@@ -48,16 +49,22 @@ export const rootdeepSettlerRoutes = [
   { id:'rootdeep-stonecarver', homeX:720, workX:790, fireX:995, variant:2, home:'rootdeep-home-stone' },
   { id:'rootdeep-commonkeeper', homeX:1300, workX:1340, fireX:1110, variant:3, home:'rootdeep-home-common' }
 ];
-export function rootdeepSettlerState(route,time) {
-  const t=((time%136)+136)%136;
-  const travel=(from,to,start,end) => from+(to-from)*Math.max(0,Math.min(1,(t-start)/(end-start)));
-  const atHome=t>=101;
-  const x=t<12 ? travel(route.homeX,route.workX,0,12)
-    : t<39 ? route.workX
-    : t<55 ? travel(route.workX,route.fireX,39,55)
-    : t<73 ? route.fireX
-    : t<101 ? travel(route.fireX,route.homeX,73,101) : route.homeX;
-  return { x,y:surfaceAt(tiers[3][0],x),atHome,moving:t<12||t>=39&&t<55||t>=73&&t<101 };
+export function rootdeepSettlerState(route, time) {
+  const t = ((time % DAY_LENGTH) + DAY_LENGTH) % DAY_LENGTH;
+  const workStart = 12;
+  const leaveWork = DAY_DUSK_START - 9;
+  const fireStart = leaveWork + 16;
+  const leaveFire = NIGHT_START + 3;
+  const homeStart = leaveFire + 28;
+  const travel = (from, to, start, end) => from + (to - from) * Math.max(0, Math.min(1, (t - start) / (end - start)));
+  const atHome = t >= homeStart;
+  const x = t < workStart ? travel(route.homeX, route.workX, 0, workStart)
+    : t < leaveWork ? route.workX
+    : t < fireStart ? travel(route.workX, route.fireX, leaveWork, fireStart)
+    : t < leaveFire ? route.fireX
+    : t < homeStart ? travel(route.fireX, route.homeX, leaveFire, homeStart) : route.homeX;
+  const moving = t < workStart || t >= leaveWork && t < fireStart || t >= leaveFire && t < homeStart;
+  return { x, y: surfaceAt(tiers[3][0], x), atHome, moving };
 }
 
 // These side-ledge lanterns are independent of the Common Keeper's settlement quest.

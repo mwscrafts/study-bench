@@ -1,6 +1,6 @@
 import { surfaceAt } from './terrain.mjs';
 import { random, poly, path, orb, pine, stone, sign } from './camp-art.mjs?v=15';
-import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=15';
+import { crownwoodTerrain, crownwoodLandmarks, crownwoodTimberTrees, crystalNodes } from './crownwood.mjs?v=17';
 import { drawSprite } from './canvas-art.mjs?v=6';
 
 const { width, height, surfaces, floor } = crownwoodTerrain;

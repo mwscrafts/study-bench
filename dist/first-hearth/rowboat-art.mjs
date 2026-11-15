@@ -1,7 +1,7 @@
 import { drawSprite, paintShadow } from './canvas-art.mjs?v=4';
 import {
   rowboatTerrain, ROWBOAT_CENTER_X, ROWBOAT_BASELINE_Y, ROWBOAT_DECK_Y, ROWBOAT_CHAIR_X
-} from './rowboat.mjs?v=1';
+} from './rowboat.mjs?v=3';
 
 const sandyCoveBackdrop = new Image();
 sandyCoveBackdrop.src = new URL('./rowboat-sea-background.webp', import.meta.url).href;

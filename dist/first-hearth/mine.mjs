@@ -1,4 +1,4 @@
-import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs';
+import { defineTerrain, surfaceAt, patrolShadows } from './terrain.mjs?v=18';
 
 const floor = { id: 'mine-floor', points: [
   [0,405],[455,405],[550,426],[765,510],[940,554],[1090,556],[1240,600],

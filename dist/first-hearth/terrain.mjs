@@ -1,3 +1,5 @@
+import { NIGHT_START, NIGHT_END } from './day-cycle.mjs?v=1';
+
 export const WORLD_WIDTH = 4800;
 export const WORLD_HEIGHT = 900;
 export const SPAWN_X = 280;
@@ -146,9 +148,9 @@ export function nearbyLandmark(player, candidates) {
 }
 
 export function patrolShadows(patrols, phase) {
-  if (phase < 70 || phase >= 111) return [];
+  if (phase < NIGHT_START || phase >= NIGHT_END) return [];
   return patrols.map(({surface, left, right, offset}, index) => {
-    const t = phase - 70 + offset;
+    const t = phase - NIGHT_START + offset;
     const x = left + (.5 + .5 * Math.sin(t * .75)) * (right - left);
     const hop = Math.max(0, Math.sin(t * 2.5));
     const y = surfaceAt(surface, x) - hop * 27;

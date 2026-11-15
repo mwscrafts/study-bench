@@ -1,10 +1,10 @@
 import { DurableObject } from 'cloudflare:workers';
 import { advanceFieldShadows, shadowPatrols } from './field-shadows.mjs';
+import { WORLD_CYCLE_MS, NIGHT_START, NIGHT_FADE_START, NIGHT_END } from '../dist/first-hearth/day-cycle.mjs';
 
 const PATH = '/first-hearth/api/times';
 const PRESENCE_PATH = '/first-hearth/api/presence';
 const BOARD_PATH = '/first-hearth/api/noticeboard';
-const PUBLIC_CYCLE_MS = 136000;
 const response = (data, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
 });
@@ -192,7 +192,7 @@ export class HearthPresence extends DurableObject {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  ensureShadowCycle(cycle = Math.floor((Date.now() + this.clockOffsetMs) / PUBLIC_CYCLE_MS)) {
+  ensureShadowCycle(cycle = Math.floor((Date.now() + this.clockOffsetMs) / WORLD_CYCLE_MS)) {
     if (this.shadowCycleState.cycle !== cycle) {
       this.shadowCycleState = { cycle, states: {} };
       this.shadowScenes.clear();
@@ -202,12 +202,12 @@ export class HearthPresence extends DurableObject {
 
   updateShadowScene(region, sockets, now) {
     const time = now + this.clockOffsetMs;
-    const cycle = Math.floor(time / PUBLIC_CYCLE_MS);
-    const phase = (time - cycle * PUBLIC_CYCLE_MS) / 1000;
+    const cycle = Math.floor(time / WORLD_CYCLE_MS);
+    const phase = (time - cycle * WORLD_CYCLE_MS) / 1000;
     const state = this.ensureShadowCycle(cycle);
     const previous = this.shadowScenes.get(region);
     if (previous && now - previous.updatedAt < 95) return { scene: previous, changed: false };
-    if (!previous?.creatures.length && (phase < 70 || phase >= 96)) {
+    if (!previous?.creatures.length && (phase < NIGHT_START || phase >= NIGHT_FADE_START)) {
       return { scene: { type: 'shadow-frame', region, cycle, phase, creatures: [] }, changed: false };
     }
     const players = sockets.map(socket => socket.deserializeAttachment())
@@ -244,8 +244,8 @@ export class HearthPresence extends DurableObject {
     const ids = new Set(peers.map(peer => peer.id));
     for (const id of this.sleepVotes) if (!ids.has(id)) this.sleepVotes.delete(id);
     if (peers.length && peers.every(peer => this.sleepVotes.has(peer.id))) {
-      const phase = ((Date.now() + this.clockOffsetMs) % PUBLIC_CYCLE_MS + PUBLIC_CYCLE_MS) % PUBLIC_CYCLE_MS;
-      this.clockOffsetMs += PUBLIC_CYCLE_MS - phase;
+      const phase = ((Date.now() + this.clockOffsetMs) % WORLD_CYCLE_MS + WORLD_CYCLE_MS) % WORLD_CYCLE_MS;
+      this.clockOffsetMs += WORLD_CYCLE_MS - phase;
       const restedIds = peers.filter(peer => this.sleepVotes.has(peer.id)).map(peer => peer.id);
       this.sleepVotes.clear();
       await this.ctx.storage.put('public-clock-offset', this.clockOffsetMs);
@@ -283,9 +283,9 @@ export class HearthPresence extends DurableObject {
       socket.send(JSON.stringify({ type: 'shadow-state', ...prior, cycle: state.cycle, rewarded: prior.winnerId === peer.id }));
       return;
     }
-    const phase = (Date.now() + this.clockOffsetMs - state.cycle * PUBLIC_CYCLE_MS) / 1000;
+    const phase = (Date.now() + this.clockOffsetMs - state.cycle * WORLD_CYCLE_MS) / 1000;
     const target = this.shadowScenes.get(pose.region)?.creatures.find(shadow => shadow.index === data.index);
-    if (phase < 70 || phase >= 106 || !target ||
+    if (phase < NIGHT_START || phase >= NIGHT_END || !target ||
       Math.abs(target.x - actor.x) > reachX || Math.abs(target.y - actor.y) > reachY) return;
     const updated = { ...prior, x: target.x, y: target.y, hp: Math.max(0, prior.hp - data.damage) };
     updated.defeated = updated.hp <= 0;

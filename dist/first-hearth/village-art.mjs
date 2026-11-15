@@ -1,6 +1,6 @@
 import { poly, path, orb } from './camp-art.mjs?v=15';
-import { villageTerrain, houseTerrain, villageLandmarks } from './village.mjs?v=14';
-import { surfaceAt } from './terrain.mjs?v=17';
+import { villageTerrain, houseTerrain, villageLandmarks } from './village.mjs?v=15';
+import { surfaceAt } from './terrain.mjs?v=18';
 
 function person(ctx,x,y,coat,style=0) {
   ctx.save();

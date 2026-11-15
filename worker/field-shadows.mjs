@@ -1,3 +1,4 @@
+import { NIGHT_START, NIGHT_FADE_START, NIGHT_END } from '../dist/first-hearth/day-cycle.mjs';
 import { beachShadows } from '../dist/first-hearth/beach.mjs';
 import { crownwoodShadows } from '../dist/first-hearth/crownwood.mjs';
 import { mineShadows } from '../dist/first-hearth/mine.mjs';
@@ -11,9 +12,9 @@ export const shadowPatrols = new Map([
 ]);
 
 export function advanceFieldShadows(shadows, patrols, phase, dt, players, isDefeated) {
-  if (phase < 70 || phase >= 106) return [];
+  if (phase < NIGHT_START || phase >= NIGHT_END) return [];
   const previous = new Map(shadows.map(shadow => [shadow.index, shadow]));
-  const anchors = phase < 96 ? patrols(phase) : shadows;
+  const anchors = phase < NIGHT_FADE_START ? patrols(phase) : shadows;
   return anchors.filter(anchor => !isDefeated(anchor.index)).map(anchor => {
     const shadow = previous.get(anchor.index) ?? { ...anchor, aggro: false, direction: 1 };
     let nearest = null;

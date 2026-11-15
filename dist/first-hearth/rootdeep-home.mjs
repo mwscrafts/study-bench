@@ -1,4 +1,4 @@
-import { defineTerrain } from './terrain.mjs?v=17';
+import { defineTerrain } from './terrain.mjs?v=18';
 import { buildRootdeepHomeArt } from './rootdeep-home-art.mjs?v=2';
 
 // The three settlement homes are separate public regions: players in different rooms
