@@ -1453,10 +1453,10 @@ function drawHairStylePreview(canvas,sprite,style) {
   context.clearRect(0,0,canvas.width,canvas.height);
   if (!sprite?.image || !sprite.width || !sprite.height) return;
   const tail=style==='ponytail';
-  const cropX=sprite.left+sprite.width*(tail?.02:.10);
+  const cropX=sprite.left+sprite.width*(tail ? 0.02 : 0.10);
   const cropY=sprite.top;
-  const cropWidth=sprite.width*(tail?.96:.80);
-  const cropHeight=sprite.height*(tail?.61:.47);
+  const cropWidth=sprite.width*(tail ? 0.96 : 0.80);
+  const cropHeight=sprite.height*(tail ? 0.61 : 0.47);
   const scale=Math.min((canvas.width-8)/cropWidth,(canvas.height-6)/cropHeight);
   const width=cropWidth*scale,height=cropHeight*scale;
   context.imageSmoothingEnabled=true;
