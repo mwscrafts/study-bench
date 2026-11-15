@@ -11,11 +11,12 @@ import { rootdeepTerrain, rootdeepLandmarks, rootglassNodes, rootdeepOreNodes, g
 import { paintRootdeepLights, paintRootglass, paintDorrin, paintRootdeepLift,
   paintRootdeepSettler, paintGlowcap, buildRootdeepArt, paintRootdeepTunnel, paintTunnelGoblin, paintTunnelGuard } from './rootdeep-art.mjs?v=14';
 import { beachFlower, readFishing, castNet, fishingLevel, fishingProgress,
-  ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=9';
+  ROWBOAT_WOOD_COST, ROWBOAT_DRIFTWOOD_COST, ROWBOAT_IRON_COST } from './beach.mjs?v=10';
 import { paintBeachHorizon, paintBeachDetails, paintRowboat } from './beach-art.mjs?v=17';
+import { paintTelescopeView } from './telescope-art.mjs?v=1';
 import { ROWBOAT_FISH_X, ROWBOAT_CHAIR_X, ROWBOAT_DECK_Y, ROWBOAT_DECK_MIN_X, ROWBOAT_DECK_MAX_X } from './rowboat.mjs?v=2';
 import { paintRowboatSky, paintRowboatSea, paintRowboatVessel } from './rowboat-art.mjs?v=3';
-import { startRowboatAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=2';
+import { startRowboatAmbience, startBeachAmbience, stopRowboatAmbience } from './rowboat-ambience.mjs?v=3';
 import { timberTrees, WOOD_COST, readTools, spareWood } from './crafting.mjs?v=17';
 import { SWING_TIME, TOOL_COOLDOWN, SWING_IMPACT, BERRY_HEAL, gear, berryBushes, puff, floater,
   advanceGatheringEffects, paintGatheringEffects, paintHeldTool, paintBerryBush } from './equipment.mjs?v=09';
@@ -133,6 +134,7 @@ let glowcapHarvestDays = {};
 let fishing = readFishing();
 let fishingCastCount = 0;
 let rowboatRelaxing = false;
+let telescopeViewing = false;
 let alvinPetCount = 0;
 let casting = null;
 let nightIndex = 0;
@@ -764,6 +766,7 @@ function paint() {
   ctx.globalAlpha = 1;
   paintGatheringEffects(ctx, particles, floaters);
   if (playing) currentLandmarks().forEach(paintMarker);
+  if (telescopeViewing) paintTelescopeView(ctx, camera, animationClock);
 }
 
 function updateAlvinCombat() {
@@ -881,7 +884,7 @@ function updateCatnipLeap() {
 }
 
 function controlsActive() {
-  return playing && !paused && !talking && !casting && !inventoryOpen && !journalOpen && !mapOpen &&
+  return playing && !paused && !talking && !casting && !inventoryOpen && !journalOpen && !mapOpen && !telescopeViewing &&
     trial?.stage !== 'alvin' && finaleDelay <= 0 && !endingScene;
 }
 
@@ -1428,6 +1431,7 @@ function begin(save) {
 
 function enterRegion(next, footing) {
   if (next === 'rowboat') startRowboatAmbience();
+  else if (next === 'beach') startBeachAmbience();
   else stopRowboatAmbience();
   rowboatRelaxing = false;
   region = next;
@@ -2917,6 +2921,11 @@ function tunnelDialogue(item) {
 }
 
 function interact() {
+  if (telescopeViewing) {
+    telescopeViewing = false;
+    updatePrompt();
+    return;
+  }
   if (!controlsActive()) return;
   // Refresh the target at activation time; touch input can leave the previous frame's selection stale.
   updatePrompt();
@@ -2936,6 +2945,10 @@ function interact() {
     return;
   }
   const id = item.id;
+  if (id === 'telescope') {
+    telescopeViewing = true;
+    return;
+  }
   if (id === 'king-bridge') {
     kingBridgeDialogue();
     return;
@@ -3844,6 +3857,14 @@ const jumpKeys = new Set([' ', 'w', 'arrowup']);
 window.addEventListener('keydown', event => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const key = event.key.toLowerCase();
+  if (telescopeViewing) {
+    if (key === 'escape' || key === 'e') {
+      telescopeViewing = false;
+      updatePrompt();
+      event.preventDefault();
+    }
+    return;
+  }
   if (event.target instanceof Element && event.target.closest('#chat-input')) {
     if (key === 'escape') { closeChat(); event.preventDefault(); }
     return;

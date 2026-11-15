@@ -1,6 +1,6 @@
 # First Hearth developer handoff
 
-Updated: 2026-11-14
+Updated: 2026-11-15
 Repository: `mwscrafts/study-bench`  
 Live site: <https://love.ashquack.workers.dev/>  
 Game: <https://love.ashquack.workers.dev/first-hearth/>
@@ -433,6 +433,15 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 - The offshore boat scene uses region ID `rowboat`, but the public presence worker rejected it because its valid-region allowlist omitted that ID. Players therefore stopped receiving each other’s rowboat poses and the public player count split.
 - Added `rowboat` to the existing valid-region allowlist in `worker/hearth-times.mjs`. No scene art, movement, boat interactions, or terrain were changed.
 - Reviewed the client’s region transition and worker pose validation. No tests were run and the live game was not opened. The push triggers the configured deployment; deployment completion and shared boat visibility remain for the owner and Ash to verify in-game.
+
+
+
+## Sandy Cove telescope and shared shoreline surf — 2026-11-15
+
+- Wired the existing telescope painted into the Tide Arch lookout background to an interaction target at the same location. No second telescope or map region was added. Using it overlays a circular distant view while the player remains in the beach region. The coastal mountain and castle remain still; clouds drift, birds pass, and water ripples. E, Escape, or Interact lowers the scope.
+- The beach now starts the same synthesized surf loop used offshore in the rowboat. The telescope stays in the beach region, so its surf continues without restarting. Rowboat gull calls remain offshore; the beach uses the shared waves only.
+- Cache versions are beach v10, rowboat-ambience v3, and playtest entry v125. `world-data.mjs` imports beach v10; the view renderer is `telescope-art.mjs?v=1`.
+- Source review only. No tests or live gameplay check were run; the game was not opened. A push to `main` triggers Cloudflare deployment; completion and in-game appearance remain unverified.
 
 ## Shared Public field ghosts — 2026-11-14
 

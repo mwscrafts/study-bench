@@ -42,6 +42,7 @@ export const beachLandmarks = [
   at(sand,'shore-return',165,'Return to Alder Camp',88),
   dock,
   at(lookout,'lodestone-shore',LODESTONE_SHORE_X,'Inspect the old lodestone',70),
+  at(lookout,'telescope',3160,'Use Sandy Cove telescope',82),
   at(sand,'tide-arch',3525,'Look out from Tide Arch',90),
   at(sand,'rowboat',ROWBOAT_X,'Rowboat',100)
 ];
