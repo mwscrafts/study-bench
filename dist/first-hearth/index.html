@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth</title>
-  <link rel="stylesheet" href="./playtest.css?v=27">
+  <link rel="stylesheet" href="./playtest.css?v=28">
 </head>
 <body>
   <main class="page">
@@ -71,15 +71,21 @@
             <p id="load-error" class="error" role="alert" hidden>Camp art didn’t load. Refresh to try again.</p>
           </div>
         </div>
-        <div id="start" class="overlay" hidden>
-          <div class="start-card character-start-card">
+        <div id="start" class="overlay journey-choice-overlay" hidden>
+          <section class="start-card journey-choice-card" role="dialog" aria-modal="true" aria-labelledby="journey-choice-title">
+            <p class="eyebrow">THE FIRST HEARTH</p>
+            <h2 id="journey-choice-title">Choose your journey.</h2>
             <div id="continue-section" class="continue-section" hidden>
               <button id="continue" type="button" class="secondary">Continue Journey →</button>
-              <p class="continue-note">Starting a new journey below will overwrite your saved journey on this device.</p>
             </div>
-            <section class="new-journey" aria-labelledby="appearance-editor-title">
-              <p class="eyebrow">START A NEW JOURNEY</p>
-              <p>Alvin’s coming either way.</p>
+            <button id="create-new-journey" type="button" class="primary">Create New Journey →</button>
+            <p id="new-journey-warning" class="journey-overwrite-note" hidden>Starting a new journey will replace the saved journey on this device.</p>
+          </section>
+        </div>
+        <div id="characterCreation" class="overlay character-creation-overlay" hidden>
+          <section class="start-card character-creation-card" role="dialog" aria-modal="true" aria-labelledby="appearance-editor-title">
+            <button id="back-to-journey-choice" type="button" class="secondary">← Back to journey choices</button>
+                        <section class="new-journey" aria-labelledby="appearance-editor-title">
               <div id="appearance-editor-home">
                 <section class="appearance-editor" id="appearance-editor" aria-labelledby="appearance-editor-title">
                   <h2 id="appearance-editor-title">Choose your <em>adventurer.</em></h2>
@@ -146,18 +152,18 @@
                 </section>
               </div>
               <div class="new-journey-footer">
+                <label class="player-name" for="player-name">Adventurer name (required) <input id="player-name" type="text" maxlength="16" autocomplete="off" placeholder="Enter a name to start" required aria-required="true"></label>
                 <div class="difficulty" role="group" aria-label="Difficulty">
                   <button type="button" data-difficulty="easy" aria-pressed="true">Easy</button>
                   <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
                 </div>
-                <label class="player-name" for="player-name">Name shown to other players (required) <input id="player-name" type="text" maxlength="16" autocomplete="off" placeholder="Enter a name to start" required aria-required="true"></label>
-                <button id="begin" type="button" class="primary" disabled>Loading camp…</button>
+                <button id="begin" type="button" class="primary" disabled>Enter Alder Camp →</button>
               </div>
             </section>
             
-          </div>
+          </section>
         </div>
-        <div id="dialogue" class="overlay" hidden>
+                <div id="dialogue" class="overlay" hidden>
           <section class="dialogue" role="dialog" aria-modal="true" aria-labelledby="speaker">
             <canvas id="portrait" width="110" height="136" aria-hidden="true"></canvas>
             <div>
@@ -306,6 +312,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=132"></script>
+  <script type="module" src="./playtest.mjs?v=133"></script>
 </body>
 </html>
