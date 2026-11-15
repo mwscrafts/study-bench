@@ -408,6 +408,7 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
   font-family: Georgia, serif;
 }
 .creator-art { display: block; width: 100%; height: auto; }
+img.creator-art.is-neutralized { display: none; }
 #back-to-journey-choice {
   position: absolute;
   z-index: 2;
@@ -448,7 +449,7 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 .character-creation-card :is(button[data-value], button[data-difficulty], #player-name, #begin, .appearance-preview-frame) {
   position: absolute; left: var(--x); top: var(--y); width: var(--w); height: var(--h); margin: 0;
 }
-.character-creation-card :is(button[data-value], button[data-difficulty], #begin) {
+.character-creation-card :is(button[data-value], button[data-difficulty], :where(#begin)) {
   min-width: 0; min-height: 0; padding: 0; border: 0; color: transparent; background: transparent;
   box-shadow: none; outline: none; touch-action: manipulation;
 }
@@ -465,11 +466,8 @@ footer { display: flex; gap: 9px; justify-content: space-between; flex-wrap: wra
 .character-creation-card .appearance-swatch[data-reference-selected][aria-pressed="false"] {
   box-shadow: inset 0 0 0 .27cqw #1a281b;
 }
-.character-creation-card .hair-choice[aria-pressed="true"]:not([data-reference-selected]) {
+.character-creation-card .hair-choice[aria-pressed="true"] {
   box-shadow: inset 0 0 0 .22cqw #e9b94b; border-radius: .9cqw;
-}
-.character-creation-card .hair-choice[data-reference-selected][aria-pressed="false"] {
-  backdrop-filter: saturate(.5) brightness(.78);
 }
 .character-creation-card :is(.appearance-buttons,.difficulty):has([data-reference-selected][aria-pressed="false"]) button {
   border: .16cqw solid #716b3e; border-radius: 1cqw;

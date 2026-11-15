@@ -1347,51 +1347,57 @@ function parseHexColor(hex) {
   return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
 }
 
-function cleanAvatarCell(canvas) {
-  const context = canvas.getContext('2d',{willReadFrequently:true});
-  const image = context.getImageData(0,0,canvas.width,canvas.height);
-  const pixels = image.data, width = canvas.width, height = canvas.height;
-  const seen = new Uint8Array(width * height);
-  for (let i=0;i<pixels.length;i+=4) {
-    if (pixels[i+3] < 48) { pixels[i+3]=0; continue; }
-    const [h,s] = rgbToHsl(pixels[i],pixels[i+1],pixels[i+2]);
-    if ((h < 7 || h > 352) && s > .82) pixels[i+3]=0;
-  }
-  const queue = [];
-  for (let start=0;start<width*height;start++) {
-    if (seen[start]) continue;
-    const alpha = pixels[start*4+3];
-    if (alpha < 80) { seen[start]=1; continue; }
-    seen[start]=1; queue.length=0; queue.push(start);
-    let head=0;
-    while (head<queue.length) {
-      const at=queue[head++], x=at%width, y=Math.floor(at/width);
-      for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) {
-        if (!dx && !dy) continue;
-        const nx=x+dx, ny=y+dy;
-        if (nx<0||ny<0||nx>=width||ny>=height) continue;
-        const next=ny*width+nx;
-        if (seen[next] || pixels[next*4+3]<80) continue;
-        seen[next]=1; queue.push(next);
-      }
-    }
-    if (queue.length < 18) for (const at of queue) pixels[at*4+3]=0;
-  }
-  context.putImageData(image,0,0);
-}
+// Measured on the source atlas: left, top, right, bottom, and the crown-to-scarf boundary.
+const AVATAR_FRAMES = [
+  [[87,64,212,280,153], [335,59,491,279,154], [608,24,747,279,123], [864,13,1039,279,115]],
+  [[80,331,214,557,431], [334,330,496,557,432], [609,294,748,557,395], [865,286,1041,557,391]],
+  [[87,615,212,825,698], [334,611,496,825,698], [609,576,748,825,662], [865,570,1042,825,661]],
+  [[85,867,220,1107,979], [335,858,495,1107,972], [610,832,755,1107,948], [865,828,1043,1108,945]],
+  [[87,1147,212,1389,1264], [335,1145,495,1389,1264], [610,1119,748,1390,1232], [865,1112,1042,1389,1228]]
+];
 
-function getAvatarBaseCell(column,row) {
-  const key = column+':'+row;
+function getAvatarBaseCell(column, row) {
+  const key = column + ':' + row;
   if (avatarBaseCellCache.has(key)) return avatarBaseCellCache.get(key);
   if (!avatarAtlasImage) return null;
-  const sourceWidth=avatarAtlasImage.width/4, sourceHeight=avatarAtlasImage.height/5;
-  const canvas=document.createElement('canvas');
-  canvas.width=Math.ceil(sourceWidth); canvas.height=Math.ceil(sourceHeight);
-  const context=canvas.getContext('2d',{willReadFrequently:true});
-  context.drawImage(avatarAtlasImage,column*sourceWidth,row*sourceHeight,sourceWidth,sourceHeight,0,0,canvas.width,canvas.height);
-  cleanAvatarCell(canvas);
-  avatarBaseCellCache.set(key,canvas);
-  return canvas;
+  const [left, top, right, bottom, scarfTop] = AVATAR_FRAMES[row][column];
+  const canvas = document.createElement('canvas');
+  canvas.width = right - left + 1;
+  canvas.height = bottom - top + 1;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  context.drawImage(avatarAtlasImage, left, top, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+  const image = context.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = image.data;
+  const width = canvas.width;
+  const height = canvas.height;
+
+  // Keep the connected figure. Flecks in the transparent margin are atlas artefacts.
+  const connected = new Uint8Array(width * height);
+  const center = Math.floor(height * 0.53) * width + Math.floor(width * 0.62);
+  const queue = [center];
+  connected[center] = 1;
+  for (let i = 0; i < queue.length; i++) {
+    const point = queue[i];
+    const x = point % width;
+    const y = Math.floor(point / width);
+    for (let ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny++) {
+      for (let nx = Math.max(0, x - 1); nx <= Math.min(width - 1, x + 1); nx++) {
+        const neighbor = ny * width + nx;
+        const k = neighbor * 4;
+        const redArtefact = pixels[k] > 140 && pixels[k + 1] < pixels[k] / 4 && pixels[k + 2] < pixels[k] / 4;
+        if (connected[neighbor] || pixels[k + 3] < 80 || redArtefact) continue;
+        connected[neighbor] = 1;
+        queue.push(neighbor);
+      }
+    }
+  }
+  for (let i = 0; i < connected.length; i++) {
+    if (!connected[i]) pixels[i * 4 + 3] = 0;
+  }
+  context.putImageData(image, 0, 0);
+  const frame = { canvas, headHeight: scarfTop - top };
+  avatarBaseCellCache.set(key, frame);
+  return frame;
 }
 
 function makeAvatarSprite(value) {
@@ -1403,9 +1409,10 @@ function makeAvatarSprite(value) {
   const base=getAvatarBaseCell(column,row);
   if (!base) return sprites?.[avatar] ?? sprites?.boy;
   const canvas=document.createElement('canvas');
-  canvas.width=base.width; canvas.height=base.height;
+  canvas.width = base.canvas.width;
+  canvas.height = base.canvas.height;
   const context=canvas.getContext('2d',{willReadFrequently:true});
-  context.drawImage(base,0,0);
+  context.drawImage(base.canvas, 0, 0);
   const image=context.getImageData(0,0,canvas.width,canvas.height);
   const pixels=image.data, width=canvas.width, height=canvas.height;
   const skinOption=APPEARANCE_SKINS.find(option=>option.value===look.skin);
@@ -1415,22 +1422,39 @@ function makeAvatarSprite(value) {
     pink:'#d35b99',purple:'#985cc4',green:'#568e48',blue:'#427bb5'
   })[look.hairColor];
   const hairHsl=hairHex?rgbToHsl(...parseHexColor(hairHex)):null;
+  const hairMask = new Uint8Array(width * base.headHeight);
+  let hairLeft = width;
+  let hairRight = 0;
+  for (let y = 0; y < base.headHeight; y++) {
+    for (let x = 0; x < width; x++) {
+      const point = y * width + x;
+      const i = point * 4;
+      if (pixels[i + 3] < 80) continue;
+      const [h, s, l] = rgbToHsl(pixels[i], pixels[i + 1], pixels[i + 2]);
+      // Include the darker locks around the ears and the lighter shaved sides of the mohawk.
+      if (h <= 7 || h >= 34 || s <= 0.12 || l <= 0.14 || !(l < 0.53 || (l < 0.61 && s < 0.46))) continue;
+      hairMask[point] = 1;
+      hairLeft = Math.min(hairLeft, x);
+      hairRight = Math.max(hairRight, x);
+    }
+  }
   for (let y=0;y<height;y++) for (let x=0;x<width;x++) {
     const i=(y*width+x)*4;
     if (pixels[i+3]<80) continue;
     const [h,s,l]=rgbToHsl(pixels[i],pixels[i+1],pixels[i+2]);
-    const inHairArea=y/height<.27 || (y/height<.39&&(x/width<.32||x/width>.75)) ||
-      (look.hairStyle==='ponytail'&&y/height<.53&&x/width<.48);
-    const isHair=inHairArea&&h>7&&h<36&&s>.12&&l<.58;
-    if (isHair && look.hairColor!=='brown') {
+    const inHead = y < base.headHeight;
+    if (hairMask[y * width + x]) {
+      if (look.hairColor === 'brown') continue;
       const nextH=look.hairColor==='rainbow'
-        ? (x/width*300+y/height*55+4)%360 : hairHsl[0];
+        ? (x - hairLeft) / Math.max(1, hairRight - hairLeft) * 293 + y / base.headHeight * 15
+        : hairHsl[0];
       const nextS=look.hairColor==='rainbow'?.82:hairHsl[1];
       const targetL=look.hairColor==='rainbow'?.53:hairHsl[2];
       [pixels[i],pixels[i+1],pixels[i+2]]=hslToRgb(nextH,nextS,Math.max(.10,Math.min(.90,targetL+(l-.34)*.62)));
       continue;
     }
-    const isSkin=h>7&&h<34&&s>.16&&l>.47;
+    const isSkin = h > 7 && h < 34 && s > 0.16 && l > 0.60
+      && (inHead || (y > height * 0.54 && y < height * 0.72));
     if (isSkin) {
       const targetL=Math.max(.20,Math.min(.92,skinHsl[2]+(l-.72)*.72));
       [pixels[i],pixels[i+1],pixels[i+2]]=hslToRgb(skinHsl[0],skinHsl[1],targetL);
@@ -1659,6 +1683,7 @@ function begin(save) {
   playing = true;
   el('start').hidden = true;
   el('characterCreation').hidden = true;
+  el('game-bottom').hidden = false;
   const savedRegion = Object.hasOwn(regions, save?.region) ? save.region : 'camp';
   if (savedRegion === 'crownwood' && footing?.ground === 'overlook') {
     const ground = footing.x < KING_BRIDGE_START ? 'king-bridge-west'
@@ -3945,6 +3970,54 @@ el('player-name').addEventListener('input', () => {
 });
 el('begin').addEventListener('click', () => begin());
 el('continue').addEventListener('click', () => begin(getSavedCamp()));
+// Neutralize just the obsolete gold stroke printed around the ponytail in the approved art.
+async function prepareCreatorArt() {
+  const art = document.querySelector('img.creator-art');
+  await art.decode();
+  const canvas = document.createElement('canvas');
+  canvas.className = art.className;
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.width = art.naturalWidth;
+  canvas.height = art.naturalHeight;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  context.drawImage(art, 0, 0);
+  const image = context.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = image.data;
+  const original = new Uint8ClampedArray(pixels);
+
+  const isGoldStroke = (x, y) => {
+    if (x < 881 || x > 993 || y < 385 || y > 518) return false;
+    // Exclude the face and the printed caption, which are inside the same bounds.
+    if ((x > 914 && x < 977 && y > 421 && y < 472) || (x >= 915 && y >= 497)) return false;
+    const i = (y * canvas.width + x) * 4;
+    const [r, g, b] = original.subarray(i, i + 3);
+    return r - g > 25 && g - b > 41 && g > 91 && b < 128;
+  };
+  const maxRadius = 3;
+  const panelColor = [21, 34, 24];
+  for (let y = 385; y <= 518; y++) {
+    for (let x = 881; x <= 993; x++) {
+      let distanceSquared = Infinity;
+      for (let dy = -maxRadius; dy <= maxRadius; dy++) {
+        for (let dx = -maxRadius; dx <= maxRadius; dx++) {
+          if (isGoldStroke(x + dx, y + dy)) distanceSquared = Math.min(distanceSquared, dx * dx + dy * dy);
+        }
+      }
+      if (distanceSquared > maxRadius * maxRadius) continue;
+      const weight = distanceSquared <= 4 ? 1 : 0.7;
+      const i = (y * canvas.width + x) * 4;
+      for (let channel = 0; channel < 3; channel++) {
+        pixels[i + channel] = original[i + channel] * (1 - weight) + panelColor[channel] * weight;
+      }
+    }
+  }
+  context.putImageData(image, 0, 0);
+  art.after(canvas);
+  art.classList.add('is-neutralized');
+}
+
+prepareCreatorArt().catch(error => console.warn('Creator illustration could not be prepared', error));
+
 el('create-new-journey').addEventListener('click', () => {
   el('start').hidden = true;
   el('characterCreation').hidden = false;

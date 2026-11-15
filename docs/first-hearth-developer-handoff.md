@@ -16,6 +16,12 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 - Opening the creator only switches screens. The existing device save is replaced by the normal new journey flow after a valid name and explicit Enter Alder Camp action. Cache versions are `playtest.css?v=37` and `playtest.mjs?v=142`.
 - JavaScript syntax, the exact image bytes, and whitespace were checked locally. The executor blocked Chromium startup. Rendered mobile appearance and Cloudflare publication still require confirmation.
 
+### Creator follow-up from the owner’s landscape screenshots
+
+- Gameplay controls are hidden during startup, journey selection, and character creation. The game reveals them when starting a named journey or continuing a save.
+- The printed ponytail outline is neutralized while drawing the original artwork. Buttons use a single selection highlight, including Ponytail. Playable avatar previews use measured sprite bounds and retain just the connected silhouette, so nearby sprite rows cannot appear below the feet. Hair tinting includes the shaded hair behind the ears and preserves the eyes and clothing.
+- The local canvas check exercises all 180 hairstyle, colour, height, and build combinations and verifies the silhouette extents. Cache versions are `playtest.css?v=38` and `playtest.mjs?v=143`. Public mobile gameplay was not used for verification.
+
 ### Beach graphical rework
 
 - The approved complete beach map is `dist/first-hearth/beach-map.webp` (1920 × 445, drawn over world coordinates 3840 × 890). It includes the distant coast and playable foreground. The earlier concept-as-backdrop overlay was removed.

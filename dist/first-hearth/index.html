@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#233a32">
   <title>Alder Camp · The First Hearth</title>
-  <link rel="stylesheet" href="./playtest.css?v=37">
+  <link rel="stylesheet" href="./playtest.css?v=38">
 </head>
 <body>
   <main class="page">
@@ -124,7 +124,7 @@
                         <h3>Hairstyle</h3>
                         <div class="hair-style-grid" role="group" aria-label="Hairstyle">
                           <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="regular" style="--x:49.219%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Regular</span></button>
-                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="ponytail" style="--x:57.292%;--y:44.907%;--w:7.422%;--h:15.741%" data-reference-selected><span>Ponytail</span></button>
+                          <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="ponytail" style="--x:57.292%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Ponytail</span></button>
                           <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="buzzcut" style="--x:65.690%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Buzzcut</span></button>
                           <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="afro" style="--x:74.414%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Afro</span></button>
                           <button type="button" class="hair-choice" data-appearance-field="hairStyle" data-value="mohawk" style="--x:82.682%;--y:44.907%;--w:7.422%;--h:15.741%"><span>Mohawk</span></button>
@@ -286,7 +286,7 @@
           </div>
         </div>
       </div>
-      <div class="game-bottom">
+      <div class="game-bottom" id="game-bottom" hidden>
         <div class="inventory">
           <button id="inventoryButton" class="inventory-button" type="button" aria-label="Backpack" title="Open backpack (I)" disabled>▣ Backpack <kbd>I</kbd></button>
           <button id="quickBerry" class="inventory-button" type="button" aria-label="Eat a berry" disabled>● Berry <span id="berryCount">3</span></button>
@@ -313,6 +313,6 @@
       <span>The First Hearth · saves on this device</span>
     </footer>
   </main>
-  <script type="module" src="./playtest.mjs?v=142"></script>
+  <script type="module" src="./playtest.mjs?v=143"></script>
 </body>
 </html>
