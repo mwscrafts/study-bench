@@ -1358,10 +1358,10 @@ function cleanAvatarCell(canvas) {
     if ((h < 7 || h > 352) && s > .82) pixels[i+3]=0;
   }
   const queue = [];
+  let mainSilhouette = [];
   for (let start=0;start<width*height;start++) {
     if (seen[start]) continue;
-    const alpha = pixels[start*4+3];
-    if (alpha < 80) { seen[start]=1; continue; }
+    if (pixels[start*4+3] < 80) { seen[start]=1; continue; }
     seen[start]=1; queue.length=0; queue.push(start);
     let head=0;
     while (head<queue.length) {
@@ -1375,8 +1375,13 @@ function cleanAvatarCell(canvas) {
         seen[next]=1; queue.push(next);
       }
     }
-    if (queue.length < 18) for (const at of queue) pixels[at*4+3]=0;
+    if (queue.length > mainSilhouette.length) mainSilhouette = queue.slice();
   }
+  // Keep the connected adventurer silhouette; detached generated specks, including
+  // the mark below the boots, must not expand the preview bounds.
+  const keep = new Uint8Array(width*height);
+  for (const at of mainSilhouette) keep[at]=1;
+  for (let at=0;at<width*height;at++) if (!keep[at]) pixels[at*4+3]=0;
   context.putImageData(image,0,0);
 }
 
@@ -1443,6 +1448,23 @@ function makeAvatarSprite(value) {
   return sprite;
 }
 
+function drawHairStylePreview(canvas,sprite,style) {
+  const context=canvas.getContext('2d');
+  context.clearRect(0,0,canvas.width,canvas.height);
+  if (!sprite?.image || !sprite.width || !sprite.height) return;
+  const tail=style==='ponytail';
+  const cropX=sprite.left+sprite.width*(tail?.02:.10);
+  const cropY=sprite.top;
+  const cropWidth=sprite.width*(tail?.96:.80);
+  const cropHeight=sprite.height*(tail?.61:.47);
+  const scale=Math.min((canvas.width-8)/cropWidth,(canvas.height-6)/cropHeight);
+  const width=cropWidth*scale,height=cropHeight*scale;
+  context.imageSmoothingEnabled=true;
+  context.imageSmoothingQuality='high';
+  context.drawImage(sprite.image,cropX,cropY,cropWidth,cropHeight,
+    (canvas.width-width)/2,(canvas.height-height)/2,width,height);
+}
+
 function updateAppearanceEditor() {
   const root=el('appearance-editor');
   if (!root) return;
@@ -1455,7 +1477,7 @@ function updateAppearanceEditor() {
   if (preview&&avatarAtlasImage) drawPortrait(preview,makeAvatarSprite(look));
   for (const button of root.querySelectorAll('.hair-choice')) {
     const canvas=button.querySelector('canvas');
-    if (canvas&&avatarAtlasImage) drawPortrait(canvas,makeAvatarSprite({...look,hairStyle:button.dataset.value}));
+    if (canvas&&avatarAtlasImage) drawHairStylePreview(canvas,makeAvatarSprite({...look,hairStyle:button.dataset.value}),button.dataset.value);
   }
 }
 
