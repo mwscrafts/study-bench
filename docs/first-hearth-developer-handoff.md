@@ -454,3 +454,9 @@ Cache references are `hearth.mjs?v=11`, `world-data.mjs?v=30`, and entry `playte
 ## Long-range mainland expansion seed — 2026-11-15
 
 This is future direction, not a committed feature plan. The current setting begins on an isolated island. The owner is considering a much later rowboat-to-sailboat upgrade, perhaps around Fishing level 25 (threshold undecided), that would provide a larger boat for offshore use and open a route to the mainland. Possible mainland regions include woods leading toward the castle, an elven settlement, and a waterfall area, with the castle itself later. The castle could host activities such as a gladiator-style minigame. Preserve the island-to-mainland reveal and the sailboat as a meaningful expansion of offshore travel; do not build these regions or lock the level threshold without further direction.
+
+
+## Telescope exit button — 2026-11-15
+
+- The owner reported that touch Interact stays disabled in telescope view, leaving keyboard instructions unusable on mobile. Added a dedicated visible **Stop looking** button beside the scope on wide layouts, with a compact responsive placement on narrow screens. It closes telescope view directly; keyboard E/Escape and Interact remain supported.
+- Cache versions: playtest CSS v25 and entry module v127. Source review only; no tests or live gameplay check were run. The push to `main` triggers Cloudflare deployment; live behavior remains unverified.

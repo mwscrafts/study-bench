@@ -2921,10 +2921,17 @@ function tunnelDialogue(item) {
   updateNotes(); saveCamp();
 }
 
+function leaveTelescope() {
+  if (!telescopeViewing) return;
+  telescopeViewing = false;
+  el('telescope-exit').hidden = true;
+  updatePrompt();
+  world.focus({ preventScroll: true });
+}
+
 function interact() {
   if (telescopeViewing) {
-    telescopeViewing = false;
-    updatePrompt();
+    leaveTelescope();
     return;
   }
   if (!controlsActive()) return;
@@ -2948,6 +2955,8 @@ function interact() {
   const id = item.id;
   if (id === 'telescope') {
     telescopeViewing = true;
+    el('telescope-exit').hidden = false;
+    el('telescope-exit').focus({ preventScroll: true });
     updatePrompt();
     return;
   }
@@ -3853,6 +3862,7 @@ el('chat-form').addEventListener('submit', event => {
 });
 
 el('wave').addEventListener('click', startWave);
+el('telescope-exit').addEventListener('click', leaveTelescope);
 
 const moveKeys = new Set(['a', 'd', 'arrowleft', 'arrowright']);
 const jumpKeys = new Set([' ', 'w', 'arrowup']);
@@ -3861,8 +3871,7 @@ window.addEventListener('keydown', event => {
   const key = event.key.toLowerCase();
   if (telescopeViewing) {
     if (key === 'escape' || key === 'e') {
-      telescopeViewing = false;
-      updatePrompt();
+      leaveTelescope();
       event.preventDefault();
     }
     return;
