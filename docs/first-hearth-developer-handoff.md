@@ -9,6 +9,12 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 ## Current checkpoint
 
+### Ridge Helm
+
+- The owner selected the Ridge Helm concept for the existing iron helmet. The artwork is drawn with the layered adventurer in `adventurer-art.mjs`, with a raised center ridge, short cheek guards, and a clear face. Tall hairstyles tuck inside the helmet and ponytail braids remain visible.
+- The same helmeted sprite is used for local and multiplayer rendering. It follows the same facing, walking motion, and swing as the head. It uses the existing helmet save and multiplayer fields. Crafting and damage reduction are unchanged.
+- Cache versions are `adventurer-art.mjs?v=2` and `playtest.mjs?v=145`. Local render checks cover the open face and canvas bounds at both heights. Public gameplay was not used for verification.
+
 ### Shared layered adventurer art
 
 - `dist/first-hearth/adventurer-art.mjs` draws every custom appearance, including the default ponytail, with one layered drawing used by the creator, Hugh's makeover, and the local and multiplayer character renderers. The character atlas is no longer loaded by the game.

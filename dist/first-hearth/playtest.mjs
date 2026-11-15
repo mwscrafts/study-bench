@@ -1,4 +1,4 @@
-import { paintAdventurer } from './adventurer-art.mjs?v=1';
+import { paintAdventurer } from './adventurer-art.mjs?v=2';
 import { VIEW_WIDTH, SPAWN_X, CAMP_X, campTerrain, landmarks, flowers,
   groundAt, surfaceAt, clamp, createPlayer, jump, dropThrough, movePlayer, nearbyLandmark } from './terrain.mjs?v=17';
 import { buildCampArt, paintHorizon, paintCampTint, paintFirelight, paintFlame, paintFlower, paintCraftingProps } from './camp-art.mjs?v=15';
@@ -38,7 +38,7 @@ import { specialRequests, specialRewardChoices, paintTrailScarf, paintAlvinBell,
 import { regions, knownLandmarks, knownFlowers, gates, liftGates, conversations } from './world-data.mjs?v=31';
 import { mapRegionIds, renderFieldMap } from './field-map.mjs?v=3';
 import { WAVE_TIME, loadImage, spriteBounds, drawSprite, drawPortrait, paintComposureWraith,
-  paintWave, paintOpenLift, paintLodestone, paintShadow, paintIronHelmet } from './canvas-art.mjs?v=6';
+  paintWave, paintOpenLift, paintLodestone, paintShadow } from './canvas-art.mjs?v=6';
 
 const allTimberTrees = [...timberTrees, ...crownwoodTimberTrees];
 const allIronNodes = [...oreNodes, ...rootdeepOreNodes];
@@ -424,9 +424,9 @@ function paintPeers() {
     ctx.save();
     if (peer.leftAt) ctx.globalAlpha = 1 - (Date.now() - peer.leftAt) / 5000;
     paintShadow(ctx,peer.x,peer.y,22);
-    drawSprite(ctx,makeAvatarSprite(pose.appearance ?? defaultAppearanceFor(pose.avatar)),peer.x,peer.y,avatarHeightFor(pose.appearance ?? defaultAppearanceFor(pose.avatar)),pose.direction,bob,tilt);
+    const look = pose.appearance ?? defaultAppearanceFor(pose.avatar);
+    drawSprite(ctx, makeAvatarSprite(look, pose.helmet), peer.x, peer.y, avatarHeightFor(look), pose.direction, bob, tilt);
     if (pose.scarf === true) paintTrailScarf(ctx,peer.x,peer.y,pose.direction,bob);
-    if (pose.helmet) paintIronHelmet(ctx,peer.x,peer.y,pose.direction,bob,tilt,97);
     paintHeldTool(ctx,peer.x,peer.y,pose.direction,pose.tool,pose.swing,bob,tilt);
     paintWave(ctx,peer.x,peer.y,pose.direction,pose.wave ?? 0,bob);
     ctx.font = 'bold 13px system-ui, sans-serif';
@@ -764,9 +764,8 @@ function paint() {
   const tilt = (rowboatRelaxing ? -.13 : 0) + (player.moving ? Math.sin(gait) * .045 : 0) + swing * -.23;
   const facing = swing > 0 ? swingDirection : player.direction;
   const avatarHeight = rowboatRelaxing ? avatarHeightFor(appearance) * .8 : avatarHeightFor(appearance);
-  drawSprite(ctx, makeAvatarSprite(appearance), player.x, player.y, avatarHeight, facing, bob, tilt);
+  drawSprite(ctx, makeAvatarSprite(appearance, playing && tools.helmet), player.x, player.y, avatarHeight, facing, bob, tilt);
   if (specialRewards.has('scarf')) paintTrailScarf(ctx,player.x,player.y,facing,bob);
-  if (tools.helmet && playing) paintIronHelmet(ctx,player.x,player.y,facing,bob,tilt,avatarHeight);
   if (playing) paintHeldTool(ctx, player.x, player.y, facing, equipped, swing, bob, tilt);
   if (playing) paintWave(ctx, player.x, player.y, player.direction, wave, bob);
   if (playing) paintChatBubble(player.x, player.y, chatBubbles.get('self'));
@@ -1320,9 +1319,9 @@ function avatarHeightFor(value) {
   return normalizeAppearance(value, defaultAppearanceFor()).height === 'short' ? 84 : 104;
 }
 
-function makeAvatarSprite(value) {
+function makeAvatarSprite(value, helmet = false) {
   const look = normalizeAppearance(value, defaultAppearanceFor());
-  const key = [look.skin, look.build, look.height, look.hairStyle, look.hairColor].join(':');
+  const key = [look.skin, look.build, look.height, look.hairStyle, look.hairColor, helmet].join(':');
   if (avatarAppearanceCache.has(key)) return avatarAppearanceCache.get(key);
 
   const skin = APPEARANCE_SKINS.find(option => option.value === look.skin).color;
@@ -1331,7 +1330,7 @@ function makeAvatarSprite(value) {
   image.height = look.height === 'short' ? 430 : 491;
   const context = image.getContext('2d');
   context.translate(6, 19);
-  paintAdventurer(context, look, skin);
+  paintAdventurer(context, look, skin, helmet);
   const sprite = { image, left: 0, top: 0, width: image.width, height: image.height, anchor: 0.53 };
   if (avatarAppearanceCache.size >= 64) avatarAppearanceCache.delete(avatarAppearanceCache.keys().next().value);
   avatarAppearanceCache.set(key, sprite);

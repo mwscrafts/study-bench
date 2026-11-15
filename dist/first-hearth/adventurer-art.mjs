@@ -134,22 +134,47 @@ function drawBody(ctx, skin, height, build) {
   ctx.restore();
 }
 
-export function paintAdventurer(ctx, look, skin) {
+function drawRidgeHelm(ctx) {
+  // The crown and cheek plates share the face coordinates used by every build.
+  polygon(ctx, '#242e36', [101,113,107,80,118,55,142,34,172,17,190,4,224,23,248,45,263,72,267,98,257,107,242,101,222,91,186,94,152,107,119,127]);
+  polygon(ctx, '#465763', [102,106,110,78,125,52,151,33,188,8,174,51,146,73,124,93]);
+  polygon(ctx, '#536671', [126,52,151,33,188,8,174,51,147,70]);
+  polygon(ctx, '#374952', [104,106,124,93,147,70,174,51,193,88,174,95,140,104,118,118]);
+  polygon(ctx, '#52616a', [193,88,174,51,190,4,219,24,244,48,257,73,261,90,241,86,216,81]);
+  polygon(ctx, '#6d777a', [212,22,239,41,254,62,259,77,234,65,207,47]);
+  polygon(ctx, '#b5a28b', [190,4,205,12,223,35,237,59,246,80,244,92,235,98,232,84,215,55,201,30]);
+  polygon(ctx, '#7c8383', [190,4,201,30,215,55,232,84,235,98,224,91,206,59,194,39,180,22]);
+
+  // Keep the two eyes clear. The near cheek guard is broad, the far one a thin edge.
+  polygon(ctx, '#354650', [122,111,144,100,152,108,155,128,165,140,171,163,151,164,141,155,131,143]);
+  polygon(ctx, '#556671', [125,112,143,102,148,121,155,135,162,142,165,158,150,157,139,145]);
+  polygon(ctx, '#84918f', [143,102,149,108,154,128,163,139,171,162,165,158,157,142,148,132]);
+  polygon(ctx, '#4b5b62', [250,100,260,103,258,126,255,149,249,157,244,153,249,132]);
+  polygon(ctx, '#958d7e', [257,105,260,103,258,127,255,149,249,157,250,148,254,128]);
+  polygon(ctx, '#728186', [102,106,121,95,144,87,174,79,205,75,224,77,235,87,245,82,261,88,267,98,247,93,237,100,223,90,204,87,176,91,144,101,119,113,108,121,101,113]);
+  polygon(ctx, '#485b64', [108,113,124,103,145,94,176,85,204,81,223,83,236,94,246,87,265,93,267,98,247,93,237,100,223,90,204,87,176,91,144,101,119,113,108,121]);
+}
+
+export function paintAdventurer(ctx, look, skin, helmet = false) {
   drawBody(ctx, skin, look.height, look.build);
 
   ctx.save();
   const paint = lift => hairPaint(ctx, look, lift);
   // Head and scarf meet at the body transform's fixed shoulder line.
-  drawHairBehind(ctx, look.hairStyle, paint);
+  if (!helmet || look.hairStyle === 'ponytail') drawHairBehind(ctx, look.hairStyle, paint);
   polygon(ctx, shade(skin,-0.19), [137,125,144,94,163,72,195,61,220,66,238,85,246,110,247,134,239,151,223,164,202,170,178,165,157,156,142,142]);
   polygon(ctx, shade(skin,0.01), [144,111,161,86,190,69,216,69,232,85,240,110,241,137,233,151,218,160,200,163,182,160,160,150,148,138]);
   polygon(ctx, shade(skin,0.08), [179,93,205,77,222,80,234,98,238,122,235,141,220,153,197,157,177,147,168,128]);
-  drawHairFront(ctx, look.hairStyle, paint);
+  if (helmet) {
+    polygon(ctx, paint(-0.20), [117,93,141,82,169,91,167,105,159,117,149,142,141,159,123,156,113,142,119,126,110,122]);
+  } else {
+    drawHairFront(ctx, look.hairStyle, paint);
+  }
   ellipse(ctx, shade(skin,-0.17), 145, 136, 10, 14, -0.34);
   ellipse(ctx, shade(skin,0.02), 145, 135, 6.5, 10, -0.34);
   ellipse(ctx, shade(skin,-0.23), 147, 138, 3, 5.5, -0.34);
   ellipse(ctx, '#1c1413', 193, 117, 5, 12);
   ellipse(ctx, '#1c1413', 225, 115, 4.8, 11.5);
+  if (helmet) drawRidgeHelm(ctx);
   ctx.restore();
-
 }
