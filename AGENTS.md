@@ -8,6 +8,8 @@ Update the handoff after **every implementation attempt**, including failed, par
 
 Approved concepts are binding visual specifications, not loose inspiration. Preserve the approved composition, framing, proportions, palette, typography, and control order. Do not redraw, regenerate, crop sprite-sheet art, substitute assets, or recompose the interface unless the owner asks. If a technical constraint prevents an exact match, explain the constraint and discuss the change before implementing it. Before calling the work complete, compare the rendered result against the approved reference at the intended viewport; record any approved deviation in the handoff.
 
+Before implementing a visual task, locate the exact approved source image in the project/thread context and write down its file path plus the visual invariants the implementation must preserve. Treat that reference as the acceptance target throughout the work; do not substitute a new concept, asset source, crop, or layout during implementation. Review the actual render beside the reference at the target viewport before presenting it. If the source or a technical constraint is unclear, stop and resolve that before changing the design.
+
 ## Project layout
 
 The browser game lives in `dist/first-hearth/`. `index.html` loads the playtest and CSS. `playtest.mjs` owns the main loop, controls, player save, dialogue, region transitions, combat, multiplayer presence, and the UI. Region and feature modules keep their terrain, landmark data, state helpers, and artwork in separate files.

@@ -32,6 +32,6 @@ export function advanceFieldShadows(shadows, patrols, phase, dt, players, isDefe
     const gap = Math.hypot(dx, dy);
     const fraction = gap > .5 ? Math.min(1, (aggro ? 104 : 76) * dt / gap) : 0;
     return { index: shadow.index, x: shadow.x + dx * fraction, y: shadow.y + dy * fraction,
-      aggro, direction: Math.sign(dx) || shadow.direction };
+      aggro, direction: -Math.sign(dx) || shadow.direction };
   });
 }

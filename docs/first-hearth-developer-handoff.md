@@ -1,6 +1,6 @@
 # First Hearth developer handoff
 
-Updated: 2026-11-15
+Updated: 2026-11-16
 Repository: `mwscrafts/study-bench`  
 Live site: <https://love.ashquack.workers.dev/>  
 Game: <https://love.ashquack.workers.dev/first-hearth/>
@@ -23,7 +23,20 @@ This is the durable continuity note for future Codex/dev conversations. Read it 
 
 Approved concepts are binding visual specifications, not loose inspiration. Preserve the approved composition, framing, proportions, palette, typography, and control order. Do not redraw, regenerate, crop sprite-sheet art, substitute assets, or recompose the interface unless the owner asks. If a technical constraint prevents an exact match, explain the constraint and discuss the change before implementing it. Before calling the work complete, compare the rendered result against the approved reference at the intended viewport; record any approved deviation in the handoff.
 
+### DevNote: stop approved-concept drift (2026-11-16)
+
+- The written fidelity rule already existed. The failure was mine: I did not use it as a required pre-coding/review gate, made independent substitutions (cropped atlas art, substitute sprites, altered framing/layout), and then patched without first comparing the whole result to the approved reference.
+- Before coding a visual task, identify and pin the exact approved image/file and record its path here or in the task checkpoint. Translate it into a short list of invariants: composition, framing, proportions, palette, typography, asset source, and control order. Build against those invariants; do not invent a second concept or “improve” the approved one.
+- Before calling it done, inspect the actual rendered screen at the target viewport beside the pinned reference and check every invariant. If a technical constraint blocks a match, stop before changing the design and explain the constraint for discussion. Record only deviations the owner explicitly approved.
+- Recent examples to guard against: the character creator drifting from its approved full-screen art, and the fishing timing strip losing the approved yellow zones. In both cases, the agreed concept remains the spec through implementation; this is a process correction, not permission to change either design.
+
 ## Current checkpoint
+
+### Shared co-op ghost movement and facing (2026-11-16)
+
+- The owner and Ash confirmed they see and fight the same ghosts, and reported visible stutter plus ghosts approaching backward.
+- Public ghost positions update on the server at about 10 Hz. Keep collision/contact checks on the authoritative positions, but smoothly interpolate separate client-side draw positions each animation frame. The wisp sprite's unmirrored orientation faces left, so the Worker uses the inverse horizontal delta for facing.
+- Changed `worker/field-shadows.mjs`, `dist/first-hearth/playtest.mjs`, and `dist/first-hearth/index.html` (entry cache v151). Both modules passed `node --check`; `git diff --check` passed. Shell push failed because this workspace has no Git credentials; this targeted patch was published to `main` with the connected GitHub API. Deployment is triggered by the main update; live co-op behavior remains unverified. The owner and Ash can confirm it in play.
 
 ### Fishing timing, level cap, and loading-screen recovery (latest)
 

@@ -183,6 +183,7 @@ let floaters = [];
 let hitUntil = 0;
 let creatures = [];
 let creatureCycleKey = '';
+const sharedShadowDrawPositions = new Map();
 let player = createPlayer();
 let avatar = 'boy';
 const DEFAULT_APPEARANCE = { skin: 'warm', build: 'slim', height: 'tall', hairStyle: 'ponytail', hairColor: 'brown' };
@@ -713,13 +714,19 @@ function paint() {
     paintHutDecor(ctx, hutDecorations);
     paintSpecialHomeDecor(ctx,'hut',specialRewards,hutDecorations);
   }
-  const shadowPhase = usesSharedShadows() ? presence.getShadowFrame()?.phase ?? phaseClock : phaseClock;
+  const sharedShadowScene = usesSharedShadows() ? presence.getShadowFrame() : null;
+  const shadowPhase = sharedShadowScene?.phase ?? phaseClock;
   const shadowFade = skyMode === 'auto' && shadowPhase >= NIGHT_FADE_START
     ? clamp((NIGHT_END - shadowPhase) / (NIGHT_END - NIGHT_FADE_START), 0, 1) : 1;
   ctx.save();
   ctx.globalAlpha *= shadowFade;
-  creatures.forEach(creature => paintCrownwoodShadow(ctx, creature, animationClock, sprites.nightWisp,
-    creature.direction ?? (player.x < creature.x ? 1 : -1)));
+  creatures.forEach(creature => {
+    const drawPosition = sharedShadowScene?.region === region
+      ? sharedShadowDrawPositions.get(sharedShadowId(sharedShadowScene.cycle, creature.index)) : null;
+    const drawn = drawPosition ? { ...creature, x: drawPosition.x, y: drawPosition.y } : creature;
+    paintCrownwoodShadow(ctx, drawn, animationClock, sprites.nightWisp,
+      creature.direction ?? (player.x < creature.x ? 1 : -1));
+  });
   ctx.restore();
   currentFlowers().forEach(flower => {
     if (!collected.has(flower.id)) paintFlower(ctx, flower, selectedLandmark === flower, animationClock);
@@ -3578,16 +3585,34 @@ function sharedShadowId(cycle, index) {
   return 'public:' + cycle + ':' + region + ':' + index;
 }
 
-function refreshSharedShadows() {
+function refreshSharedShadows(dt = 0) {
   if (usesSharedShadows()) {
     const scene = presence.getShadowFrame();
     creatureCycleKey = 'public';
     creatures = scene?.region === region
       ? scene.creatures.filter(creature => !defeatedShadows.has(sharedShadowId(scene.cycle, creature.index)))
       : [];
+    const active = new Set();
+    const blend = 1 - Math.exp(-20 * Math.min(dt, .08));
+    if (scene?.region === region) {
+      for (const creature of creatures) {
+        const id = sharedShadowId(scene.cycle, creature.index);
+        active.add(id);
+        const drawPosition = sharedShadowDrawPositions.get(id);
+        if (!drawPosition) sharedShadowDrawPositions.set(id, { x: creature.x, y: creature.y });
+        else {
+          drawPosition.x += (creature.x - drawPosition.x) * blend;
+          drawPosition.y += (creature.y - drawPosition.y) * blend;
+        }
+      }
+    }
+    for (const id of sharedShadowDrawPositions.keys()) {
+      if (!active.has(id)) sharedShadowDrawPositions.delete(id);
+    }
   } else if (creatureCycleKey === 'public') {
     creatures = [];
     creatureCycleKey = '';
+    sharedShadowDrawPositions.clear();
   }
 }
 
@@ -3679,7 +3704,7 @@ function frame(time) {
   lastFrame = time;
   if (playing && onlineEnabled) syncPublicClock();
   else if (!onlineEnabled) publicClockCycle = null;
-  if (playing) refreshSharedShadows();
+  if (playing) refreshSharedShadows(dt);
   if (wave > 0) wave = Math.max(0, wave - dt);
   if (!paused && !talking && !inventoryOpen && !mapOpen) animationClock += dt;
   if (casting) fishingPanel.showMarker(castMarker(animationClock - casting.start, casting.fromLeft));
